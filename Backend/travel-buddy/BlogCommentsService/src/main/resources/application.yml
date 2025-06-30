@@ -1,0 +1,19 @@
+server:
+  port: 8091
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: BlogComments
+  application:
+    name: BLOGS-COMMENT-SERVICE
+  security:
+    user:
+      name: admin
+      password: password
+
+  config:
+    import: configserver:http://localhost:8086
+
+# File size limit for multipart requests

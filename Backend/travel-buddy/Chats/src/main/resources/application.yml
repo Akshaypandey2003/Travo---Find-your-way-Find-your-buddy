@@ -1,0 +1,23 @@
+server:
+  port: 8092
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: Chats
+  application:
+    name: CHATS-SERVICE
+  security:
+    user:
+      name: admin
+      password: password
+
+  config:
+    import: configserver:http://localhost:8086
+
+# File size limit for multipart requests
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB

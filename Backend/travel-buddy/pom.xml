@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.travelbuddy</groupId>
+    <artifactId>Hotel-Backend</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>ApiGateway</module>
+        <module>Blogs</module>
+        <module>BlogCommentsService</module>
+        <module>Booking</module>
+        <module>ConfigServer</module>
+        <module>Chats</module>
+        <module>Hotel</module>
+        <module>HotelInfo</module>
+        <module>Review</module>
+        <module>Room</module>
+        <module>ServiceRegistery</module>
+        <module>TripService</module>
+        <module>UserService</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>3.1.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

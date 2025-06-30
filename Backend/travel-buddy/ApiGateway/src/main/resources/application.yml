@@ -1,0 +1,91 @@
+server:
+  port: 8085
+
+# eureka:
+#   instance:
+#     prefer-ip-address: true
+#   client:
+#     fetch-registry: true
+#     register-with-eureka: true
+#     service-url:
+#       defaultZone: http://localhost:8761/eureka
+
+
+spring:
+  cloud:
+    gateway:
+      routes:
+      - id: HOTEL-INFO
+        uri: lb://HOTEL-INFO
+        predicates:
+        - Path=/hotelInfo/**
+
+      - id: HOTEL-SERVICE
+        uri: lb://HOTEL-SERVICE
+        predicates:
+        - Path=/hotel/**
+
+      - id: REVIEW-SERVICE
+        uri: lb://REVIEW-SERVICE
+        predicates:
+        - Path=/review/**
+
+      - id: ROOM-SERVICE
+        uri: lb://ROOM-SERVICE
+        predicates:
+        - Path=/rooms/**
+
+      - id: BOOKING-SERVICE
+        uri: lb://BOOKING-SERVICE
+        predicates:
+        - Path=/booking/**
+
+      - id: USER-SERVICE
+        uri: lb://USER-SERVICE
+        predicates:
+        - Path=/user/**
+        filters:
+        - AddRequestHeader=Authorization, Bearer {jwt}
+      
+      - id: TRIPS-SERVICE
+        uri: lb://TRIPS-SERVICE
+        predicates:
+        - Path=/trips/**
+
+      - id: BLOGS-SERVICE
+        uri: lb://BLOGS-SERVICE
+        predicates:
+        - Path=/blogs/**
+
+      - id: BLOGS-SERVICE
+        uri: lb://BLOGS-COMMENT-SERVICE
+        predicates:
+        - Path=/comment/**
+
+      - id: USER-WEBSOCKET-ROUTE
+        uri: lb://USER-SERVICE
+        predicates:
+            - Path=/ws/**
+        # filters:
+        #     - name: RewritePath
+        #       args:
+        #         regexp: /ws/(?<segment>.*)
+        #         replacement: /${segment}
+      
+  
+  application:
+    name: API-GATEWAY
+  config:
+    import: configserver:http://localhost:8086
+
+
+# Okta Configuration
+okta:
+  oauth2:
+    issuer: https://dev-95846997.okta.com/oauth2/default
+    audience: api://default
+    client-id: 0oanj7msm6GM08sZ25d7
+    client-secret: 0Sag_S9QQwPeMrdWR72MDHqi6YKFV-bkPEuDvJN_mZm5xBQJTr9qifk8UWX7xvv1
+    scopes: openid, profile, email, offline_access
+
+        

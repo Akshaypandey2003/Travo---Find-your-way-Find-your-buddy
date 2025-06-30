@@ -1,0 +1,70 @@
+
+
+spring:
+  application:
+    name: HOTEL-INFO
+  config:
+    import: configserver:http://localhost:8086
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-95846997.okta.com/oauth2/default
+      client:
+        registration:
+            my-internal-client:
+              provider: okta
+              authorization-grant-type: client_credentials
+              scope: internal
+              client-id: 0oanj7msm6GM08sZ25d7
+              client-secret: 0Sag_S9QQwPeMrdWR72MDHqi6YKFV-bkPEuDvJN_mZm5xBQJTr9qifk8UWX7xvv1
+        provider:
+          okta:
+            issuer-uri: https://dev-95846997.okta.com/oauth2/default
+         
+    
+server:
+  port: 8084
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances: 
+       getHotelInfoBreaker:
+          register-health-indicator: true
+          event-consumer-buffer-size: 10
+          failure-rate-threshold: 50
+          minimum-number-of-calls: 5
+          automatic-transition-from-open-to-half-open-enabled: true
+          wait-duration-in-open-state: 5s
+          permitted-number-of-calls-in-half-open-state: 3
+          sliding-window-size: 10
+          sliding-window-type: COUNT_BASED
+      
+
+# Okta Configuration
+okta:
+  oauth2:
+    issuer: https://dev-95846997.okta.com/oauth2/default
+    audience: api://default
+
+# eureka:
+#   instance:
+#     prefer-ip-address: true
+#   client:
+#     fetch-registry: true
+#     register-with-eureka: true
+#     service-url:
+#       defaultZone: http://localhost:8761/eureka
+

@@ -6,7 +6,7 @@
 
 ## ✨ Summary
 
-**Travo** is a full-stack web application designed to streamline the process of **finding travel partners**, **planning trips**, and **sharing experiences**. It empowers users from different locations to connect, collaborate, and travel together with ease — whether it's a solo trip, a family getaway, or a group adventure.
+**Travo** is a full-stack web application designed to streamline the process of **finding travel partners**, **planning trips**, and **sharing experiences**. It empowers users from different locations to connect, collaborate, and travel together with ease — whether it's a solo trip, a family gateway, or a group adventure.
 
 ---
 

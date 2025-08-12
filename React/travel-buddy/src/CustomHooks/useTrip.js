@@ -11,15 +11,17 @@ import {
   updateTripRequest,
 } from "../Redux/Slices/authSlice";
 import { filterNotifications } from "../Redux/Slices/notificationSlice";
+import { updateTripFeedbacks } from "../Redux/Slices/tripSlice";
 
 const useTrip = () => {
   const loggedInUser = useSelector((state) => state.auth.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const sendTripRequest = async ({ notificationId,tripId, requestTo }) => {
+  const sendTripRequest = async ({ notificationId, tripId, requestTo }) => {
     if (!loggedInUser) {
       navigate("/login");
+      return;
     }
     console.log(
       loggedInUser?.userId +
@@ -55,10 +57,8 @@ const useTrip = () => {
             requestFrom: loggedInUser?.userId,
             tripId: tripId,
           })
-         
         );
-        if(notificationId)
-         dispatch(filterNotifications(notificationId))
+        if (notificationId) dispatch(filterNotifications(notificationId));
       } else {
         const err = await response.json();
         console.error("Error sending trip request:", err.message);
@@ -67,9 +67,8 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
-  const getTrip = async(tripId)=>
-  {
-    console.log("Fetching trip with id: ", tripId)
+  const getTrip = async (tripId) => {
+    console.log("Fetching trip with id: ", tripId);
     try {
       const response = await fetch(
         `http://localhost:8085/auth/user/trip/get-trip-by-tripId/${tripId}`,
@@ -91,10 +90,7 @@ const useTrip = () => {
           data = await response.text(); // fallback to plain text
         }
         console.log("Trip fetched successfully:", data);
-        dispatch(
-         addTrips(data)   
-        );
-      
+        dispatch(addTrips(data));
       } else {
         const err = await response.json();
         console.error("Error fetching trip:", err.message);
@@ -102,14 +98,14 @@ const useTrip = () => {
     } catch (error) {
       console.error("Network error:", error.message);
     }
-  }
+  };
   const acceptTripRequest = async (
     notificationId,
     tripId,
-    notificationFrom,
+    notificationFrom
   ) => {
     //We need to add trip details of trip with tripID to the user with id notificationFrom and delete the notification with id notification id
-    console.log("Trip id inside accept trip custom hook: ",tripId);
+    console.log("Trip id inside accept trip custom hook: ", tripId);
     try {
       const response = await fetch(
         `http://localhost:8085/auth/user/trip/accept-trip-request/${notificationId}/${tripId}/${notificationFrom}/${loggedInUser?.userId}`,
@@ -120,7 +116,7 @@ const useTrip = () => {
           },
         }
       );
-       if (response.ok) {
+      if (response.ok) {
         const contentType = response.headers.get("content-type");
         let data;
 
@@ -136,14 +132,15 @@ const useTrip = () => {
             tripId: tripId,
           })
         );
-         
-         !notificationId ?
-           dispatch(removeTripRequest({
-            tripMember: notificationFrom,
-            tripId: tripId,
-          })
-        ):dispatch(filterNotifications(notificationId));
 
+        !notificationId
+          ? dispatch(
+              removeTripRequest({
+                tripMember: notificationFrom,
+                tripId: tripId,
+              })
+            )
+          : dispatch(filterNotifications(notificationId));
       } else {
         const err = await response.json();
         console.error("Error accepting trip request:", err.message);
@@ -152,9 +149,8 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
-  const removeTripMember = async(tripId,userId)=>
-  {
-     try {
+  const removeTripMember = async (tripId, userId) => {
+    try {
       const response = await fetch(
         `http://localhost:8085/auth/user/trip/remove-trip-member/${tripId}/${userId}`,
         {
@@ -164,7 +160,7 @@ const useTrip = () => {
           },
         }
       );
-       if (response.ok) {
+      if (response.ok) {
         const contentType = response.headers.get("content-type");
         let data;
 
@@ -174,19 +170,22 @@ const useTrip = () => {
           data = await response.text(); // fallback to plain text
         }
         console.log("Trip member removed successfully:", data);
-        dispatch(removeTripMembers({tripId:tripId,memberId:userId}))
-
+        dispatch(removeTripMembers({ tripId: tripId, memberId: userId }));
       } else {
         const err = await response.json();
-        console.error("Error while removing member with id:",userId," ", err.message);
+        console.error(
+          "Error while removing member with id:",
+          userId,
+          " ",
+          err.message
+        );
       }
     } catch (error) {
       console.error("Network error:", error.message);
     }
-  }
-  const deleteTripRequest = async(tripId,userId)=>
-  {
-     console.log("Trip id inside delete trip  request custom hook: ",tripId);
+  };
+  const deleteTripRequest = async (tripId, userId) => {
+    console.log("Trip id inside delete trip  request custom hook: ", tripId);
     try {
       const response = await fetch(
         `http://localhost:8085/auth/user/trip/delete-trip-request/${tripId}/${userId}`,
@@ -197,7 +196,7 @@ const useTrip = () => {
           },
         }
       );
-       if (response.ok) {
+      if (response.ok) {
         const contentType = response.headers.get("content-type");
         let data;
 
@@ -220,7 +219,7 @@ const useTrip = () => {
     } catch (error) {
       console.error("Network error:", error.message);
     }
-  }
+  };
   const createTrip = async (tripData) => {
     if (!loggedInUser) {
       navigate("/login");
@@ -301,6 +300,91 @@ const useTrip = () => {
       console.error("Network error while creating trip:", error.message);
     }
   };
-  return { sendTripRequest, createTrip, deleteTrip, acceptTripRequest,deleteTripRequest,removeTripMember,getTrip};
+
+  const fetchTripFeedbacks = async (tripId) => {
+    console.log("Fetching feedbacks for the trip with id: ", tripId);
+    try {
+      const response = await fetch(
+        `http://localhost:8085/auth/user/trip/get-trip-feedback/${tripId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type");
+        let data;
+
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          data = await response.text(); // fallback to plain text
+        }
+        console.log("Trip feedbacks fetched successfully:", data);
+        dispatch(
+          updateTripFeedbacks({
+            tripId: tripId,
+            feedbacks: data,
+          })
+        );
+      } else {
+        const err = await response.json();
+        console.error("Error fetching trip feedbacks:", err.message);
+      }
+    } catch (error) {
+      console.error("Network error:", error.message);
+    }
+  };
+
+  const postTripFeedback = async (feedback) => {
+    console.log("Posting feedback: ",feedback);
+    try {
+      const response = await fetch(
+        `http://localhost:8085/auth/user/trip/post-trip-feedback`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(feedback)
+,
+        }
+      );
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type");
+        let data;
+
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          data = await response.text(); // fallback to plain text
+        }
+        data.author = feedback.author;
+        console.log("Trip feedback submitted successfully", data);
+        dispatch(updateTripFeedbacks({tripId:data?.tripId,feedbacks:data}));
+      }
+       else {
+        const err = await response.json();
+        console.error("Error submitting trip feedback:", err.message);
+      }
+    } catch (error) {
+      console.error("Network error:", error.message);
+    }
+  };
+  return {
+    sendTripRequest,
+    createTrip,
+    deleteTrip,
+    acceptTripRequest,
+    deleteTripRequest,
+    removeTripMember,
+    getTrip,
+    fetchTripFeedbacks,
+    postTripFeedback,
+  };
 };
 export default useTrip;

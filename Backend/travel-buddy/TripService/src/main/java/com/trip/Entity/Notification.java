@@ -33,6 +33,7 @@ public class Notification {
         FRIEND_REQUEST,
         ACCEPTED,
         LIKE,
-        COMMENT
+        COMMENT,
+        SYSTEM_GENERATED
     }
 }

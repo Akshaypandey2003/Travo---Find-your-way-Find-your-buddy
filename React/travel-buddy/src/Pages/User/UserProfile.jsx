@@ -107,7 +107,7 @@ const UserProfile = () => {
   
 
   return (
-    <>
+    <div className="mt-24 w-[99vw]">
       <div className="message-area absolute left-1/3 min-w-96 ">
         <AnimatePresence>
           {showAlert && success && (
@@ -144,7 +144,7 @@ const UserProfile = () => {
         </AnimatePresence>
 
       </div>
-      <div className="p-10 flex flex-col items-center justify-center">
+      <div className="p-10 flex flex-col items-center justify-center  ">
         <div className="rounded-xl w-[80rem] h-[25rem] object-contain overflow-hidden">
           <img src="../friends-2.jpg" alt="" className="w-full h-full" />
         </div>
@@ -247,7 +247,7 @@ const UserProfile = () => {
         </div>
       </div>
       {/* <DatePicker /> */}
-    </>
+    </div>
   );
 };
 export default UserProfile;

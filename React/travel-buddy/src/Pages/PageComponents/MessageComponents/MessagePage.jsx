@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import useChat from "../../../CustomHooks/useChat";
 import { useSelector, useDispatch } from "react-redux";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -25,6 +26,7 @@ import {
   faCommentAlt,
   faMagnifyingGlass,
   faPaperPlane,
+  faUserGroup,
 } from "@fortawesome/free-solid-svg-icons";
 import useUserData from "../../../CustomHooks/useUserData";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -58,6 +60,10 @@ export const MessagePage = () => {
   const usersList = useSelector((store) => store.auth.usersList);
   const messagesEndRef = useRef(null);
 
+  console.log("All chats for current user is: ", chats);
+  console.log("Active chat is: ", activeChat);
+  console.log("Messages for active chat is: ", currMessage);
+
   // Derive other participant's userId
   // Only extract chatUserId if:
   // 1. activeChat has a chatId (i.e., it's an actual chat)
@@ -70,11 +76,17 @@ export const MessagePage = () => {
 
   // Now only try to fetch the user if chatUserId is available
   const localUser = useMemo(() => {
-    return chatUserId ? usersList?.find((user) => user?.userId === chatUserId):null;
+    return chatUserId
+      ? usersList?.find((user) => user?.userId === chatUserId)
+      : null;
   }, [chatUserId, usersList]);
 
-  const handleSendMessage = async () => {
-    const message = messageRef?.current?.value;
+  const handleSendMessage = async (e) => {
+    if (e?.preventDefault) e.preventDefault();
+
+    const message = messageRef?.current?.value.trim();
+    if (!message) return;
+
     const messageData = {
       chatId: activeChat?.chatId,
       senderId: loggedInUser?.userId,
@@ -84,49 +96,49 @@ export const MessagePage = () => {
 
     const chatId = activeChat?.chatId;
     if (chatId) {
-      // console.log("Sending message for chat: ", chatId);
+      console.log("Sending message for chat: ", chatId);
       await sendMessage({ message: messageData });
       // console.log("Message sent successfylly for chat: ", chatId);
     } else {
-      // console.log("Initiating chat for user: ", activeChat?.userId);
+      console.log("Initiating chat for user: ", activeChat?.userId);
       await startChat({ message: messageData, receiver: activeChat?.userId });
       // console.log("Chat initiated successfully for user: ", activeChat?.userId);
     }
     messageRef.current.value = "";
   };
-  console.log("Active chat is: ", activeChat);
+  // console.log("Active chat is: ", activeChat);
   // console.log("Group participants are: ", participants);
   const handleUserSelect = (chat) => {
     dispatch(setActiveChat(chat));
     setSearchQuery("");
     setSuggestedUsers([]);
   };
-  console.log("Chat user is : ", chatUser);
-  console.log("Chat user ID is : ", chatUserId);
+  // console.log("Chat user is : ", chatUser);
+  // console.log("Chat user ID is : ", chatUserId);
 
-  
   useEffect(() => {
-  // If it's a group chat → skip
-  if (activeChat?.groupChat) return;
+    // If it's a group chat → skip
+    if (activeChat?.groupChat) return;
 
-  // If it's an existing chat
-  if (chatUserId) {
-    if (localUser) {
-      setChatUser(localUser);
-    } else {
-      const fetchUser = async () => {
-        const user = await getUser(chatUserId);
-        setChatUser(user);
-      };
-      fetchUser();
+    // If it's an existing chat
+    if (chatUserId) {
+      if (localUser) {
+        setChatUser(localUser);
+      } else {
+        const fetchUser = async () => {
+          const user = await getUser(chatUserId);
+          setChatUser(user);
+        };
+        fetchUser();
+      }
     }
-  } 
-  // If it's a new chat (no chatId), just set the activeChat as chatUser
-  else if (!activeChat?.chatId && activeChat?.userId) {
-    setChatUser(activeChat);
-  }
-}, [activeChat, chatUserId, localUser]);
+    // If it's a new chat (no chatId), just set the activeChat as chatUser
+    else if (!activeChat?.chatId && activeChat?.userId) {
+      setChatUser(activeChat);
+    }
+  }, [activeChat, chatUserId, localUser]);
 
+  // Fetching chats for the logged-in user
   useEffect(() => {
     if (chats == null || chats.length === 0) fetchChats(loggedInUser?.userId);
   }, [loggedInUser]);
@@ -173,10 +185,10 @@ export const MessagePage = () => {
   }, [activeChat]); // ✅ only reruns when chatId changes
 
   return (
-    <div className=" h-[86vh] w-[95%] m-auto">
+    <div className=" h-[86vh] w-[100vw] m-auto mt-24 border">
       <ResizablePanelGroup
         direction="horizontal"
-        className="min-h-[200px] rounded-lg md:min-w-[450px]"
+        className="min-h-[200px] rounded-lg md:min-w-[450px] "
       >
         <ResizablePanel minSize={25} maxSize={35} className="border border-r-0">
           <div className="text-right px-4 py-1">
@@ -193,7 +205,11 @@ export const MessagePage = () => {
           <ScrollArea className="h-[90%]">
             {searchQuery.length > 0 && suggestedUsers.length > 0 ? (
               suggestedUsers.map((user) => (
-                <div key={user.userId} onClick={() => handleUserSelect(user)}>
+                <div
+                  key={user.userId}
+                  onClick={() => handleUserSelect(user)}
+                  className="p-2 rounded-lg"
+                >
                   <SuggestedUserCard user={user} />
                 </div>
               ))
@@ -222,7 +238,7 @@ export const MessagePage = () => {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={75} className="">
-          {Object.keys(activeChat).length > 0 ? (
+          {Object?.keys(activeChat).length > 0 ? (
             <Card className="h-full rounded-none p-0">
               <CardHeader className="border-b p-2">
                 <div className="flex items-center justify-between">
@@ -289,16 +305,17 @@ export const MessagePage = () => {
                     </div>
                   </div>
                   {/* {activeChat?.groupChat && ( */}
-                    <div className="p-2">
-                      <DropDown chatUser={chatUser} participants={participants} />
-                    </div>
+                  <div className="p-2">
+                    <DropDown chatUser={chatUser} participants={participants} />
+                  </div>
                   {/* )} */}
                 </div>
               </CardHeader>
               <CardContent className="h-[80%] flex items-center justify-center p-0">
                 <ScrollArea className="h-[100%] w-full">
                   <div className="w-full">
-                    {currMessage && currMessage.length > 0 ? (
+                    {currMessage && currMessage.length > 0 ? 
+                    (
                       <div className="flex flex-col justify-end  gap-2 p-4">
                         {currMessage.map((message, index) => (
                           <MessageCard
@@ -309,7 +326,18 @@ export const MessagePage = () => {
                         ))}
                         <div ref={messagesEndRef} />
                       </div>
-                    ) : (
+                    ) : activeChat?.groupChat && !activeChat?.groupImageUrl ? 
+                    (
+                      <div className="h-[30rem] flex flex-col justify-center items-center">
+                        <FontAwesomeIcon
+                          icon={faUserGroup}
+                          className="text-orange-300"
+                          size="5x"
+                        />
+                        <h1 className="font-bold">Start a conversation.........</h1>
+                      </div>
+                    ) : 
+                    (
                       <div className="h-[30rem] flex justify-center items-center">
                         <div className="">
                           <Avatar className="h-32 w-32 m-auto">
@@ -327,32 +355,37 @@ export const MessagePage = () => {
                                 chatUser?.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <h1 className="font-bold">
-                            Start a conversation.........
-                          </h1>
                         </div>
+                        <h1 className="font-bold">Start a conversation.........</h1>
                       </div>
-                    )}
+                    )     }
+                    
                   </div>
                 </ScrollArea>
               </CardContent>
-              <CardFooter className="px-4 py-2 flex gap-2">
+              <CardFooter className="px-4 py-3 rounded-b-xl shadow-inner flex gap-3">
                 <Input
-                  placeholder="Type your message here..."
-                  className=""
                   ref={messageRef}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      handleSendMessage(e);
+                    }
+                  }}
+                  placeholder="Type your message..."
+                  className="rounded-full px-5 py-2 text-base bg-background/70 backdrop-blur-sm border  shadow-sm focus:shadow-md transition-all duration-400"
                 />
-                <Badge
-                  variant="outline"
-                  className="hover:cursor-pointer border-none"
+                <Button
+                  variant="ghost"
+                  className="rounded-full p-3 bg-orange-100 hover:bg-orange-200 shadow hover:scale-105 transition-all"
                   onClick={handleSendMessage}
+                  aria-label="Send Message"
                 >
                   <FontAwesomeIcon
-                    className="text-orange-400 hover:cursor-pointer"
                     icon={faPaperPlane}
-                    size="2xl"
+                    className="text-orange-500"
+                    size="lg"
                   />
-                </Badge>
+                </Button>
               </CardFooter>
             </Card>
           ) : (

@@ -22,8 +22,8 @@ const formatTimeAgo = (date) => {
   const monthsDiff = differenceInMonths(now, postedDate);
 
   if (secondsDiff < 60) {
-    return `${secondsDiff} ${secondsDiff === 1 ? "second" : "seconds"} ago`;
-  } else if (minutesDiff < 60) {
+    return `Just now`;  // ✅ Changed this line
+  }  else if (minutesDiff < 60) {
     return `${minutesDiff} ${minutesDiff === 1 ? "minute" : "minutes"} ago`;
   } else if (hoursDiff < 24) {
     return `${hoursDiff} ${hoursDiff === 1 ? "hour" : "hours"} ago`;

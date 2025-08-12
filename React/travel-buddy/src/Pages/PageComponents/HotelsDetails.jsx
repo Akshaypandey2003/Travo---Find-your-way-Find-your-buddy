@@ -132,7 +132,7 @@ export const HotelsDetails = () => {
     <div className="">
       <div className=" h-[50vh] flex justify-center  ">
         <div className="flex  items-center justify-center w-[90rem] ">
-          <Marquee autoFill={true} speed={25} className="rounded-xl -mx-2">
+          {/* <Marquee autoFill={true} speed={25} className="rounded-xl -mx-2"> */}
             {hotelsDetails?.photos?.map((item, index) => {
               let photoUrl = item?.photo_reference
                 ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${item?.photo_reference}&key=${GOOGLE_API_KEY}`
@@ -150,7 +150,7 @@ export const HotelsDetails = () => {
                 </div>
               ) : null;
             })}
-          </Marquee>
+          {/* </Marquee> */}
         </div>
       </div>
       <div className=" flex justify-center p-5 ">

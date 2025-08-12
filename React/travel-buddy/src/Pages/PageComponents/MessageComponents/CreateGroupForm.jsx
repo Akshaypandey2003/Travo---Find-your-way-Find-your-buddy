@@ -45,6 +45,7 @@ const CreateGroupForm = ({setOpen}) => {
   const [selectedParticipants, setSelectedParticipants] = useState([
     user?.userId,
   ]);
+  
   const onSubmit = (data) => {
     let hasError = false;
     const errors = {
@@ -178,7 +179,7 @@ const CreateGroupForm = ({setOpen}) => {
             )}
           </div>
 
-          <ScrollArea className="h-96 rounded-md">
+          <ScrollArea className="h-64 rounded-md">
             <div>
               {usersList?.map((user, indx) => {
                 const isChecked = selectedParticipants.includes(user.userId);

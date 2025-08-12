@@ -32,10 +32,12 @@ import {
 import { useState } from "react";
 import useTrip from "../../CustomHooks/useTrip";
 import DatePicker from "react-datepicker";
+import { INDIAN_STATES } from "../../Constants/constants";
+import { Country, State, City } from "country-state-city";
 
 const PlanTripForm = () => {
   const user = useSelector((store) => store.auth.user, shallowEqual);
-  const {createTrip} = useTrip();
+  const { createTrip } = useTrip();
   // const [open, setOpen] = useState(false);
   //   const { updateUser } = useAuth();
   //   const [preview, setPreview] = useState(null);
@@ -83,6 +85,15 @@ const PlanTripForm = () => {
 
     form.setValue("tripTags", updatedTags);
   };
+  const states = State.getStatesOfCountry(form.watch("tripCountry"));
+  // Get cities of the selected state
+  const cities = form.watch("tripState")
+    ? City.getCitiesOfState(
+        form.getValues("tripCountry"),
+        form.getValues("tripState")
+      )
+    : [];
+  const tripCat = form.watch("tripCategory");
   const [startDate, setStartDate] = useState(new Date());
 
   return (
@@ -114,16 +125,17 @@ const PlanTripForm = () => {
                       onValueChange={(value) => field.onChange(value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Country" />
+                        <SelectValue placeholder="Select Country" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="india">India</SelectItem>
-                        <SelectItem value="america">America</SelectItem>
-                        <SelectItem value="australia">Australia</SelectItem>
-                        <SelectItem value="britain">Britain</SelectItem>
-                        <SelectItem value="russia">Russia</SelectItem>
-                        <SelectItem value="china">China</SelectItem>
-                        <SelectItem value="ukrain">Ukrain</SelectItem>
+                        {Country.getAllCountries().map((country) => (
+                          <SelectItem
+                            key={country.isoCode}
+                            value={country.isoCode}
+                          >
+                            {country.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -145,13 +157,11 @@ const PlanTripForm = () => {
                         <SelectValue placeholder="State" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Madhya Pradesh">Madhya Pradesh</SelectItem>
-                        <SelectItem value="america">America</SelectItem>
-                        <SelectItem value="australia">Australia</SelectItem>
-                        <SelectItem value="britain">Britain</SelectItem>
-                        <SelectItem value="russia">Russia</SelectItem>
-                        <SelectItem value="china">China</SelectItem>
-                        <SelectItem value="ukrain">Ukrain</SelectItem>
+                        {states.map((state) => (
+                          <SelectItem key={state.isoCode} value={state.isoCode}>
+                            {state.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -173,13 +183,11 @@ const PlanTripForm = () => {
                         <SelectValue placeholder="city" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Bangalore">Bangalore</SelectItem>
-                        <SelectItem value="america">America</SelectItem>
-                        <SelectItem value="australia">Australia</SelectItem>
-                        <SelectItem value="britain">Britain</SelectItem>
-                        <SelectItem value="russia">Russia</SelectItem>
-                        <SelectItem value="china">China</SelectItem>
-                        <SelectItem value="ukrain">Ukrain</SelectItem>
+                        {cities.map((city) => (
+                          <SelectItem key={city.name} value={city.name}>
+                            {city.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -358,31 +366,41 @@ const PlanTripForm = () => {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="memberSize"
-              render={({ field }) => (
-                <FormItem className="">
-                  <FormControl>
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => field.onChange(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Member Size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2-5 Members">2-5 Members</SelectItem>
-                        <SelectItem value="5-10 Members">5-10 Members</SelectItem>
-                        <SelectItem value="10-15 Members">10-15 Members</SelectItem>
-                        <SelectItem value="15+ Members">15+ Members</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {tripCat === "Group" && (
+              <FormField
+                control={form.control}
+                name="memberSize"
+                render={({ field }) => (
+                  <FormItem className="">
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) => field.onChange(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Member Size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2-5 Members">
+                            2-5 Members
+                          </SelectItem>
+                          <SelectItem value="5-10 Members">
+                            5-10 Members
+                          </SelectItem>
+                          <SelectItem value="10-15 Members">
+                            10-15 Members
+                          </SelectItem>
+                          <SelectItem value="15+ Members">
+                            15+ Members
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
           <FormField
             control={form.control}
@@ -407,21 +425,19 @@ const PlanTripForm = () => {
                     </span>
                   </HoverCardTrigger>
                   <HoverCardContent className="p-2">
-                    <div className="flex justify-between space-x-4">
+                    <div className="flex space-x-4">
                       <div className="space-y-1">
                         <FontAwesomeIcon
                           icon={faEyeSlash}
                           className="hover:cursor-pointer"
                         />
-                        <p className="text-sm">
-                          It will be a private trip and only the close friends
-                          will be informed.
-                        </p>
-                        <h1 className="text-xs text-blue-600 cursor-pointer font-light">
-                          Select Close Friends
-                        </h1>
                       </div>
+                      <h1 className="text-sm font-semibold">Privacy</h1>
                     </div>
+                    <p className="text-sm">
+                      It will be a private trip and only the close friends will
+                      be notified.
+                    </p>
                   </HoverCardContent>
                 </HoverCard>
                 <FormMessage />

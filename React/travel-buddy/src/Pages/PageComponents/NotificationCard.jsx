@@ -51,7 +51,7 @@ export const NotificationCard = ({ notification }) => {
         {notification?.type != "LIKE" &&
         notification?.type != "COMMENT" &&
         notification?.type != "NEW_TRIP" &&
-        notification?.type != "ACCEPTED"? (
+        notification?.type != "ACCEPTED" ? (
           <div>
             <Badge
               variant="outline"
@@ -82,7 +82,7 @@ export const NotificationCard = ({ notification }) => {
             </Badge>
           </div>
         ) : notification?.type == "NEW_TRIP" ? (
-          <div className="flex">
+          <div className="flex gap-1">
             <Badge
               variant="outline"
               className="bg-orange-400  hover:cursor-pointer hover:bg-orange-300 hover:border hover:border-orange-600"

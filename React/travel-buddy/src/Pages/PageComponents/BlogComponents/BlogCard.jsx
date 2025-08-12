@@ -35,18 +35,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import CreateBlogForm from "./CreateBlogForm";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  differenceInHours,
-  differenceInDays,
-  differenceInWeeks,
-  differenceInMonths,
-} from "date-fns";
+
 import useBlog from "../../../CustomHooks/useBlog";
 import BlogComments from "./BlogComments";
+import useHelperMethods from "../../../CustomHooks/useHelperMethods";
 
 export const BlogCard = ({ blog }) => {
   const { getUser } = useUserData();
   const { deleteBlog, updateBlogLike } = useBlog();
+  const {formatTimeAgo} = useHelperMethods();
   const [showComment, setShowComment] = useState(false);
   const user = useSelector((store) => store.auth, shallowEqual);
   const [author, setAuthor] = useState(null);
@@ -79,15 +76,7 @@ export const BlogCard = ({ blog }) => {
     fetchUser();
   }, [localUser, author]);
 
-  // const goToImage = (index) => {
-  //   const imageElement = imageRefs.current[index];
-  //   if (imageElement && scrollContainerRef.current) {
-  //     scrollContainerRef.current.scrollTo({
-  //       left: imageElement.offsetLeft,
-  //       behavior: "smooth",
-  //     });
-  //   }
-  // };
+ 
   const goToImage = (index) => {
     setCurrentImageIndex(index);
   };
@@ -119,25 +108,7 @@ export const BlogCard = ({ blog }) => {
       return () => container.removeEventListener("scroll", handleScroll);
     }
   }, []);
-  const formatTimeAgo = (date) => {
-    const postedDate = new Date(date);
-    const now = new Date();
-
-    const hoursDiff = differenceInHours(now, postedDate);
-    const daysDiff = differenceInDays(now, postedDate);
-    const weeksDiff = differenceInWeeks(now, postedDate);
-    const monthsDiff = differenceInMonths(now, postedDate);
-
-    if (hoursDiff < 24 && daysDiff === 0) {
-      return `${hoursDiff} ${hoursDiff === 1 ? "hour" : "hours"} ago`;
-    } else if (daysDiff < 7) {
-      return `${daysDiff} ${daysDiff === 1 ? "day" : "days"} ago`;
-    } else if (weeksDiff < 4) {
-      return `${weeksDiff} ${weeksDiff === 1 ? "week" : "weeks"} ago`;
-    } else {
-      return `${monthsDiff} ${monthsDiff === 1 ? "month" : "months"} ago`;
-    }
-  };
+  
   // console.log("Author is: ",author);
   return (
     <Card className="w-full max-w-3xl mb-4 p-4 mx-auto">

@@ -68,7 +68,7 @@ public class CommentController {
 
             return new ResponseEntity<>(response.getBody(), response.getStatusCode());
         } catch (Exception e) {
-            MessageResponse msg = new MessageResponse("Error posting blog: " + e.getMessage(), "error");
+            MessageResponse msg = new MessageResponse("Error posting comment: " + e.getMessage(), "error");
 
             return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
         }

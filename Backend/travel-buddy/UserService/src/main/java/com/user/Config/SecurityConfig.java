@@ -28,12 +28,12 @@ public class SecurityConfig {
      .csrf(csrf -> csrf.ignoringRequestMatchers(
         "/ws/**",
         "/user/**",
-        "/connection/**",
+        "/auth/**",
         "/auth/user/notification/**",
         "/chat/**"
     ))
      .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-     .authorizeHttpRequests(auth->auth.requestMatchers("/user/**","/connection/**","/auth/user/notification/**","/ws/**","/chat/**").permitAll()
+     .authorizeHttpRequests(auth->auth.requestMatchers("/user/**","/auth/**","/connection/**","/auth/user/notification/**","/ws/**","/chat/**").permitAll()
      .anyRequest()
      .authenticated());
     //  .oauth2ResourceServer(oauth2 -> oauth2.jwt()

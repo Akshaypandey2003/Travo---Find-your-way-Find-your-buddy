@@ -1,17 +1,20 @@
 /* eslint-disable no-unused-vars */
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import {
   faComments,
   faExclamationTriangle,
-  faIdCard, faShieldAlt
+  faIdCard,
+  faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import ImgCarousel from "./PageComponents/ImgCarousel";
 import HeroSectionImageCarousel from "./HeroSectionImageCarousel";
 import Footer from "./Footer Section/Footer";
 import CustomerCard from "./PageComponents/CustomerCard";
 import { SafetyCard } from "./PageComponents/SafetyCard";
+import { useSelector } from "react-redux";
 const customerCardInfo = [
   {
     name: "Atul Garg",
@@ -33,68 +36,87 @@ const customerCardInfo = [
 
 const safetyCardInfo = [
   {
-    title:"Every profile manually reviewed",
+    title: "Every profile manually reviewed",
     icon: faIdCard,
-   className:"text-9xl text-blue-500",
-    desc:  "Our team manually verifies every new workawayer and host profile"+
-    "before they are listed on the site. To help keep our community"+
-    "safe and fair, and to allow our members to make informed"+
-    "decisions when arranging potential exchanges, we also review"+
-    "every new and renewing workawayer, as well as every new and"+
-    "updated host listing."
+    className: "text-9xl text-blue-500",
+    desc:
+      "Our team manually verifies every new workawayer and host profile" +
+      "before they are listed on the site. To help keep our community" +
+      "safe and fair, and to allow our members to make informed" +
+      "decisions when arranging potential exchanges, we also review" +
+      "every new and renewing workawayer, as well as every new and" +
+      "updated host listing.",
   },
   {
-    title:"Every profile manually reviewed",
+    title: "Every profile manually reviewed",
     icon: faShieldAlt,
-    className:"text-9xl text-green-700",
-    desc:  "Our team manually verifies every new workawayer and host profile"+
-    "before they are listed on the site. To help keep our community"+
-    "safe and fair, and to allow our members to make informed"+
-    "decisions when arranging potential exchanges, we also review"+
-    "every new and renewing workawayer, as well as every new and"+
-    "updated host listing."
+    className: "text-9xl text-green-700",
+    desc:
+      "Our team manually verifies every new workawayer and host profile" +
+      "before they are listed on the site. To help keep our community" +
+      "safe and fair, and to allow our members to make informed" +
+      "decisions when arranging potential exchanges, we also review" +
+      "every new and renewing workawayer, as well as every new and" +
+      "updated host listing.",
   },
   {
-    title:"Every profile manually reviewed",
+    title: "Every profile manually reviewed",
     icon: faComments,
-    className:"text-9xl text-orange-800",
-    desc:  "Our team manually verifies every new workawayer and host profile"+
-    "before they are listed on the site. To help keep our community"+
-    "safe and fair, and to allow our members to make informed"+
-    "decisions when arranging potential exchanges, we also review"+
-    "every new and renewing workawayer, as well as every new and"+
-    "updated host listing."
+    className: "text-9xl text-orange-800",
+    desc:
+      "Our team manually verifies every new workawayer and host profile" +
+      "before they are listed on the site. To help keep our community" +
+      "safe and fair, and to allow our members to make informed" +
+      "decisions when arranging potential exchanges, we also review" +
+      "every new and renewing workawayer, as well as every new and" +
+      "updated host listing.",
   },
   {
-    title:"Every profile manually reviewed",
-     icon :faExclamationTriangle,
-     className:"text-9xl text-red-600",
-     desc:  "Our team manually verifies every new workawayer and host profile"+
-    "before they are listed on the site. To help keep our community"+
-    "safe and fair, and to allow our members to make informed"+
-    "decisions when arranging potential exchanges, we also review"+
-    "every new and renewing workawayer, as well as every new and"+
-    "updated host listing."
+    title: "Every profile manually reviewed",
+    icon: faExclamationTriangle,
+    className: "text-9xl text-red-600",
+    desc:
+      "Our team manually verifies every new workawayer and host profile" +
+      "before they are listed on the site. To help keep our community" +
+      "safe and fair, and to allow our members to make informed" +
+      "decisions when arranging potential exchanges, we also review" +
+      "every new and renewing workawayer, as well as every new and" +
+      "updated host listing.",
   },
-  
-]
+];
 export const About = () => {
+  const theme = useSelector((store) => store.auth.theme);
   return (
-    <div>
+    <div className="mt-36">
       <div className="p-10  m-auto">
         <ImgCarousel />
       </div>
       {/* --------- Second container ---------------------- */}
       <div className="flex items-center justify-center ">
-        <div className="w-[40%]  ">
+        <div className="w-[40%] h-[75vh]">
           <Card className="w-[16rem] h-[19rem] rounded-3xl  object-contain overflow-hidden relative top-[5rem] left-[5rem]">
-            <img src="../palace-1.jpg" alt="" className="w-full h-full" />
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808658/palace-1_pxsg8t.jpg"
+              alt=""
+              loading="lazy"
+              className="w-full h-full"
+            />
           </Card>
           <Card className="w-[16rem] h-[13rem] rounded-3xl  object-contain overflow-hidden relative bottom-14 left-[12rem]">
-            <img src="../resort-1.jpg" alt="" className="w-full h-full" />
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808707/resort-1_ldhbwe.jpg"
+              alt=""
+              loading="lazy"
+              className="w-full h-full"
+            />
           </Card>
           <Card className="w-[10rem] h-[9rem] rounded-3xl object-contain overflow-hidden relative bottom-[24rem] left-[18rem]">
-            <img src="../monument-1.jpg" alt="" className="w-full h-full" />
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808545/monument-1_googoq.jpg"
+              alt=""
+              loading="lazy"
+              className="w-full h-full"
+            />
           </Card>
         </div>
         <div className="w-[50%] px-20 py-10   ">
@@ -131,7 +153,7 @@ export const About = () => {
       </div>
 
       {/* --------- Third container ---------------------- */}
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center ">
         <div className="w-[50%] px-20 py-10 ">
           <div className="flex items-center gap-2 mb-5">
             <div className="w-8 h-8 ">
@@ -185,7 +207,11 @@ export const About = () => {
       </div>
 
       {/* ---------------------------- Fourth Container---------------------- */}
-      <div className=" p-10  bg-gray-100 rounded-3xl w-[85rem] m-auto">
+      <div
+        className={`p-10  rounded-3xl my-12 w-[85rem] m-auto ${
+          theme === "dark" ? "bg-gray-900" : "bg-gray-100"
+        }`}
+      >
         <div className=" w-[40rem] m-auto text-center">
           <h1 className="text-orange-500 font-semibold ">Top Destinations</h1>
           <p className="text-4xl mb-5">
@@ -257,7 +283,7 @@ export const About = () => {
           <Card className="w-[16rem] h-[22rem] rounded-3xl overflow-hidden relative top-[10rem] left-[5rem] border-none">
             <div className="w-full h-full shadow-inner-custom">
               <img
-                src="../Friends-1.jpg"
+                src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808468/Friends-1_kstpqr.jpg"
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -266,7 +292,7 @@ export const About = () => {
           <Card className="w-[16rem] h-[13rem] rounded-3xl overflow-hidden relative top-[7rem] left-[2rem] border-none">
             <div className="w-full h-full shadow-inner-custom">
               <img
-                src="../friends-2.jpg"
+                src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808485/friends-2_r4uowc.jpg"
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -274,7 +300,7 @@ export const About = () => {
           </Card>
           <div className="w-[5rem] h-[5rem] rounded-3xl overflow-hidden relative top-[15rem] left-[3rem] border-none">
             <img
-              src="../Star Frame.png"
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808721/Star_Frame_bozrmn.png"
               alt=""
               className="w-full h-full object-cover"
             />
@@ -282,7 +308,7 @@ export const About = () => {
           <Card className="w-[13rem] h-[9rem] rounded-3xl overflow-hidden relative bottom-[18rem] left-[5rem] border-none ">
             <div className="w-full h-full shadow-inner-custom">
               <img
-                src="../friends-3.jpg"
+                src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808507/friends-3_j0edsz.jpg"
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -291,7 +317,7 @@ export const About = () => {
           <Card className="w-[22rem] h-[13rem] rounded-3xl overflow-hidden relative bottom-[2rem] left-[5rem] border-none">
             <div className="w-full h-full shadow-inner-custom">
               <img
-                src="../friends-4.jpg"
+                src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808526/friends-4_llyrfh.jpg"
                 alt=""
                 className="w-full h-full object-cover blur-[0.2rem]"
               />
@@ -338,15 +364,15 @@ export const About = () => {
             friends and grow your network world wide.
           </p>
         </div>
-        <div className=" flex gap-[2rem] mt-10 w-[80rem] p-4">
-          {customerCardInfo.map((item, index) => (
-            <CustomerCard key={index} item={item} />
-          ))}
-        </div>
-        <div className="m-auto text-center">
-          <Button className="bg-orange-600 hover:bg-orange-500 border-none font-semibold">
-            View More
-          </Button>
+        <div className=" gap-[2rem] mt-10 w-[80rem] p-4">
+          <ScrollArea className="whitespace-nowrap">
+            <div className="flex w-max space-x-4 pb-4 scroll-smooth snap-x py-4">
+              {customerCardInfo.map((item, index) => (
+                <CustomerCard key={index} item={item} />
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </div>
       </div>
       {/* -------------- Seventh Container --------------------- */}
@@ -376,15 +402,17 @@ export const About = () => {
           </p>
         </div>
         <div className=" flex justify-between gap-6 mt-10 w-[80rem]  flex-wrap  m-auto">
-         { safetyCardInfo.map((item,index)=>(
-                <SafetyCard key={index} item={item} />
-         ))
-         }
-         
+          {safetyCardInfo.map((item, index) => (
+            <SafetyCard key={index} item={item} />
+          ))}
         </div>
       </div>
       {/* ---------------------------- Eighth Container---------------------- */}
-      <div className="p-10  bg-gray-100 rounded-3xl w-[85rem] m-auto ">
+      <div
+        className={`p-10  rounded-3xl w-[85rem] m-auto ${
+          theme === "dark" ? "bg-gray-900" : "bg-gray-100"
+        }`}
+      >
         <div className=" w-[40rem] m-auto text-center">
           <p className="text-4xl mb-5">
             {" "}

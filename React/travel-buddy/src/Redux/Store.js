@@ -1,19 +1,20 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // Uses localStorage
-import placeReducer from "./Slices/placeSlice"; // Your existing place reducer
-import hotelReducer from "./Slices/hotelSlice"; // Your existing place reducer
-import authReducer from "./Slices/authSlice"; // Your existing place reducer
-import blogReducer from "./Slices/blogsSlice"; // Your existing place reducer
-import commentReducer from "./Slices/commentSlice"; // Your existing place reducer
-import notificationReducer from "./Slices/notificationSlice"; // Your existing place reducer
-import chatReducer from "./Slices/chatSlice"; // Your existing place reducer
+import storage from "redux-persist/lib/storage"; 
+import placeReducer from "./Slices/placeSlice"; 
+import hotelReducer from "./Slices/hotelSlice"; 
+import authReducer from "./Slices/authSlice";
+import blogReducer from "./Slices/blogsSlice";
+import commentReducer from "./Slices/commentSlice";
+import notificationReducer from "./Slices/notificationSlice";
+import chatReducer from "./Slices/chatSlice";
+import tripReducer from "./Slices/tripSlice";
 
 // 🔹 Step 1: Configure persist settings
 const persistConfig = {
   key: "root", // Key for localStorage
   storage, // Use localStorage to persist
-  whitelist: ["places","hotels","auth","notifications","blog","comment","chat"], 
+  whitelist: ["places","hotels","auth","notifications","blog","comment","chat","trip"], 
 };
 
 // 🔹 Step 2: Wrap root reducer with persistedReducer
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   blog: blogReducer,
   comment: commentReducer,
   notifications: notificationReducer,
+  trip: tripReducer,
   chat: chatReducer, // Persist this slice
 });
 

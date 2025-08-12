@@ -2,8 +2,11 @@
 
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import {
+  filterFriendRequests,
   setUsersData,
   updateCloseFriends,
+  updateFollowings,
+  updateFriendRequests,
   updateLike,
 } from "../Redux/Slices/authSlice";
 import {
@@ -95,6 +98,7 @@ const useUserData = () => {
       };
       dispatch(setMessage(payload));
       dispatch(filterNotifications(notificationId));
+      dispatch(updateFollowings(senderId));
 
       return data;
     } catch (error) {
@@ -270,38 +274,145 @@ const useUserData = () => {
     return [...existingUsers, ...finalFetchedUsers];
   };
 
- const extractAllFriends = useCallback(async () => {
-  console.log("inside extractFriends");
-  if (!loggedInUser) return [];
+  const extractAllFriends = useCallback(async () => {
+    console.log("inside extractFriends");
+    if (!loggedInUser) return [];
 
-  const allFriendIds = [...new Set([
-    ...(loggedInUser.followers || []),
-    ...(loggedInUser.followings || []),
-  ])];
- console.log("All friend IDs:", allFriendIds);
+    const allFriendIds = [
+      ...new Set([
+        ...(loggedInUser.followers || []),
+        ...(loggedInUser.followings || []),
+      ]),
+    ];
+    console.log("All friend IDs:", allFriendIds);
 
-  const friendsData = await Promise.all(
-    allFriendIds.map(async (id) => {
-      let user = usersList.find((u) => u.userId === id);
-      if (!user) {
-        try {
-          user = await getUser(id);
-          console.log("Fetched friend: ",user);
-        } catch (err) {
-          console.error(`Failed to fetch user ${id}:`, err);
-          user = null;
+    const friendsData = await Promise.all(
+      allFriendIds.map(async (id) => {
+        let user = usersList.find((u) => u.userId === id);
+        if (!user) {
+          try {
+            user = await getUser(id);
+            console.log("Fetched friend: ", user);
+          } catch (err) {
+            console.error(`Failed to fetch user ${id}:`, err);
+            user = null;
+          }
         }
-      }
-      console.log("Fetched friend: ",user);
-      return user;
-    })
-  ).catch((err) => {
-  console.error("Promise.all error:", err);
-});
-  console.log("All fetched friends data inside custom hook: ", friendsData);
-  return friendsData.filter(Boolean);
-}, [loggedInUser, usersList, getUser]); // ✅ Add these
+        console.log("Fetched friend: ", user);
+        return user;
+      })
+    ).catch((err) => {
+      console.error("Promise.all error:", err);
+    });
+    console.log("All fetched friends data inside custom hook: ", friendsData);
+    return friendsData.filter(Boolean);
+  }, [loggedInUser, usersList, getUser]); // ✅ Add these
 
+  const fetchFriendRequests = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8085/user/get-friend-requests/${loggedInUser?.userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      console.log("Fetched Friend Requests are:", data); // Debugging line
+
+      const detailedRequests = await Promise.all(
+        data.map(async (request) => {
+          const senderId = request.requestFrom;
+
+          // First, try to find the user in usersList
+          let user = usersList.find((u) => u.userId === senderId);
+
+          // If not found, fetch from backend
+          if (!user) {
+            try {
+              user = await getUser(senderId);
+            } catch (err) {
+              console.error(`Error fetching user ${senderId}:`, err);
+              user = null;
+            }
+          }
+
+          return {
+            request: request,
+            senderDetails: user, // Will be null if failed
+          };
+        })
+      );
+        console.log("Detailed Friend Requests:", detailedRequests);
+      dispatch(updateFriendRequests(detailedRequests));
+      // Assuming you have a Redux action to set user data
+      return detailedRequests;
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return [];
+    }
+  };
+  const acceptConnectionRequest = async (connectionId, senderId, receiverId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8085/user/accept-connection-request/${connectionId}/${senderId}/${receiverId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+
+      console.log("Notification accepted:", data); // Debugging line
+      const payload = {
+        message: data?.messageResponse?.message,
+        success: data?.messageResponse?.status == "success" ? true : false,
+        error: data?.messageResponse?.status == "error" ? true : false,
+      };
+      dispatch(setMessage(payload));
+      dispatch(filterFriendRequests(connectionId));    // Filtering friend requests based on notificationID (Connection id will be sent from the component in case of connection request)
+      dispatch(updateFollowings(senderId));
+
+      
+      return data;
+    } catch (error) {
+      console.error("Error accepting notification:", error);
+      return null;
+    }
+  };
+  const deleteConnectionRequest = async (connectionId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8085/user/delete-connection-request/${connectionId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      // Check response type
+      const contentType = response.headers.get("content-type");
+      let data;
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        data = await response.text(); // fallback to plain text
+      }
+      console.log("Notification deleted:", data);
+      dispatch(filterFriendRequests(connectionId));
+
+      return data;
+    } catch (error) {
+      console.error("Error while deleting notification:", error);
+      return null;
+    }
+  };
 
   return {
     getAllUsers,
@@ -313,7 +424,10 @@ const useUserData = () => {
     addCloseFriend,
     removeCloseFriend,
     getGroupParticipantsData,
-    extractAllFriends
+    extractAllFriends,
+    fetchFriendRequests,
+    acceptConnectionRequest,
+    deleteConnectionRequest,
   };
 };
 export default useUserData;

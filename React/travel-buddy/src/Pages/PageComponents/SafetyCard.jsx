@@ -12,10 +12,13 @@ import {
   faShield,
   faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { useSelector } from "react-redux";
 
 export const SafetyCard = ({item}) => {
+
+  const theme = useSelector(store=>store.auth.theme);
   return (
-    <Card className="border-none shadow-xl p-2 bg-orange-50 bg-opacity-80 p-5 w-[35rem]">
+    <Card className={`border-none shadow-xl p-5 w-[35rem] ${theme==="dark" ?"bg-gray-950 bg-opacity-80" :"bg-orange-50 bg-opacity-80"}`}>
       <div className=" text-center">
         <FontAwesomeIcon icon={item.icon} className={item.className} />
         <h1 className="text-4xl font-semibold">

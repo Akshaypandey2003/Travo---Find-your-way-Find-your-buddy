@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   DEFAULT_FEMALE_PIC,
   DEFAULT_MALE_PIC,
@@ -11,6 +12,7 @@ import { useSelector } from "react-redux";
 import { useEffect, useState, useMemo } from "react";
 import useUserData from "../../../CustomHooks/useUserData";
 import useChat from "../../../CustomHooks/useChat";
+import { faUserGroup } from "@fortawesome/free-solid-svg-icons";
 
 export const Chat = ({ chat }) => {
   const loggedInUser = useSelector((store) => store.auth.user);
@@ -18,8 +20,9 @@ export const Chat = ({ chat }) => {
   const { getUser } = useUserData();
   const { fetchMessages } = useChat();
   const messages = useSelector((store) => store.chat.messages);
-
+  const activeChat = useSelector((store) => store.chat.activeChat);
   const currMessage = chat?.chatId ? messages[chat?.chatId] : [];
+  const theme = useSelector((store) => store.auth.theme);
   const unseenMessages = currMessage?.filter(
     (message) => !message?.read && message?.senderId !== loggedInUser?.userId
   );
@@ -36,22 +39,22 @@ export const Chat = ({ chat }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-    if (!chatUserId) return;
+      if (!chatUserId) return;
 
-    if (localUser) {
-      setChatUser(localUser);
-    } else {
-      try {
-        const user = await getUser(chatUserId);
-        setChatUser(user);
-      } catch (err) {
-        console.error("Failed to fetch chat user", err);
-        setChatUser(null);
+      if (localUser) {
+        setChatUser(localUser);
+      } else {
+        try {
+          const user = await getUser(chatUserId);
+          setChatUser(user);
+        } catch (err) {
+          console.error("Failed to fetch chat user", err);
+          setChatUser(null);
+        }
       }
-    }
-  };
+    };
 
-  fetchUser();
+    fetchUser();
   }, [chatUserId]);
 
   useEffect(() => {
@@ -71,28 +74,51 @@ export const Chat = ({ chat }) => {
     const time = new Date(timestamp);
     const diff = Math.floor((now - time) / 1000); // in seconds
 
-    if (diff < 60) return `${diff} sec ago`;
+    if (diff < 60) return `Just now`;
     if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hour${Math.floor(diff / 3600) > 1 ? "s" : ""} ago`;
-    return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? "s" : ""} ago`;
+    if (diff < 86400)
+      return `${Math.floor(diff / 3600)} hour${
+        Math.floor(diff / 3600) > 1 ? "s" : ""
+      } ago`;
+    return `${Math.floor(diff / 86400)} day${
+      Math.floor(diff / 86400) > 1 ? "s" : ""
+    } ago`;
   };
 
   return (
-    <Card className="border-none shadow-none p-2">
-      <div className="text-wrap flex gap-2">
-        <Avatar>
-          <AvatarImage
-            src={
-              chat?.groupImageUrl || chatUser?.profilePic ||
-              (chatUser?.gender?.toLowerCase() === "male"
-                ? DEFAULT_MALE_PIC
-                : DEFAULT_FEMALE_PIC)
-            }
+    <Card
+      className={`${
+        activeChat?.chatId === chat?.chatId && theme === "dark"
+          ? "bg-gray-900"
+          : activeChat?.chatId === chat?.chatId &&
+            theme === "light" &&
+            "bg-orange-100"
+      } border-none shadow-none p-2`}
+    >
+      <div className="text-wrap flex gap-2 items-center">
+        {chat?.groupChat && !chat?.groupImageUrl ? (
+          <FontAwesomeIcon
+            icon={faUserGroup}
+            className=""
+            size="xl"
           />
-          <AvatarFallback>
-            {chat?.groupName?.charAt(0).toUpperCase() || chatUser?.name?.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        ) : (
+          <Avatar>
+            <AvatarImage
+              src={
+                chat?.groupImageUrl ||
+                chatUser?.profilePic ||
+                (chatUser?.gender?.toLowerCase() === "male"
+                  ? DEFAULT_MALE_PIC
+                  : DEFAULT_FEMALE_PIC)
+              }
+            />
+            <AvatarFallback>
+              {chat?.groupName?.charAt(0).toUpperCase() ||
+                chatUser?.name?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        )}
         <div className="w-full">
           <div className="flex items-center justify-between w-full">
             <h1 className="font-semibold text-sm">
@@ -107,7 +133,11 @@ export const Chat = ({ chat }) => {
             )}
           </div>
           <h1 className="text-xs text-gray-500">
-            {lastMessage?.createdAt ? getTimeAgo(lastMessage.createdAt) : chat?.groupChat ? chat?.groupDescription : chatUser?.bio || "Start a conversation..."}
+            {lastMessage?.createdAt
+              ? getTimeAgo(lastMessage.createdAt)
+              : chat?.groupChat
+              ? chat?.groupDescription
+              : chatUser?.bio || "Start a conversation..."}
           </h1>
         </div>
       </div>

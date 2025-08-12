@@ -57,7 +57,7 @@ export const MessageCard = ({ message, isGroup }) => {
       }`}
     >
       {isGroup && message?.senderId !== loggedInUser.userId && (
-        <h1 className=" font-semibold text-orange-800">
+        <h1 className=" font-semibold text-orange-800 text-xs">
           {sender?.name}
         </h1>
       )}

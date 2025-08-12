@@ -82,7 +82,6 @@ public class TripController {
             .status("success")
             .build() );
 
-            
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error sending trip request: " + e.getMessage());
         }

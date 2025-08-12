@@ -21,6 +21,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import com.gateway.DTO.Author;
 import com.gateway.Entity.MessageResponse;
 import com.gateway.Entity.Notification;
 import com.gateway.Entity.Trip;
@@ -182,7 +183,7 @@ public class UserController {
             @PathVariable String senderId, @PathVariable String receiverId) {
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String userServiceUrl = "http://localhost:8088/connection/accept/" + notificationId + "/" + senderId + "/"
+            String userServiceUrl = "http://localhost:8088/auth/connection/accept/" + notificationId + "/" + senderId + "/"
                     + receiverId;
 
             ResponseEntity<Notification> response = restTemplate.exchange(
@@ -196,7 +197,32 @@ public class UserController {
             return new ResponseEntity<>(notification, response.getStatusCode());
 
         } catch (Exception e) {
-            MessageResponse msg = new MessageResponse("Something went wront while accepting request", "error");
+            MessageResponse msg = new MessageResponse("Something went wrong while accepting request", e.getMessage());
+            Notification notification = new Notification();
+            notification.setMessageResponse(msg);
+            return new ResponseEntity<>(notification, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/accept-connection-request/{connectionId}/{senderId}/{receiverId}")
+    public ResponseEntity<Notification> acceptConnectionRequest(@PathVariable String connectionId,
+            @PathVariable String senderId, @PathVariable String receiverId) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String userServiceUrl = "http://localhost:8088/auth/connection/accept-connection/" + connectionId + "/" + senderId + "/"
+                    + receiverId;
+
+            ResponseEntity<Notification> response = restTemplate.exchange(
+                    userServiceUrl, HttpMethod.POST, null, new ParameterizedTypeReference<Notification>() {
+                    });
+
+            Notification notification = response.getBody();
+            MessageResponse msg = new MessageResponse("You started following " + notification.getSenderName(),
+                    "success");
+            notification.setMessageResponse(msg);
+            return new ResponseEntity<>(notification, response.getStatusCode());
+
+        } catch (Exception e) {
+            MessageResponse msg = new MessageResponse("Something went wrong while accepting request", e.getMessage());
             Notification notification = new Notification();
             notification.setMessageResponse(msg);
             return new ResponseEntity<>(notification, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -211,6 +237,24 @@ public class UserController {
 
             ResponseEntity<String> response = restTemplate.exchange(
                     userServiceUrl, HttpMethod.DELETE, null, new ParameterizedTypeReference<String>() {
+                    });
+
+            return new ResponseEntity<>(response.getBody(), response.getStatusCode());
+        } catch (Exception e) {
+            MessageResponse msg = new MessageResponse(
+                    "Something went wrong while deleting notification: " + e.getMessage(), "error");
+
+            return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @DeleteMapping("/delete-connection-request/{connectionId}")
+    public ResponseEntity<?> deleteConnectionRequest(@PathVariable String connectionId) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String userServiceUrl = "http://localhost:8088/auth/connection/delete/" + connectionId;
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    userServiceUrl, HttpMethod.DELETE, null,new ParameterizedTypeReference<String>() {
                     });
 
             return new ResponseEntity<>(response.getBody(), response.getStatusCode());
@@ -250,6 +294,23 @@ public class UserController {
             return new ResponseEntity<>(response.getBody(), response.getStatusCode());
         } catch (Exception e) {
             MessageResponse msg = new MessageResponse("Error adding close friend: " + e.getMessage(), "error");
+            return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/get-friend-requests/{userId}")
+    public ResponseEntity<Object> getFriendRequests(@PathVariable String userId)
+    {
+         try {
+            RestTemplate restTemplate = new RestTemplate();
+            String userServiceUrl = "http://localhost:8088/auth/connection/received/" + userId;
+
+            ResponseEntity<Object> response = restTemplate.exchange(
+                    userServiceUrl, HttpMethod.GET, null, new ParameterizedTypeReference<Object>() {
+                    });
+            return new ResponseEntity<>(response.getBody(), response.getStatusCode());
+        } catch (Exception e) {
+            MessageResponse msg = new MessageResponse("Error fetching all friend requests: " + e.getMessage(), "error");
             return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

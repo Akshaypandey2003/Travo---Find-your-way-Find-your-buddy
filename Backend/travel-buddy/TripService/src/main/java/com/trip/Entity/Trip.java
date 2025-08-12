@@ -27,7 +27,8 @@ public class Trip {
     private String tripCity;
     private String tripCountry;
     private String tripState;
-    private LocalDate tripDate;
+    private LocalDate tripStartDate;
+    private LocalDate tripEndDate;
     private String tripDuration;
     private String tripDescription;
     private LocalDateTime tripCreatedAt = LocalDateTime.now();
@@ -50,6 +51,7 @@ public class Trip {
     private double tripBudget;
     private List<String> tripHighlights  = new ArrayList<>();
     private List<String> tripImages =new ArrayList<>();
+    
     public enum TripStatus {
         UPCOMING, ONGOING, COMPLETED, CANCELLED
     }

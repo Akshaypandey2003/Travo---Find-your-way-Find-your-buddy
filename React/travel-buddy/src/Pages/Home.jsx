@@ -1,32 +1,19 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import HeroSectionImageCarousel from "./HeroSectionImageCarousel";
 import Footer from "./Footer Section/Footer";
-import Marquee from "react-fast-marquee";
-import CustomerCard from "./PageComponents/CustomerCard";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faSearch } from "@fortawesome/free-solid-svg-icons";
-import { SelectFilterOptions } from "./PageComponents/SelectFilterOptions";
-import DestinationCard from "./PageComponents/DestinationCard";
 import destinationsData from "./MockData/destinationsData";
 import usersData from "./MockData/usersData";
 import usePlacesData from "../CustomHooks/usePlacesData";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
-import store from "../Redux/Store";
 import useUserData from "../CustomHooks/useUserData";
-import { setNextPageToken } from "../Redux/Slices/authSlice";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { motion, AnimatePresence } from "framer-motion";
 import { clearNotifications } from "../Redux/Slices/notificationSlice";
-import { DEFAULT_MALE_PIC } from "../Constants/constants";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import useBlog from "../CustomHooks/useBlog";
+import SmoothAutoScroller from "./PageComponents/SmoothAutoScroller";
+import TripSlider from "./PageComponents/TripSlider";
+import { PeopleSection } from "./PageComponents/PeopleSection";
 
 const customerCardInfo = [
   {
@@ -84,77 +71,37 @@ const userData = usersData;
 
 export const Home = () => {
   const { getPlaces } = usePlacesData();
-  const { getAllUsers,getAllNotifications } = useUserData();
-  const {getAllBlogs} = useBlog();
-
+  const { getAllUsers, getAllNotifications } = useUserData();
+  const { getAllBlogs } = useBlog();
   const places = useSelector((store) => store.places.placesData, shallowEqual);
-  const blog = useSelector((store)=>store.blog.blogs);
-  console.log("All blogs are: ", blog);
-  
-  // const nextPageToken = useSelector(
-  //   (store) => store.places.nextPageToken,
-  //   shallowEqual
-  // );
-  // const descriptions = useSelector((store) => store.places.descriptions);
-
-  // const user = useSelector((store) => store.auth.user, shallowEqual);
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
   const usersList = useSelector((store) => store.auth.usersList, shallowEqual);
   const loggedInUser = useSelector((store) => store.auth.user, shallowEqual);
-  const chat = useSelector((store)=>store.chat);
-  console.log("Chat: ", chat);
- 
   const [page, setPage] = useState(0);
+  const trips = useSelector((store) => store.trip.trips);
+  const upcomingTrips = trips.filter((trip) => trip?.tripStatus === "UPCOMING");
+  const onGoingTrips = trips.filter((trip) => trip?.tripStatus === "ONGOING");
+
   const userNextPageToken = useSelector(
     (store) => store.auth.nextPageToken,
     shallowEqual
   );
 
-  // console.log("next page token is: ", userNextPageToken);
-  const [loading, setLoading] = useState(false);
-
-  console.log("User list data in redux store: ", usersList);
-
-  // console.log("User in redux store is: ",user);
-  // console.log("DEscription data: ",descriptions);
   const weatherData = useSelector(
     (store) => store.places.weatherData,
     shallowEqual
   );
-
-  //  console.log(places);
-  // console.log(places.length);
-  // console.log("Next page token: ",nextPageToken);
-  // console.log("Weather data: ",weatherData);
-
-  const dispatch = useDispatch();
-
   const notifications = useSelector(
     (store) => store.notifications,
     shallowEqual
   );
-  // console.log("All notifications: ",notifications?.notifications);
-  // console.log("new notifications received: ", notifications?.newNotification);
-  // console.log("Notification status: ", notifications?.notificationStatus);
 
-  const loadMoreUsers = async () => {
-    if (!userNextPageToken || loading) return; // prevent multiple calls
-
-    setLoading(true);
-    setPage((page) => page + 1);
-    const newUsers = await getAllUsers(page);
-    const pageSize = 10 + Math.pow(page, 2);
-
-    if (newUsers && newUsers.length < pageSize) {
-      dispatch(setNextPageToken(false));
-    }
-    setLoading(false);
-  };
   useEffect(() => {
     const timer = setTimeout(() => {
-      dispatch(clearNotifications()); 
-      
+      dispatch(clearNotifications());
     }, 5000);
-    return () => clearTimeout(timer); 
+    return () => clearTimeout(timer);
   }, [notifications?.notificationStatus]);
 
   useEffect(() => {
@@ -162,17 +109,18 @@ export const Home = () => {
     if (!usersList || usersList?.length === 0) {
       getAllUsers(page);
     }
-    if( loggedInUser && (!notifications?.notifications || notifications?.notifications?.length === 0)) 
-    {
-      console.log("Fetching notifications for user: ", loggedInUser?.userId);
+    if (
+      loggedInUser &&
+      (!notifications?.notifications ||
+        notifications?.notifications?.length === 0)
+    ) {
       getAllNotifications(loggedInUser?.userId);
     }
     getAllBlogs();
   }, [loggedInUser]);
 
-
   return (
-    <div className="">
+    <div className="mt-36">
       {/* <div className="message-area absolute left-1/3  m-auto min-w-96 px-2">
         <AnimatePresence>
           {notifications?.notificationStatus && (
@@ -252,9 +200,7 @@ export const Home = () => {
         </div>
         <div className="w-[50%] ">
           <Card className="w-[15rem] h-[8rem] absolute top-[12rem] right-[33rem] z-10 flex flex-col justify-center items-center text-center">
-            <h1 className="text-2xl font-semibold ">
-              100+ Destinations
-            </h1>
+            <h1 className="text-2xl font-semibold ">100+ Destinations</h1>
             <span className="text-gray-400">
               More than 100 trips have been completed
             </span>
@@ -263,129 +209,49 @@ export const Home = () => {
             <h1 className="text-2xl font-semibold ">100%</h1>
             <span className="text-gray-400">Verified</span>
           </Card>
-          <Card className="w-[12rem] h-[15rem]  object-contain overflow-hidden absolute top-[9rem]  right-[23rem]">
-            <img src="../Beach1.jpg" alt="" className="w-full h-full" />
+          <Card className="w-[12rem] h-[15rem] object-contain overflow-hidden absolute top-[9rem] right-[23rem] transform transition-transform duration-500 ease-in-out hover:scale-105">
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808427/Beach1_ru7xus.jpg"
+              alt=""
+              className="w-full h-full"
+            />
           </Card>
+
           <Card className="w-[20rem] h-[15rem]  object-contain overflow-hidden absolute top-[12rem] right-[2rem]">
-            <img src="../Beach2.jpg" alt="" className="w-full h-full" />
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808450/Beach2_aofhe0.jpg"
+              alt=""
+              className="w-full h-full"
+            />
           </Card>
           <Card className="w-[17rem] h-[15rem]  object-contain overflow-hidden absolute top-[25rem]  right-[23rem]">
-            <img src="../mountains1.jpg" alt="" className="w-full h-full" />
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808585/mountains1_bnfhbr.jpg"
+              alt=""
+              className="w-full h-full"
+            />
           </Card>
           <Card className="w-[17rem] h-[15rem] object-contain overflow-hidden absolute top-[28rem]  right-[5rem]">
-            <img src="../mountains2.jpg" alt="" className="w-full h-full" />
+            <img
+              src="https://res.cloudinary.com/dwg7vniow/image/upload/v1751808631/mountains2_hpdkds.jpg"
+              alt=""
+              className="w-full h-full"
+            />
           </Card>
         </div>
       </div>
       <div className="p-10  mt-10">
-        <div className="border-none shadow-none">
-          <div className="flex flex-col items-center w-[90rem]  my-7">
-            <Marquee autoFill={true} speed={10} className="">
-              {randomData.map((item, index) => (
-                <Badge key={index} className="mx-4  border-none">
-                  {item}
-                </Badge>
-              ))}
-            </Marquee>
-          </div>
-          <div className="flex flex-col items-center w-[90rem] ">
-            <Marquee autoFill={true} direction="right" speed={10} className="">
-              {randomData.map((item, index) => (
-                <Badge key={index} className="mx-4  border-none">
-                  {item}
-                </Badge>
-              ))}
-            </Marquee>
-          </div>
-        </div>
-        <div className="  p-10 ">
-          {/* [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_75%,rgba(0,0,0,0)_100%)] */}
-          <h1 className="text-3xl font-semibold">People</h1>
-          <div className="py-4">
-            <ScrollArea className=" w-full h-[40rem] rounded-md border-black shadow-none">
-              <div className="flex gap-4 py-5 flex-wrap">
-                {usersList && usersList?.length > 0
-                  ? usersList.map((item, index) => (
-                      <CustomerCard key={index} user={item} />
-                    ))
-                  : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item, index) => (
-                      <div key={index} className="flex flex-col space-y-3">
-                        <Skeleton className="h-[200px] w-[320px] rounded-xl p-3">
-                          <Skeleton className="h-11 w-11 rounded-full" />
-                        </Skeleton>
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </div>
-                      </div>
-                    ))}
-                {/*------------------------ Skeleton part on loading ----------------------- */}
-                {loading &&
-                  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item, index) => (
-                    <div key={index} className="flex flex-col space-y-3">
-                      <Skeleton className="h-[200px] w-[320px] rounded-xl p-3">
-                        <Skeleton className="h-11 w-11 rounded-full" />
-                      </Skeleton>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-[250px]" />
-                        <Skeleton className="h-4 w-[200px]" />
-                      </div>
-                    </div>
-                  ))}
-                {/* ------------------------------------------------------------------------- */}
-              </div>
-            </ScrollArea>
-          </div>
-          <div className="text-center">
-            {userNextPageToken ? (
-              <Button
-                onClick={() => loadMoreUsers()}
-                className="bg-orange-700 hover:bg-orange-600 border-none"
-                // disabled={!userNextPageToken}
-              >
-                {loading ? "Loading..." : "View More"}
-              </Button>
-            ) : (
-              <p className="text-gray-500 mt-4">No more users to load!</p>
-            )}
-          </div>
-        </div>
-        <div className="  p-10 ">
-          <h1 className="text-3xl font-semibold">Destinations</h1>
-          <div className=" py-4 flex">
-            <div className="flex gap-4  items-center w-full">
-              <FontAwesomeIcon
-                icon={faFilter}
-                size="xl"
-                className="text-orange-600"
-              />
-              <SelectFilterOptions item={{ type: "state" }} />
-              <SelectFilterOptions item={{ type: "destinations" }} />
-              <Input className="w-[40rem]" placeholder="Search Location" />
+        {/* <SmoothAutoScroller data={randomData} reverse={false} speed={0.5} /> */}
+        <SmoothAutoScroller data={randomData} reverse={false} speed={0.5} />
 
-              <Button className="bg-orange-700 hover:bg-orange-600">
-                <FontAwesomeIcon icon={faSearch} className="text-black" />
-              </Button>
-            </div>
-          </div>
-          <div className="py-4">
-            <ScrollArea className=" w-full h-[40rem] rounded-md border-black shadow-none">
-              <div className="flex gap-4 py-10 flex-wrap  items-center justify-around">
-                {places.map((item, index) => (
-                  <DestinationCard key={index} item={item} count={index} />
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-          <div className="text-center">
-            <Button
-              onClick={() => getPlaces(true)}
-              className="bg-orange-700 hover:bg-orange-600 border-none "
-              // disabled={!nextPageToken}
-            >
-              View More
-            </Button>
-          </div>
+        <div className="my-10">
+          {upcomingTrips && upcomingTrips.length > 0 && (
+            <TripSlider trips={upcomingTrips} tripType={"UPCOMING"} />
+          )}
+          {onGoingTrips && onGoingTrips.length > 0 && (
+            <TripSlider trips={onGoingTrips} tripType={"ONGOING"} />
+          )}
+          <PeopleSection />
         </div>
       </div>
       <Footer />

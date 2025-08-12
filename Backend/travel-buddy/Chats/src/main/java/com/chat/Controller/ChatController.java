@@ -28,7 +28,7 @@ public class ChatController {
       return ResponseEntity.ok(chatService.createChat(chat));
     }
     
-    @GetMapping("/get-chat/{userId}")
+    @GetMapping("/get-chat/{userId}")   
     public ResponseEntity<?> getChat(@PathVariable String userId){
         return ResponseEntity.ok(chatService.getChat(userId));
     }

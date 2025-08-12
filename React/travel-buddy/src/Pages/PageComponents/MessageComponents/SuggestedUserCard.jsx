@@ -17,11 +17,11 @@ export const SuggestedUserCard = ({user}) => {
         <div className="w-full">
           <div className="flex items-center justify-between w-full">
             <h1 className="font-semibold text-sm">{user.name}</h1>
-            <div>
+            {/* <div>
               <Badge className="rounded-xl bg-orange-700 py-0 px-1">
                 <span className="text-xs">2</span>
               </Badge>
-            </div>
+            </div> */}
           </div>
           <h1 className="text-xs">Sent 54 min ago</h1>
         </div>

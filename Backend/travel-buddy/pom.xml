@@ -11,6 +11,7 @@
     <modules>
         <module>ApiGateway</module>
         <module>Blogs</module>
+        <module>FeedbackService</module>
         <module>BlogCommentsService</module>
         <module>Booking</module>
         <module>ConfigServer</module>

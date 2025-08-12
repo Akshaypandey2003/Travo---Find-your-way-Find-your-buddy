@@ -104,12 +104,12 @@ export const SideSheet = () => {
   for (const chatId in messages) {
     const chatMessages = messages[chatId];
 
-    const unread = chatMessages.filter((msg) => msg.read === false);
+    const unread = chatMessages.filter((msg) => msg.read === false && msg.senderId !== currentUser.userId);
 
     unreadMessages.push(...unread);
   }
-
-  return (
+  console.log("Unread Messages are: ", unreadMessages);
+  return ( 
     <Sheet>
       <SheetTrigger className="border border-orange-700 rounded-full bg-orange-200">
         <Avatar>

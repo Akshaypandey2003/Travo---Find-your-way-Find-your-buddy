@@ -388,4 +388,11 @@ button:focus-visible {
   body {
     @apply bg-background text-foreground;
   }
+   /* index.css or globals.css */
+
+/* body {
+  @apply transition-colors duration-500 bg-gradient-to-br from-orange-00 to-white dark:from-gray-900
+   dark:to-gray-800;
+} */
+
 }

@@ -1,6 +1,8 @@
 package com.user.Controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,7 +21,7 @@ import com.user.ServiceImpl.ConnectionService;
 import com.user.ServiceImpl.WebSocketNotificationService;
 
 @RestController
-@RequestMapping("/connection")
+@RequestMapping("/auth/connection")
 public class ConnectionController 
 {
      @Autowired
@@ -36,10 +38,21 @@ public class ConnectionController
 
         return ResponseEntity.ok(connectionService.acceptFriendRequest(senderId, receiverId,notificationId));
     }
+    @PostMapping("/accept-connection/{connectionId}/{senderId}/{receiverId}")
+    public ResponseEntity<?> acceptConnectionRequest(@PathVariable String senderId, @PathVariable String receiverId, @PathVariable String connectionId) {
+       
+        return ResponseEntity.ok(connectionService.acceptConnectionRequest(senderId, receiverId,connectionId));
+    }
 
     @GetMapping("/received/{userId}")
     public ResponseEntity<List<Connections>> getReceivedRequests(@PathVariable String userId) {
         return ResponseEntity.ok(connectionService.getReceivedRequests(userId));
+    }
+    @DeleteMapping("/delete/{connectionId}")
+    public ResponseEntity<?> deleteConnection(@PathVariable String connectionId) {
+        connectionService.rejectFriendRequest(connectionId);
+ 
+        return ResponseEntity.ok("Friend Request Rejected Successfully!!");
     }
 
     @GetMapping("/sent/{userId}")

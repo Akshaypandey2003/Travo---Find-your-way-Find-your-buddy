@@ -46,6 +46,36 @@ const useFriendRequest = () => {
       console.error("Network error:", error.message);
     }
   };
-  return {sendFriendRequest};
+
+  const getReceivedFriendRequest = async () => {
+    if (!loggedInUser) {
+      navigate("/login");
+      return;
+    }
+    try {
+      const response = await fetch(
+        `http://localhost:8088/connection/received/${loggedInUser?.userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Authorization: `Bearer ${loggedInUser?.token}`, // assuming you store token in auth slice
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Received friend requests:", result);
+        // Optionally, show a toast/alert
+      } else {
+        const err = await response.json();
+        console.error("Error fetching received friend request:", err.message);
+      }
+    } catch (error) {
+      console.error("Network error:", error.message);
+    }
+  };
+  return {sendFriendRequest,getReceivedFriendRequest};
 };
 export default useFriendRequest;

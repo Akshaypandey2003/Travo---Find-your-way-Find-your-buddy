@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.user.DTO.Author;
 import com.user.Entity.User;
 import com.user.Service.ImageService;
 import com.user.Service.UserService;
@@ -128,6 +129,13 @@ public class UserController {
 
         Pageable pageable = PageRequest.of(page, size);
         return new ResponseEntity<>(userService.getAllUser(pageable), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/get-author/{userId}")
+    public ResponseEntity<Author> getAuthor( @PathVariable String userId) {
+
+        return new ResponseEntity<>(userService.getAuthorById(userId), HttpStatus.OK);
     }
 
     @GetMapping("/get-user/{userId}")

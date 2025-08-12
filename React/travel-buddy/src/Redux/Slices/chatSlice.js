@@ -26,7 +26,8 @@ const chatSlice = createSlice({
         ...incomingChats,
       ];
       state.chats = mergedChats.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        (a, b) =>
+          new Date(b.recentConversationAt) - new Date(a.recentConversationAt)
       );
     },
     setActiveChat: (state, action) => {
@@ -72,13 +73,15 @@ const chatSlice = createSlice({
       if (!state.messages[chatId]) {
         state.messages[chatId] = [];
       }
-      
-      state.messages[chatId] = state.messages[chatId].filter((msg)=>msg.messageId!=message.messageId);
+
+      state.messages[chatId] = state.messages[chatId].filter(
+        (msg) => msg.messageId != message.messageId
+      );
       state.messages[chatId].push(message);
       state.messages[chatId].sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-        );
-        
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+
       // const exists = state.messages[chatId].some(
       //   (msg) => msg.messageId === message.messageId
       // );
@@ -116,7 +119,11 @@ const chatSlice = createSlice({
       if (chatIndex !== -1) {
         state.chats[chatIndex] = { ...state.chats[chatIndex], ...updatedData };
       }
-    }
+      state.chats.sort(
+        (a, b) =>
+          new Date(b.recentConversationAt) - new Date(a.recentConversationAt)
+      );
+    },
   },
 });
 export const {
@@ -126,6 +133,6 @@ export const {
   addMessageToChat,
   updateMessage,
   clearChats,
-  updateChat
+  updateChat,
 } = chatSlice.actions;
 export default chatSlice.reducer;

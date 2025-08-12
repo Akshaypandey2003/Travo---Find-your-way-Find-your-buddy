@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
+import com.user.DTO.Author;
 import com.user.Entity.User;
 
 public interface UserService 
@@ -14,6 +15,7 @@ public interface UserService
     public String deleteUser(String userId);
     public List<User> getAllUser(Pageable pageable);
     public User getUserById(String userId);
+    public Author getAuthorById(String userId);
     public User getUserByEmail(String email);
     public List<User> getUserByPreferences(List<String> preferences);
     public ResponseEntity<Object> updateLikes(String userId, String senderId);

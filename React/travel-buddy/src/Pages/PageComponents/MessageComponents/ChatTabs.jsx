@@ -59,6 +59,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
   const [removingMembers, setRemovingMembers] = useState([]);
   const [disappearingMessages, setDisappearingMessages] = useState(false);
   const { extractAllFriends } = useUserData();
+  const theme = useSelector((store) => store.auth.theme);
 
   console.log("All friends in ChatTabs: ", allFriends);
   const remainingFriends = allFriends?.filter(
@@ -120,10 +121,10 @@ export const ChatTabs = ({ chatUser, participants }) => {
         className="flex gap-4 min-h-96 w-full items-start self-start h-full border"
       >
         {/* Left-side vertical tab list */}
-        <TabsList className="flex flex-col h-full gap-2 w-48 self-start items-start bg-white ">
+        <TabsList className={`flex flex-col h-full gap-2 w-48 self-start items-start `}>
           <TabsTrigger
             value="overview"
-            className="text-left text-black gap-2  flex items-center "
+            className="text-left gap-2  flex items-center "
           >
             <FontAwesomeIcon icon={faCircleInfo} />
             Overview
@@ -131,7 +132,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
           {activeChat?.groupChat && (
             <TabsTrigger
               value="members"
-              className="text-left text-black flex gap-2 items-center"
+              className="text-left  flex gap-2 items-center"
             >
               <FontAwesomeIcon icon={faUserGroup} />
               Members
@@ -141,7 +142,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
             activeChat?.groupAdmin?.includes(loggedInUser?.userId) && (
               <TabsTrigger
                 value="add-members"
-                className="text-left text-black flex gap-2 items-center"
+                className="text-left  flex gap-2 items-center"
               >
                 <FontAwesomeIcon icon={faUserPlus} />
                 Add Members
@@ -332,16 +333,21 @@ export const ChatTabs = ({ chatUser, participants }) => {
                       {removingMembers?.length} member
                       {removingMembers?.length !== 1 && "s"} selected
                     </h1>
-                    <Badge
-                      className="bg-orange-600 text-sm shadow-md shadow-orange-300 hover:bg-bg-orange-600 hover:cursor-pointer hover:shadow-sm hover:scale-95"
-                      onClick={() => {
-                        updateGroupMembers(activeChat?.chatId, removingMembers);
-                        setRemovingMembers([]);
-                      }}
-                    >
-                      Remove
-                      {/* <FontAwesomeIcon icon={faUserMinus} className="ml-2" /> */}
-                    </Badge>
+                    {removingMembers?.length > 0 && (
+                      <Badge
+                        className="bg-orange-600 text-sm shadow-md shadow-orange-300 hover:bg-bg-orange-600 hover:cursor-pointer hover:shadow-sm hover:scale-95"
+                        onClick={() => {
+                          updateGroupMembers(
+                            activeChat?.chatId,
+                            removingMembers
+                          );
+                          setRemovingMembers([]);
+                        }}
+                      >
+                        Remove
+                        {/* <FontAwesomeIcon icon={faUserMinus} className="ml-2" /> */}
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -354,7 +360,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                       value={searchQuery}
                     />
 
-                    <Badge className="bg-white hover:bg-white text-orange-400 hover:cursor-pointer">
+                    <Badge className={` text-orange-400 hover:cursor-pointer ${theme==="dark"? "bg-gray-900 hover:bg-gray-800":"bg-white hover:bg-white"}`}>
                       <FontAwesomeIcon icon={faMagnifyingGlass} size="lg" />
                     </Badge>
                   </div>
@@ -383,7 +389,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                               onCheckedChange={handleCheckboxChange}
                             />
                             <div
-                              className="my-2 px-1 py-1 hover:bg-orange-100 flex items-center justify-between"
+                              className={`my-2 px-1 py-1  flex items-center justify-between ${theme==="dark"?"hover:bg-gray-900" :"hover:bg-orange-100"}`}
                               onClick={() => handleUserSelect(user)}
                             >
                               <UserCard key={index} user={user} />
@@ -421,7 +427,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                               onCheckedChange={handleCheckboxChange}
                             />
                             <div
-                              className="my-2 px-1 py-1 hover:bg-orange-100 flex items-center justify-between"
+                              className={`my-2 px-2 py-1 hover:bg-orange-100 flex items-center justify-between ${theme==="dark"?"hover:bg-gray-900" :"hover:bg-orange-100"}`}
                               onClick={() => handleUserSelect(user)}
                             >
                               <UserCard key={index} user={user} />
@@ -498,7 +504,13 @@ export const ChatTabs = ({ chatUser, participants }) => {
                       value={searchQuery}
                     />
 
-                    <Badge className="bg-white hover:bg-white text-orange-400 hover:cursor-pointer">
+                    <Badge
+                      className={` text-orange-400 hover:cursor-pointer ${
+                        theme === "dark"
+                          ? "bg-gray-900 hover:bg-gray-800"
+                          : "bg-white hover:bg-white"
+                      }`}
+                    >
                       <FontAwesomeIcon icon={faMagnifyingGlass} size="lg" />
                     </Badge>
                   </div>
@@ -528,7 +540,11 @@ export const ChatTabs = ({ chatUser, participants }) => {
                               onCheckedChange={handleCheckboxChange}
                             />
                             <div
-                              className="my-2 px-1 py-1 hover:bg-orange-100 flex items-center gap-1"
+                              className={`my-2 px-1 py-1   flex items-center gap-1 ${
+                                theme === "dark"
+                                  ? "hover:bg-gray-900"
+                                  : "hover:bg-orange-100"
+                              }`}
                               onClick={() => handleUserSelect(user)}
                             >
                               <UserCard key={index} user={user} />
@@ -565,7 +581,11 @@ export const ChatTabs = ({ chatUser, participants }) => {
                               onCheckedChange={handleCheckboxChange}
                             />
                             <div
-                              className="my-2 px-2 py-1 hover:bg-orange-100 cursor-pointer"
+                              className={`my-2 px-2 py-1  cursor-pointer ${
+                                theme === "dark"
+                                  ? "hover:bg-gray-900"
+                                  : "hover:bg-orange-100"
+                              }`}
                               onClick={() => handleUserSelect(user)}
                             >
                               <UserCard user={user} />

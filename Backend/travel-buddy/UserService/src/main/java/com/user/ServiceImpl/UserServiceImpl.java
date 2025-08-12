@@ -1,5 +1,6 @@
 package com.user.ServiceImpl;
 
+import com.user.DTO.Author;
 import com.user.DTO.NotificationMessage;
 import com.user.Entity.Notification;
 import com.user.Entity.Notification.NotificationType;
@@ -67,6 +68,16 @@ public class UserServiceImpl implements UserService {
         try {
             return userRepo.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
+        } catch (Exception e) {
+            throw new RuntimeException("Error while retrieving user: " + e.getMessage());
+        }
+    }
+    public Author getAuthorById(String userId) {
+        try {
+            User user =  userRepo.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
+
+            return new Author(user.getUserId(),user.getName(),user.getProfilePic());
         } catch (Exception e) {
             throw new RuntimeException("Error while retrieving user: " + e.getMessage());
         }

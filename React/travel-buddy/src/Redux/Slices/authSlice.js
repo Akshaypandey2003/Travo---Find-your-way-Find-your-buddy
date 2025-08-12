@@ -12,6 +12,7 @@ const authSlice = createSlice({
     error: null,
     success: null,
     nextPageToken: true,
+    friendRequests: [],
   },
   reducers: {
     registerSuccess: (state, action) => {
@@ -101,6 +102,9 @@ const authSlice = createSlice({
         }
       }
     },
+    updateFollowings: (state,action)=>{
+     state.user.following.push(action.payload);
+    },
     setNextPageToken: (state, action) => {
       state.nextPageToken = action.payload;
     },
@@ -148,9 +152,9 @@ const authSlice = createSlice({
         ].tripRequests.filter((item) => item !== tripMember);
       }
     },
-    removeTripMembers: (state,action)=>{
-      const {tripId, memberId} = action.payload;
-        const tripIndex = state.user?.trips?.findIndex(
+    removeTripMembers: (state, action) => {
+      const { tripId, memberId } = action.payload;
+      const tripIndex = state.user?.trips?.findIndex(
         (trip) => trip.tripId === tripId
       );
 
@@ -169,6 +173,32 @@ const authSlice = createSlice({
       if (tripIndex != -1) {
         state.user.trips[tripIndex].tripMembers.push(tripMember);
       }
+    },
+    updateFriendRequests: (state, action) => {
+      const incomingRequests = action.payload;
+
+      if (!Array.isArray(incomingRequests)) return;
+
+      // Build a set of existing connectionIds to avoid duplicates
+      const existingConnectionIds = new Set(
+        (state.friendRequests || []).map((req) => req.request?.connectionId)
+      );
+
+      // Filter out duplicates
+      const newRequests = incomingRequests.filter(
+        (req) => !existingConnectionIds.has(req.request?.connectionId)
+      );
+
+      // Merge with existing friend requests
+      state.friendRequests = [...(state.friendRequests || []), ...newRequests];
+    },
+    filterFriendRequests: (state, action) => {
+      const connectionIdToRemove = action.payload;
+
+      // Filter out the friend request with the matching connectionId
+      state.friendRequests = state.friendRequests.filter(
+        (req) => req.request?.connectionId !== connectionIdToRemove
+      );
     },
   },
 });
@@ -192,5 +222,8 @@ export const {
   updateTripMembers,
   removeTripRequest,
   removeTripMembers,
+  updateFriendRequests,
+  filterFriendRequests,
+   updateFollowings,
 } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,570 +1,300 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import { Card } from "@/components/ui/card";
-import { shallowEqual, useSelector } from "react-redux";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link, useParams } from "react-router-dom";
+/* eslint-disable no-unused-vars */
 
-import {
-  faBell, faCalendar,
-  faClock, faEdit, faPenClip, faPlus,
-  faTrash,
-  faUser, faUserGroup
-} from "@fortawesome/free-solid-svg-icons";
-import { TripMemberHover } from "./TripMemberHover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import PlanTripForm from "../../User/PlanTripForm";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import useTrip from "../../../CustomHooks/useTrip";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { useSelector, shallowEqual } from "react-redux";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  faUser,
+  faCalendarAlt,
+  faClock,
+  faUserGroup,
+  faQuoteLeft,
+  faTags,
+  faUserPlus,
+  faTrash,
+  faEdit,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TripMemberHover } from "./TripMemberHover";
+
+import FeedbackSection from "./FeedbackSection";
+import useUserData from "../../../CustomHooks/useUserData";
 import {
   DEFAULT_FEMALE_PIC,
   DEFAULT_MALE_PIC,
 } from "../../../Constants/constants";
-import { TripRequestCard } from "./TripRequestCard";
-import useUserData from "../../../CustomHooks/useUserData";
+import useTrip from "../../../CustomHooks/useTrip";
+import TripFeedbackForm from "./TripFeedbackForm";
+import { toast } from "sonner";
+
+const UserAvatar = ({ user }) => (
+  <Avatar>
+    <AvatarImage
+      src={
+        user?.profilePic
+          ? user.profilePic
+          : user?.gender?.toLowerCase() === "male"
+          ? DEFAULT_MALE_PIC
+          : DEFAULT_FEMALE_PIC
+      }
+    />
+    <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+  </Avatar>
+);
+
+const InfoItem = ({ icon, label, value }) => (
+  <div className="flex items-start gap-3">
+    <div className="text-orange-600">
+      <FontAwesomeIcon icon={icon} className="h-4 w-4 mt-1" />
+    </div>
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="font-medium text-gray-800 leading-tight">{value}</p>
+    </div>
+  </div>
+);
 
 export const TripsCard = ({ trip }) => {
+
+  // console.log("Current Trip is: ",trip);
   const { getUser } = useUserData();
-  const { sendTripRequest, deleteTrip } = useTrip();
   const [tripOwner, setOwner] = useState(null);
-  const user = useSelector((store) => store.auth, shallowEqual); // Get the logged-in user
-  const currUser = useParams();
-  const loggedInUser = user?.user; // Find the user by ID
-  const usersList = user?.usersList;
+  const [showMore, setShowMore] = useState(false);
 
-  const localUser = usersList?.find((user) => user.userId == trip?.createdBy); // Get the current user's data
+  const { fetchTripFeedbacks,postTripFeedback } = useTrip();
+
+const tripFeedbacks = useSelector((store) => {
+  const feedbackMap = store.trip?.tripFeedbacks || {};
+  return feedbackMap[trip?.tripId] || [];
+});
+
+console.log("Trip feedbacks are: ", tripFeedbacks);
+
+  const { user: loggedInUser, usersList } = useSelector(
+    (store) => store.auth,
+    shallowEqual
+  );
+  const { userId: currUserId } = useParams();
+  const localUser = usersList?.find((u) => u.userId === trip?.createdBy);
 
   useEffect(() => {
-    if (localUser) {
-      setOwner(localUser);
-    }
-  }, [localUser]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!localUser && !tripOwner) {
-        const fetchedUser = await getUser(trip?.createdBy);
-        setOwner(fetchedUser);
-      }
-    };
-    fetchUser();
+    if (localUser) setOwner(localUser);
+    else if (!tripOwner) getUser(trip?.createdBy).then(setOwner);
   }, [localUser, tripOwner, trip]);
+
+  useEffect(() => {
+    fetchTripFeedbacks(trip?.tripId);
+  }, [trip?.tripId]);
+
+  const mockFeedbacks = [
+    {
+      authorName: "Ananya Sharma",
+      authorPic: "https://randomuser.me/api/portraits/women/68.jpg",
+      comment:
+        "Absolutely loved the trip! The planning was top-notch and the locations were breathtaking. Looking forward to more adventures!",
+      rating: 5,
+      tags: ["well-organized", "memorable", "photogenic"],
+      createdAt: "02 July 2025",
+    },
+    {
+      authorName: "Ravi Verma",
+      authorPic: "https://randomuser.me/api/portraits/men/12.jpg",
+      comment: "Good overall, but I wish we had more time at the waterfalls.",
+      rating: 4,
+      tags: ["scenic", "need-more-time"],
+      createdAt: "01 July 2025",
+    },
+    {
+      authorName: "Sneha Iyer",
+      authorPic: "", // No profile picture
+      comment:
+        "Amazing group and great coordination. Food arrangements could have been better though.",
+      rating: 4,
+      tags: ["fun-group", "food-could-improve"],
+      createdAt: "30 June 2025",
+    },
+    {
+      authorName: "Pranav Desai",
+      authorPic: "https://randomuser.me/api/portraits/men/44.jpg",
+      comment:
+        "Loved the adventure part. Would suggest a little more downtime next time.",
+      rating: 3,
+      tags: ["adventure", "tight-schedule"],
+      createdAt: "29 June 2025",
+    },
+    {
+      authorName: "Ritika Jain",
+      authorPic: "https://randomuser.me/api/portraits/women/45.jpg",
+      comment: "One of the best trips ever! Made so many new friends.",
+      rating: 5,
+      tags: ["friendship", "perfect"],
+      createdAt: "28 June 2025",
+    },
+    {
+      authorName: "Nikhil Joshi",
+      authorPic: "", // fallback avatar
+      comment: "Great itinerary and fun experience overall!",
+      rating: 4,
+      tags: ["great-itinerary", "fun"],
+      createdAt: "27 June 2025",
+    },
+  ];
+
   return (
-    <>
-      {trip?.tripStatus !== "COMPLETED" ? (
-        <Card className="p-4">
-          <div className="flex justify-between">
-            <div className=" p-2 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faUser}
-                    className="mr-2 text-orange-600"
-                  />
-                  <h1>Owner: </h1>
-                </div>
-                <Link
-                  to={
-                    loggedInUser
-                      ? `/user_profile/${tripOwner?.userId}`
-                      : `/login`
-                  }
-                  state={{ redirectTo: `/user_profile/${tripOwner?.userId}` }}
+    <Card className="p-6 space-y-6 border-orange-200 shadow-sm hover:shadow-md transition rounded-2xl">
+      <div className="grid md:grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <UserAvatar user={tripOwner} />
+            <div>
+              <p className="text-xs text-muted-foreground">Trip Organizer</p>
+              <Link
+                to={
+                  loggedInUser ? `/user_profile/${tripOwner?.userId}` : "/login"
+                }
+                className="font-semibold text-orange-700 hover:underline"
+              >
+                {tripOwner?.name || "Loading..."}
+              </Link>
+            </div>
+          </div>
+
+          <InfoItem
+            icon={faUserGroup}
+            label="Members"
+            value={trip?.memberSize}
+          />
+          <InfoItem
+            icon={faCalendarAlt}
+            label="Trip Date"
+            value={trip?.tripDate}
+          />
+          <InfoItem
+            icon={faClock}
+            label="Duration"
+            value={trip?.tripDuration}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <InfoItem
+            icon={faQuoteLeft}
+            label="Description"
+            value={trip?.tripDescription}
+          />
+          {trip?.tripTags?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {trip.tripTags.map((tag, i) => (
+                <Badge
+                  key={i}
+                  variant="outline"
+                  className="border-orange-400 text-orange-600 text-xs"
                 >
-                  <div className="flex items-center gap-2 hover:cursor-pointer">
-                    <Avatar>
-                      <AvatarImage
-                        src={
-                          tripOwner?.profilePic
-                            ? tripOwner?.profilePic
-                            : tripOwner?.gender?.toLowerCase() === "male"
-                            ? DEFAULT_MALE_PIC
-                            : DEFAULT_FEMALE_PIC
-                        }
-                      />
-                      <AvatarFallback>
-                        {tripOwner?.name?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h1 className="font-semibold">{tripOwner?.name}</h1>
-                  </div>
-                </Link>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faUserGroup}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.memberSize}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faCalendar}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.tripDate}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faClock}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.tripDuration}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faPenClip}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.tripDescription}</h1>
-              </div>
-              <div className="flex gap-2 my-2">
-                {trip?.tripTags?.map((item, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="border-orange-600 h-4 font-thin"
-                  >
-                    {item}
-                  </Badge>
-                ))}
-              </div>
+                  #{tag}
+                </Badge>
+              ))}
             </div>
-            {/* <div > */}
-            <div className=" p-2  rounded-lg">
-              <FontAwesomeIcon
-                icon={faUserGroup}
-                className="mr-2 text-orange-600"
-              />
-              <span>Trip Members </span>
+          )}
 
-              <ScrollArea className=" w-80 p-2 h-28  overflow-y-auto ">
-                <div className=" flex flex-wrap gap-2">
-                  {trip?.tripMembers?.length == 0 && <h1>No members yet !!</h1>}
-
-                  {trip?.tripMembers?.map((item, index) => (
-                    <TripMemberHover
-                      key={index}
-                      memberId={item}
-                      tripId={trip?.tripId}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-            {/* </div> */}
-          </div>
-          <div className="p-4 text-right">
-            {currUser?.userId === tripOwner?.userId ? (
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Members</p>
+            <ScrollArea className="w-80 h-14 border rounded-md border-orange-100 p-1">
               <div className="flex gap-2">
-                <Dialog modal={true}>
-                  <DialogTrigger
-                    aschild="true"
-                    className="py-1 px-2 border-2 text-orange-700 font-semibold border-orange-700 hover:border-orange-500  hover:text-orange-500"
-                  >
-                    <FontAwesomeIcon
-                      icon={faEdit}
-                      className="mr-2 text-orange-600 text-lg"
-                    />
-                  </DialogTrigger>
-
-                  <DialogContent className="sm:max-w-[550px]">
-                    <ScrollArea className="h-96 rounded-md">
-                      <DialogHeader>
-                        <DialogTitle>
-                          <h1>Plan Trip</h1>
-                        </DialogTitle>
-                        <DialogDescription>
-                          <h1>
-                            Plan a trip to your dream destinations and let us
-                            find a match for your trip.
-                          </h1>
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="m-4">
-                        <PlanTripForm />
-                      </div>
-                    </ScrollArea>
-                  </DialogContent>
-                </Dialog>
-                <AlertDialog>
-                  <AlertDialogTrigger className="border-2 border-orange-600 px-3">
-                    <FontAwesomeIcon
-                      icon={faTrash}
-                      className="mr-2 text-orange-600 text-lg"
-                    />
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you absolutely sure?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete your trip and remove your trip data from our
-                        servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel
-                        variant="outline"
-                        className="border-2 border-orange-600 text-orange-600 hover:text-orange-800 hover:border-orange-400 hover:bg-orange-100"
-                      >
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-orange-600 hover:bg-orange-500"
-                        onClick={() => deleteTrip(trip?.tripId)}
-                      >
-                        Continue
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                {trip?.tripRequests?.length > 0 && (
-                  <Dialog modal={true}>
-                    <DialogTrigger
-                      aschild="true"
-                      className=" px-3 border-2 text-orange-700 font-semibold border-orange-700 hover:border-orange-500  hover:text-orange-500"
-                    >
-                      <FontAwesomeIcon
-                        icon={faBell}
-                        className="mr-2 text-orange-600 text-lg"
+                {trip?.tripMembers?.length > 0 ? (
+                  trip.tripMembers.map((id, i) => (
+                    <>
+                      <TripMemberHover
+                        key={i}
+                        memberId={id}
+                        tripId={trip?.tripId}
                       />
-                      {trip?.tripRequests?.length}
-                    </DialogTrigger>
-
-                    <DialogContent className="sm:max-w-[550px]">
-                      <ScrollArea className="h-96 rounded-md">
-                        <DialogHeader>
-                          <DialogTitle>
-                            <h1>Trip Requests</h1>
-                          </DialogTitle>
-                          <DialogDescription>
-                            <h1>
-                              See the people who are interested in join you
-                              trips.
-                            </h1>
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="m-4">
-                          {trip?.tripRequests?.map((item, index) => (
-                            <TripRequestCard
-                              key={index}
-                              tripId={trip?.tripId}
-                              userId={item}
-                            />
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </DialogContent>
-                  </Dialog>
+                    </>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No members yet</p>
                 )}
               </div>
-            ) : (
-              !trip?.tripMembers?.includes(loggedInUser?.userId) && (
-                <div>
-                  <AlertDialog>
-                    <AlertDialogTrigger className="border-2 border-orange-600 px-4 py-1">
-                      <FontAwesomeIcon
-                        icon={faUser}
-                        className=" text-orange-600 text-xs"
-                      />
-                      <FontAwesomeIcon
-                        icon={faPlus}
-                        className=" text-orange-600 text-xs"
-                      />
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you absolutely sure?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will send a request
-                          to join the trip.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel
-                          variant="outline"
-                          className="border-2 border-orange-600 text-orange-600 hover:text-orange-800 hover:border-orange-400 hover:bg-orange-100"
-                        >
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-orange-600 hover:bg-orange-500"
-                          onClick={() =>
-                            !trip?.tripRequests?.includes(
-                              loggedInUser?.userId
-                            ) &&
-                            sendTripRequest({
-                              tripId: trip?.tripId,
-                              requestTo: tripOwner?.userId,
-                            })
-                          }
-                        >
-                          Continue
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )
-            )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
-        </Card>
-      ) : (
-        //Different card design for completed trips
-        <Card className="p-4">
-          <div className="flex justify-between">
-            <div className=" p-2 rounded-lg">
-              <div className="flex ">
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>Owner: {tripOwner?.name}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faUserGroup}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.memberSize}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faCalendar}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.tripDate}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faClock}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.tripDuration}</h1>
-              </div>
-              <div className="flex my-2">
-                <FontAwesomeIcon
-                  icon={faPenClip}
-                  className="mr-2 text-orange-600"
-                />
-                <h1>{trip?.tripDescription}</h1>
-              </div>
-              <div className="flex gap-2 my-2">
-                {trip?.tripTags?.map((item, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="border-orange-600 h-4 font-thin"
-                  >
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            {/* <div > */}
-            <div className=" p-2  rounded-lg">
-              <FontAwesomeIcon
-                icon={faUserGroup}
-                className="mr-2 text-orange-600"
-              />
-              <span>Trip Members </span>
-              <ScrollArea className=" w-80 p-2 h-28  overflow-y-auto ">
-                <div className=" flex flex-wrap gap-2">
-                  {trip?.tripMembers?.length == 0 && <h1>No members yet !!</h1>}
-                  {trip?.tripMembers?.map((item, index) => (
-                    <TripMemberHover
-                      key={index}
-                      tripId={trip?.tripId}
-                      memberId={item}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-            {/* </div> */}
-          </div>
-          <div className="p-4 text-right">
-            {loggedInUser?.userId === tripOwner?.userId ? (
-              <div className="flex gap-2">
-                <Dialog modal={true}>
-                  <DialogTrigger
-                    aschild="true"
-                    className="py-1 px-2 border-2 text-orange-700 font-semibold border-orange-700 hover:border-orange-500  hover:text-orange-500"
-                  >
-                    <FontAwesomeIcon
-                      icon={faEdit}
-                      className="mr-2 text-orange-600 text-lg"
-                    />
-                  </DialogTrigger>
+        </div>
+      </div>
 
-                  <DialogContent className="sm:max-w-[550px]">
-                    <ScrollArea className="h-96 rounded-md">
-                      <DialogHeader>
-                        <DialogTitle>
-                          <h1>Plan Trip</h1>
-                        </DialogTitle>
-                        <DialogDescription>
-                          <h1>
-                            Plan a trip to your dream destinations and let us
-                            find a match for your trip.
-                          </h1>
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="m-4">
-                        <PlanTripForm />
-                      </div>
-                    </ScrollArea>
-                  </DialogContent>
-                </Dialog>
-                <AlertDialog>
-                  <AlertDialogTrigger className="border-2 border-orange-600 px-3">
-                    <FontAwesomeIcon
-                      icon={faTrash}
-                      className="mr-2 text-orange-600 text-lg"
-                    />
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you absolutely sure?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete your trip and remove your trip data from our
-                        servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel
-                        variant="outline"
-                        className="border-2 border-orange-600 text-orange-600 hover:text-orange-800 hover:border-orange-400 hover:bg-orange-100"
-                      >
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-orange-600 hover:bg-orange-500"
-                        onClick={() => deleteTrip(trip?.tripId)}
-                      >
-                        Continue
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                {trip?.tripRequests?.length > 0 && (
-                  <Dialog modal={true}>
-                    <DialogTrigger
-                      aschild="true"
-                      className=" px-3 border-2 text-orange-700 font-semibold border-orange-700 hover:border-orange-500  hover:text-orange-500"
-                    >
-                      <FontAwesomeIcon
-                        icon={faBell}
-                        className="mr-2 text-orange-600 text-lg"
-                      />
-                      {trip?.tripRequests?.length}
-                    </DialogTrigger>
-
-                    <DialogContent className="sm:max-w-[550px]">
-                      <ScrollArea className="h-96 rounded-md">
-                        <DialogHeader>
-                          <DialogTitle>
-                            <h1>Plan Trip</h1>
-                          </DialogTitle>
-                          <DialogDescription>
-                            <h1>
-                              Plan a trip to your dream destinations and let us
-                              find a match for your trip.
-                            </h1>
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="m-4">
-                          <PlanTripForm />
-                        </div>
-                      </ScrollArea>
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </div>
-            ) : (
-              !trip?.tripMembers?.includes(loggedInUser?.userId) && (
-                <div>
-                  <AlertDialog>
-                    <AlertDialogTrigger className="border-2 border-orange-600 px-4 py-1">
-                      <FontAwesomeIcon
-                        icon={faUser}
-                        className=" text-orange-600 text-xs"
-                      />
-                      <FontAwesomeIcon
-                        icon={faPlus}
-                        className=" text-orange-600 text-xs"
-                      />
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you absolutely sure?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will send a request
-                          to join the trip.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel
-                          variant="outline"
-                          className="border-2 border-orange-600 text-orange-600 hover:text-orange-800 hover:border-orange-400 hover:bg-orange-100"
-                        >
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-orange-600 hover:bg-orange-500"
-                          onClick={() =>
-                            !trip?.tripRequests?.includes(
-                              loggedInUser?.userId
-                            ) &&
-                            sendTripRequest({
-                              tripId: trip?.tripId,
-                              requestTo: tripOwner?.userId,
-                            })
-                          }
-                        >
-                          Continue
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )
-            )}
+      <div className="text-right flex justify-between">
+        {currUserId === tripOwner?.userId ? (
+          <div className="flex justify-end gap-4 items-center text-orange-600">
+            <button
+              onClick={() => {
+                // Edit modal logic
+                console.log("Edit Trip Clicked");
+              }}
+              className="hover:text-orange-800 transition"
+              title="Edit Trip"
+            >
+              <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                // Delete confirmation logic
+                console.log("Delete Trip Clicked");
+              }}
+              className="hover:text-red-600 transition"
+              title="Delete Trip"
+            >
+              <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+            </button>
           </div>
-        </Card>
-      )}
-    </>
+        ) : !trip?.tripMembers?.includes(loggedInUser?.userId) ? (
+          <div className="flex justify-end text-orange-600">
+            <button
+              onClick={() => {
+                // Send join request logic
+                console.log("Send Trip Join Request");
+              }}
+              className="hover:text-orange-800 transition flex items-center gap-1"
+              title="Request to Join"
+            >
+              <FontAwesomeIcon icon={faUserPlus} className="h-5 w-5" />
+              <span className="text-sm">Join</span>
+            </button>
+          </div>
+        ) : (
+          <div></div>
+        )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowMore(!showMore)}
+          className="text-orange-600 hover:underline"
+        >
+          {showMore ? "Hide Feedback" : "View Feedback"}
+        </Button>
+      </div>
+
+      {showMore && <FeedbackSection feedbacks={tripFeedbacks} />}
+
+      {(trip?.tripMembers?.includes(loggedInUser?.userId) || trip?.createdBy===loggedInUser?.userId) &&
+        !tripFeedbacks.some((fb) => fb.authorId === loggedInUser?.userId) && (
+          <TripFeedbackForm
+            tripId={trip?.tripId}
+            onSubmit={(feedback) => {
+              // Call your API or Redux dispatch to save feedback
+               postTripFeedback(feedback);
+              console.log("Submitting feedback:", feedback);
+              // Optionally dispatch(updateTripFeedbacks({ tripId: trip.tripId, feedbacks: [feedback], append: true }))
+              toast.success("Feedback submitted successfully!");
+            }}
+          />
+        )}
+    </Card>
   );
 };
+
 export default TripsCard;

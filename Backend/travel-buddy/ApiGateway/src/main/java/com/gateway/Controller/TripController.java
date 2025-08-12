@@ -1,13 +1,17 @@
 package com.gateway.Controller;
 
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.gateway.DTO.Author;
+import com.gateway.Entity.FeedBack;
 import com.gateway.Entity.MessageResponse;
 import com.gateway.Entity.Notification;
 import com.gateway.Entity.Trip;
@@ -26,11 +32,13 @@ import com.gateway.Entity.User;
 @RequestMapping("/auth/user/trip")
 public class TripController {
 
+    RestTemplate restTemplate = new RestTemplate();
+    HttpEntity<FeedBack> entity;
+
     @PostMapping("/create-trip")
     public ResponseEntity<?> createTrip(@RequestBody Trip trip) {
         try {
             // System.out.println("Creating trip for user with ID: " + userId);
-            RestTemplate restTemplate = new RestTemplate();
 
             String tripServiceUrl = "http://localhost:8090/auth/user/trip/create-trip";
 
@@ -94,31 +102,93 @@ public class TripController {
         }
     }
 
+    @PostMapping("/post-trip-feedback")
+    public ResponseEntity<?> submitFeedback(@RequestBody FeedBack feedback) {
+        try {
+            System.out.println("Received feedback data in apigateway  is: " + feedback);
+
+            entity = new HttpEntity<>(feedback);
+            String feedbackServiceUrl = "http://localhost:8093/api/auth/feedback/submit";
+
+            ResponseEntity<FeedBack> response = restTemplate.exchange(feedbackServiceUrl, HttpMethod.POST, entity,
+                    FeedBack.class);
+
+            FeedBack responseFeedBack = response.getBody();
+            if (responseFeedBack != null) {
+                responseFeedBack.setMessageResponse(new MessageResponse("Feedback submitted Successfully", "success"));
+            } else {
+                responseFeedBack = new FeedBack();
+                responseFeedBack.setMessageResponse(
+                        new MessageResponse("Something went wrong while submitting feedback", "error"));
+            }
+
+            return new ResponseEntity<>(response.getBody(), response.getStatusCode());
+        } catch (Exception e) {
+            MessageResponse msg = new MessageResponse("Error submitting feedback: " + e.getMessage(), "error");
+            FeedBack feedbackResponse = new FeedBack();
+            feedbackResponse.setMessageResponse(msg);
+            return new ResponseEntity<>(feedbackResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/get-trip-feedback/{tripId}")
+    public ResponseEntity<?> getFeedBack(@PathVariable String tripId) {
+        try {
+
+            String feedbackServiceUrl = "http://localhost:8093/api/auth/feedback/trip/" + tripId;
+
+            ResponseEntity<List<FeedBack>> response = restTemplate.exchange(
+                    feedbackServiceUrl,
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<List<FeedBack>>() {
+                    });
+
+            List<FeedBack> feedBacks = response.getBody();
+            if (feedBacks != null && !feedBacks.isEmpty()) {
+                List<CompletableFuture<Author>> futures = feedBacks.stream()
+                        .map(f -> fetchAuthorAsync(f.getAuthorId()))
+                        .collect(Collectors.toList());
+
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+                for (int i = 0; i < feedBacks.size(); i++) {
+                    feedBacks.get(i).setAuthor(futures.get(i).get()); // Now all are ready
+                }
+            }
+
+            return new ResponseEntity<>(response.getBody(), response.getStatusCode());
+        } catch (Exception e) {
+            MessageResponse msg = new MessageResponse("Error Fetching feedback: " + e.getMessage(), "error");
+            FeedBack feedbackResponse = new FeedBack();
+            feedbackResponse.setMessageResponse(msg);
+            return new ResponseEntity<>(feedbackResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/get-trip-by-tripId/{tripId}")
-    public ResponseEntity<?> getTrip(@PathVariable String tripId)
-    {
-       try {
-          RestTemplate restTemplate = new RestTemplate();
+    public ResponseEntity<?> getTrip(@PathVariable String tripId) {
+        try {
 
             String tripServiceUrl = "http://localhost:8090/auth/user/trip/get-trip/" + tripId;
 
             ResponseEntity<Trip> response = restTemplate.exchange(
-                    tripServiceUrl, HttpMethod.GET, null,Trip.class);
+                    tripServiceUrl, HttpMethod.GET, null, Trip.class);
 
-        return ResponseEntity.ok(response.getBody());
-       } catch (Exception e) {
-        MessageResponse messageResponse = new MessageResponse();
-        messageResponse.setMessage("Something went wrong while fetching trip");
-        messageResponse.setStatus("error");
+            return ResponseEntity.ok(response.getBody());
+        } catch (Exception e) {
+            MessageResponse messageResponse = new MessageResponse();
+            messageResponse.setMessage("Something went wrong while fetching trip");
+            messageResponse.setStatus("error");
 
-        return new ResponseEntity<>(messageResponse,HttpStatus.INTERNAL_SERVER_ERROR);
-       }
+            return new ResponseEntity<>(messageResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
     @DeleteMapping("/delete-trip/{tripId}")
     public ResponseEntity<?> deleteTrip(@PathVariable String tripId) {
         try {
             // System.out.println("Creating trip for user with ID: " + userId);
-            RestTemplate restTemplate = new RestTemplate();
 
             String tripServiceUrl = "http://localhost:8090/auth/user/trip/delete-trip/" + tripId;
 
@@ -141,7 +211,6 @@ public class TripController {
 
             // System.out.println("Requesting trip with ID: " + tripId + " from: " +
             // requestFrom + " to: " + requestTo);
-            RestTemplate restTemplate = new RestTemplate();
 
             String tripServiceUrl = "http://localhost:8090/auth/user/trip/send-trip-request/" + tripId + "/"
                     + requestFrom + "/"
@@ -169,8 +238,7 @@ public class TripController {
         try {
 
             System.out.println("Accepting trip request with ID: " + tripId + " from: " +
-            requestFrom + " to: " + requestTo);
-            RestTemplate restTemplate = new RestTemplate();
+                    requestFrom + " to: " + requestTo);
 
             String tripServiceUrl = "http://localhost:8090/auth/user/trip/accept-trip-request/" + notificationId + "/"
                     + tripId + "/" + requestFrom + "/"
@@ -198,7 +266,6 @@ public class TripController {
 
             // System.out.println("Requesting trip with ID: " + tripId + " from: " +
             // requestFrom + " to: " + requestTo);
-            RestTemplate restTemplate = new RestTemplate();
 
             String tripServiceUrl = "http://localhost:8090/auth/user/trip/remove-trip-member/" + tripId + "/"
                     + memberId;
@@ -217,5 +284,14 @@ public class TripController {
             MessageResponse msg = new MessageResponse("Error removing member from trip: " + e.getMessage(), "error");
             return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Async
+    public CompletableFuture<Author> fetchAuthorAsync(String authorId) {
+        String url = "http://localhost:8088/user/get-author/" + authorId;
+        ResponseEntity<Author> response = restTemplate.exchange(
+                url, HttpMethod.GET, null, new ParameterizedTypeReference<Author>() {
+                });
+        return CompletableFuture.completedFuture(response.getBody());
     }
 }

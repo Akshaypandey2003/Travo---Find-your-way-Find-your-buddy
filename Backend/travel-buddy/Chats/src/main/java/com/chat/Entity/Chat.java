@@ -38,4 +38,6 @@ public class Chat {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    private LocalDateTime recentConversationAt;
 }

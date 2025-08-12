@@ -82,7 +82,6 @@ public class ChatServiceImpl implements ChatService {
 
                 existingChat.setParticipants(chat.getParticipants());
             }
-
             return chatRepo.save(existingChat);
         } catch (Exception e) {
             throw new RuntimeException("Error updating chat: " + e.getMessage(), e);

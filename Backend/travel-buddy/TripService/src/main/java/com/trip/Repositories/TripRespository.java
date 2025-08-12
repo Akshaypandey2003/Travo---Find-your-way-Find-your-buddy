@@ -1,5 +1,6 @@
 package com.trip.Repositories;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -14,4 +15,7 @@ public interface TripRespository extends MongoRepository<Trip,String>{
     
     @Query("{ '$or': [ { 'createdBy': ?0 }, { 'tripMembers': ?0 } ] }")
     List<Trip> findByCreatedBy(String userId); // Find trips by user ID
+
+    List<Trip> findByTripStartDate(LocalDate date);
+    List<Trip> findByTripEndDate(LocalDate date);
 } 

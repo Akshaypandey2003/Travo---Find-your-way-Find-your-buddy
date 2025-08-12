@@ -39,7 +39,8 @@ public class MessageController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody Message message) {
         try {
-
+            
+            System.out.println("REceived message in api gateway ins : "+message);
             // -------- store message in DB ---------------------
             RestTemplate restTemplate = new RestTemplate();
 

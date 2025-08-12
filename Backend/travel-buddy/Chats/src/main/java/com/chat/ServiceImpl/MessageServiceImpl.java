@@ -1,12 +1,15 @@
 package com.chat.ServiceImpl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.chat.Entity.Chat;
 import com.chat.Entity.Message;
 import com.chat.Exceptions.MessageNotFoundException;
+import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
 import com.chat.Service.MessageService;
 
@@ -16,9 +19,16 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private MessageRepository messageRepo;
 
+    @Autowired
+    private ChatRepo chatRepo;
+
     @Override
     public Message sendMessage(Message message) {
         try {
+            Chat chat = chatRepo.findById(message.getChatId())
+                    .orElseThrow(() -> new RuntimeException("Chat not found"));
+            chat.setRecentConversationAt(LocalDateTime.now());
+            chatRepo.save(chat);
             return messageRepo.save(message);
         } catch (Exception e) {
             throw new RuntimeException("Error sending message: " + e.getMessage(), e);

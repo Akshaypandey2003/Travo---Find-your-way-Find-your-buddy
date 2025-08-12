@@ -18,15 +18,9 @@ const useChat = () => {
   const createGroup = async (data) => {
     console.log("Data inside createGroup custom hook: ", data);
     try {
-      if (data?.groupImageUrl) {
-        const { url, public_id } = await uploadImageToCloudinary(
-          data?.groupImageUrl
-        );
-        data.groupImageUrl = url;
-      }
-      // else
-      // data.groupImageUrl = GROUP_DEFAULT_PIC;
-
+       
+      const groupImage = data?.groupImageUrl;
+      data.groupImageUrl = "";
       const response = await fetch(`http://localhost:8085/auth/chats/create`, {
         method: "POST",
         headers: {
@@ -43,6 +37,14 @@ const useChat = () => {
       dispatch(addChats(createdGroup));
       dispatch(setActiveChat(createdGroup));
 
+       if (groupImage) {
+        const { url, public_id } = await uploadImageToCloudinary(
+          groupImage
+        );
+        createdGroup.groupImageUrl = url;
+      }
+      console.log("Updated group with image URL: ", createdGroup);
+      updateGroupChat(createdGroup.chatId, createdGroup);
       return createdGroup;
     } catch (error) {
       console.error("Error while creating new group chat:", error.message);
@@ -92,6 +94,14 @@ const useChat = () => {
       const data = await response.json();
       console.log("Message Sent Successfully: ", data);
       dispatch(addMessageToChat({ chatId: data?.chatId, message: data }));
+      dispatch(
+        updateChat({
+          chatId: data.chatId,
+          updatedData: {
+            recentConversationAt: new Date().toISOString(),
+          },
+        })
+      );
 
       return data;
     } catch (error) {
@@ -103,6 +113,7 @@ const useChat = () => {
     const payload = {
       participants: [loggedInUser?.userId, receiver],
     };
+    console.log("Starting chat with: ", payload.participants);
     try {
       const response = await fetch(`http://localhost:8085/auth/chats/create`, {
         method: "POST",
@@ -123,7 +134,9 @@ const useChat = () => {
         messageType: message?.messageType,
         messageContent: message?.messageContent,
       };
-      const sentMsg = await sendMessage(messageData);
+      console.log("MEssage data to be sent is : ", messageData);
+      const sentMsg = await sendMessage({ message: messageData });
+      console.log("Sent msg is: ", sentMsg);
       dispatch(addChats(data));
       dispatch(setActiveChat(data));
       return data;
@@ -271,7 +284,32 @@ const useChat = () => {
       console.error("Error updating group members:", error.message);
     }
   };
-
+  
+  const updateGroupChat = async (chatId, groupData) => {
+    console.log("Updating group for chatId:", chatId);
+    try {
+      const response = await fetch(
+        `http://localhost:8085/auth/chats/update/${chatId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(groupData),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to update group");
+      }
+      const data = await response.json();
+      console.log("Group updated successfully: ", data);
+      dispatch(updateChat({ chatId, updatedData: data }));
+      dispatch(setActiveChat(data));
+      return data;
+    } catch (error) {
+      console.error("Error updating group:", error.message);
+    }
+  };
   return {
     fetchChats,
     sendMessage,
@@ -282,6 +320,7 @@ const useChat = () => {
     updateFavorite,
     createGroup,
     updateGroupMembers,
+    updateGroupChat,
   };
 };
 export default useChat;

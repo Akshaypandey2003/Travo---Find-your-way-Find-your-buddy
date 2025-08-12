@@ -91,8 +91,8 @@ export const BlogsPage = () => {
   // );
   // console.log("All comments: ", allComments);
   return (
-    <div>
-      <ScrollArea ref={scrollRef} className="h-[80vh] overflow-y-auto border">
+    <div className="mt-24 w-[100vw]">
+      <ScrollArea ref={scrollRef} className="h-[82vh] overflow-y-auto">
         <div className="py-10">
           {currentBlogs?.map((item, index) => (
             <div key={item?.blogId} data-id={item?.blogId} className="blog">

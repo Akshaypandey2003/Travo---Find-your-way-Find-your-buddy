@@ -9,11 +9,16 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useUserData from "../../CustomHooks/useUserData";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faVrCardboard, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import TripAccordian from "../PageComponents/TripComponents/TripAccordian";
 import CreateBlogForm from "../PageComponents/BlogComponents/CreateBlogForm";
 import BlogCard from "../PageComponents/BlogComponents/BlogCard";
+import FollowingUsers from "./FollowingUsers";
+import FollowersUsers from "./FollowersUsers";
+import PeopleTab from "./PeopleTab";
+import FriendRequestCard from "./FriendRequestCard";
+import useTrip from "../../CustomHooks/useTrip";
 
 export const UserTabs = () => {
   const slides = [
@@ -94,7 +99,9 @@ export const UserTabs = () => {
     },
   ];
   const blog = useSelector((store) => store.blog, shallowEqual);
-  const { getUser } = useUserData();
+  const { getUser, fetchFriendRequests } = useUserData();
+  const {fetchTripFeedBacks} = useTrip();
+
   const [currentUser, setCurrentUser] = useState(null);
 
   const { userId } = useParams(); // The id from URL like /user_profile/:userId
@@ -108,22 +115,7 @@ export const UserTabs = () => {
   const currentUserBlogs = blog?.blogs.filter(
     (blog) => blog?.blogAuthor == currentUser?.userId
   );
-  // console.log("Blogs inside userTAbs: ",currentUserBlogs);
-  useEffect(() => {
-    if (localUser) {
-      setCurrentUser(localUser);
-    }
-  }, [localUser]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!localUser && !currentUser) {
-        const fetchedUser = await getUser(userId);
-        setCurrentUser(fetchedUser);
-      }
-    };
-    fetchUser();
-  }, [localUser, currentUser, userId]);
+  console.log("Logged in user: ", loggedInUser);
 
   const following =
     currentUser?.following?.length > 0
@@ -171,10 +163,29 @@ export const UserTabs = () => {
           user?.closeFriends?.includes(currentUser?.userId))
     )
   );
+  console.log(
+    "All friend requests inside usertabs are: ",
+    user?.friendRequests
+  );
+  useEffect(() => {
+    if (localUser) {
+      setCurrentUser(localUser);
+    }
+  }, [localUser]);
 
-  // console.log("Upcoming trips after filtering", upcomingTrips);
-  //  console.log("On going trips after filtering", ongoingTrips);
-  //  console.log("completed trips after filtering", completedTrips);
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!localUser && !currentUser) {
+        const fetchedUser = await getUser(userId);
+        setCurrentUser(fetchedUser);
+      }
+    };
+    fetchUser();
+  }, [localUser, currentUser, userId]);
+
+  useEffect(() => {
+    fetchFriendRequests();
+  }, [loggedInUser]);
 
   return (
     <div className=" flex justify-center p-5 ">
@@ -205,9 +216,9 @@ export const UserTabs = () => {
           )}
 
           {/* )} */}
-          {userId == user?.user?.userId && (
-            <TabsTrigger value="requests" className="border-none text-black">
-              Requests
+          {currentUser?.userId == loggedInUser?.userId && (
+            <TabsTrigger value="requests" className="border-none text-black gap-2">
+              Requests { user?.friendRequests?.length > 0 &&  user?.friendRequests?.length} 
             </TabsTrigger>
           )}
           <TabsTrigger value="feedback" className="border-none text-black">
@@ -250,159 +261,140 @@ export const UserTabs = () => {
         </TabsContent>
         <TabsContent value="trips">
           <div className="w-[80rem] py-5  flex ">
-            <ScrollArea className="w-[80%] h-96 overflow-y-auto py-5 px-10">
-              {upcomingTrips?.length == 0 &&
-              ongoingTrips?.length == 0 &&
-              completedTrips?.length == 0 ? (
-                currentUser?.userId == loggedInUser?.userId ? (
-                  <>
-                    <div className="flex items-center gap-2  rounded-2xl w-auto">
-                      <FontAwesomeIcon
-                        size="xl"
-                        icon={faWarning}
-                        className="text-orange-400"
-                      />
-                      <Badge
-                        variant="outline"
-                        className="text-lg border-none text-orange-400"
-                      >
-                        You did not plan any trip yet !! please plan some trip
-                        or join some trips. .
-                      </Badge>
-                    </div>
-                    <div className="gap-4  items-center justify-start flex-nowrap mt-4">
-                      <h1 className=" text-xl text-orange-500 font-bold">
-                        Upcoming Trips
-                      </h1>
-                      {tripSuggestions?.map((item, index) => (
-                        <TripAccordian key={index} trip={item} />
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  currentUser?.userId != loggedInUser?.userId && (
-                    <div className="flex items-center gap-2  rounded-2xl w-auto">
-                      <FontAwesomeIcon
-                        size="xl"
-                        icon={faWarning}
-                        className="text-orange-400"
-                      />
-                      <Badge
-                        variant="outline"
-                        className="text-lg border-none text-orange-400"
-                      >
-                        Don't have any trip currentlly !!
-                      </Badge>
-                    </div>
-                  )
-                )
-              ) : (
-                <div className=" gap-4  items-center justify-start flex-nowrap">
-                  {upcomingTrips?.length > 0 && (
+            {/* <ScrollArea className="w-[80%] h-96 overflow-y-auto py-5 px-10"> */}
+            {upcomingTrips?.length == 0 &&
+            ongoingTrips?.length == 0 &&
+            completedTrips?.length == 0 ? (
+              currentUser?.userId == loggedInUser?.userId ? (
+                <>
+                  <div className="flex items-center gap-2  rounded-2xl w-auto">
+                    <FontAwesomeIcon
+                      size="xl"
+                      icon={faWarning}
+                      className="text-orange-400"
+                    />
+                    <Badge
+                      variant="outline"
+                      className="text-lg border-none text-orange-400"
+                    >
+                      You did not plan any trip yet !! please plan some trip or
+                      join some trips. .
+                    </Badge>
+                  </div>
+                  <div className="gap-4  items-center justify-start flex-nowrap mt-4">
                     <h1 className=" text-xl text-orange-500 font-bold">
-                      Upcoming Trips{" "}
+                      Upcoming Trips
                     </h1>
-                  )}
-                  {upcomingTrips?.map((item, index) => (
-                    <TripAccordian key={index} trip={item} />
-                  ))}
+                    {tripSuggestions?.map((item, index) => (
+                      <TripAccordian key={index} trip={item} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                currentUser?.userId != loggedInUser?.userId && (
+                  <div className="flex items-center gap-2  rounded-2xl w-auto">
+                    <FontAwesomeIcon
+                      size="xl"
+                      icon={faWarning}
+                      className="text-orange-400"
+                    />
+                    <Badge
+                      variant="outline"
+                      className="text-lg border-none text-orange-400"
+                    >
+                      Don't have any trip currentlly !!
+                    </Badge>
+                  </div>
+                )
+              )
+            ) : (
+              <div className=" gap-4  items-center justify-start flex-nowrap">
+                {upcomingTrips?.length > 0 && (
+                  <h1 className=" text-xl text-orange-500 font-bold">
+                    Upcoming Trips{" "}
+                  </h1>
+                )}
+                {upcomingTrips?.map((item, index) => (
+                  <TripAccordian key={index} trip={item} isOpen={index === 0} />
+                ))}
 
-                  {ongoingTrips?.length > 0 && <h1>On Going Trips </h1>}
-                  {ongoingTrips?.map((item, index) => {
-                    <TripAccordian key={index} trip={item} />;
-                  })}
+                {ongoingTrips?.length > 0 && (
+                  <h1 className=" text-xl text-orange-500 font-bold">
+                    On Going Trips{" "}
+                  </h1>
+                )}
+                {ongoingTrips?.map((item, index) => {
+                  <TripAccordian
+                    key={index}
+                    trip={item}
+                    isOpen={index === 0}
+                  />;
+                })}
 
-                  {completedTrips?.length > 0 && <h1>Completed Trips </h1>}
-                  {completedTrips?.map((item, index) => {
-                    <TripAccordian key={index} trip={item} />;
-                  })}
-
-                  {/* {currentUser?.trips?.map((item, index) => (
-                  <TripsCard key={index} trip={item} />
-                ))} */}
-                </div>
-              )}
-            </ScrollArea>
+                {completedTrips?.length > 0 && (
+                  <h1 className=" text-xl text-orange-500 font-bold">
+                    On Going Trips{" "}
+                  </h1>
+                )}
+                {completedTrips?.map((item, index) => {
+                  <TripAccordian
+                    key={index}
+                    trip={item}
+                    isOpen={index === 0}
+                  />;
+                })}
+              </div>
+            )}
+            {/* </ScrollArea> */}
           </div>
         </TabsContent>
         <TabsContent value="following">
-          <div className="w-[80rem] py-5 ">
-            <ScrollArea className=" h-96 overflow-y-auto py-5 px-10 ">
-              <div className="flex items-center flex-wrap gap-5">
-                {following?.map((item, index) => (
-                  <CustomerCard key={index} user={item} />
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        </TabsContent>
-        <TabsContent value="people">
-          <div className="w-[80rem] py-5 ">
-            <ScrollArea className=" h-96 overflow-y-auto py-5 px-10 ">
-              <div className="flex items-center flex-wrap gap-5">
-                {usersList?.map((item, index) => (
-                  <CustomerCard key={index} user={item} />
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+          <FollowingUsers users={following} />
         </TabsContent>
         <TabsContent value="followers">
-          <div className="w-[80rem] py-5 ">
-            <ScrollArea className=" h-96 overflow-y-auto py-5 px-10 ">
-              <div className="flex gap-4 py-10 flex-wrap">
-                {followers?.map((item, index) => (
-                  <CustomerCard key={index} user={item} />
-                ))}
-              </div>
-            </ScrollArea>
-            {/* <div className=" flex px-5 justify-around ">
-              <div className="  w-[50rem] px-2">
-                <h1 className="font-bold text-2xl">Best Time To Visit</h1>
-                <div className="flex flex-wrap  gap-4 p-2 justify-center">
-                  {suggestedVisitTime.map((item) => (
-                    <Card key={item} className="px-4 py-2 w-[15rem]">
-                      <h1 className="font-semibold text-xl">{item.interval}</h1>
-                      <p>{item.desc}</p>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              <div className=" w-[30rem] px-2">
-                <h1 className="font-bold text-2xl">Special Events</h1>
-                <div className="flex flex-wrap gap-4 p-2">
-                  {specialEvents.map((item) => (
-                    <HoverCard key={item}>
-                      <HoverCardTrigger className="cursor-pointer px-4 border border-orange-500 rounded-full hover:text-black">
-                        {item.event}
-                      </HoverCardTrigger>
-                      <HoverCardContent>{item.desc}</HoverCardContent>
-                    </HoverCard>
-                  ))}
-                </div>
-              </div>
-              <div></div>
-            </div> */}
-          </div>
+          <FollowersUsers users={followers} />
         </TabsContent>
+        <TabsContent value="people">
+          <PeopleTab users={usersList} />
+        </TabsContent>
+
         <TabsContent value="requests">
-          <div className="w-[80rem] py-5 ">
-            <ReactCardSlider slides={slides} />
+          <div className="w-[80rem]  p-10">
+            <div className="flex items-center flex-wrap gap-5">
+              {user?.friendRequests && user?.friendRequests?.length > 0 ? (
+                user?.friendRequests.map((request) => (
+                  <FriendRequestCard
+                    key={request.senderDetails.userId}
+                    user={request}
+                  />
+                ))
+              ) : (
+                <div className="flex flex-col items-center text-center text-gray-500">
+                 <FontAwesomeIcon icon={faWarning} size="4x" className="text-orange-300"/>
+
+                  <h2 className="text-xl font-semibold text-gray-700">
+                    No Friend Requests
+                  </h2>
+                  <p className="text-sm mt-1">
+                    You’re all caught up. Check back later!
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="feedback">
           <div className=" w-[80rem] p-10 flex items-center gap-2  rounded-2xl">
-            <FontAwesomeIcon
-              size="xl"
-              icon={faWarning}
-              className="text-orange-400"
-            />
-            <Badge
-              variant="outline"
-              className="text-lg border-none text-orange-400"
-            >
-              Didn't get any feedback currentlly !!
-            </Badge>
+            <div className="flex flex-col items-center text-center text-gray-500">
+                 <FontAwesomeIcon icon={faWarning} size="4x" className="text-orange-300"/>
+
+                  <h2 className="text-xl font-semibold text-gray-700">
+                    No Feedbacks Yet
+                  </h2>
+                  <p className="text-sm mt-1">
+                    You’re all caught up. Check back later!
+                  </p>
+                </div>
           </div>
         </TabsContent>
       </Tabs>

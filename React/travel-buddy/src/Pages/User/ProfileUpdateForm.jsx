@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faEdit, faX, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 import {
   Select,
@@ -29,6 +29,7 @@ import {
   DEFAULT_FEMALE_PIC,
   DEFAULT_MALE_PIC,
 } from "../../Constants/constants";
+import { City, Country, State } from "country-state-city";
 
 const ProfileUpdateForm = () => {
   const user = useSelector((store) => store.auth.user, shallowEqual);
@@ -54,15 +55,17 @@ const ProfileUpdateForm = () => {
       state: user?.state || "",
       city: user?.city || "",
       bio: user?.bio || "",
-      preferences: user.preferences || [
-        "Eg.",
-        "Mountains",
-        "Beaches",
-        "Adeventure",
-      ],
+      preferences: user.preferences || [],
     },
   });
-
+   const states = State.getStatesOfCountry(form.watch("country"));
+  // Get cities of the selected state
+  const cities = form.watch("state")
+    ? City.getCitiesOfState(
+        form.getValues("country"),
+        form.getValues("state")
+      )
+    : [];
   const onSubmit = (data) => {
     const finalData = {
       ...data,
@@ -211,16 +214,17 @@ const ProfileUpdateForm = () => {
                       onValueChange={(value) => field.onChange(value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Country" />
+                        <SelectValue placeholder="Select Country" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="india">India</SelectItem>
-                        <SelectItem value="america">America</SelectItem>
-                        <SelectItem value="australia">Australia</SelectItem>
-                        <SelectItem value="britain">Britain</SelectItem>
-                        <SelectItem value="russia">Russia</SelectItem>
-                        <SelectItem value="china">China</SelectItem>
-                        <SelectItem value="ukrain">Ukrain</SelectItem>
+                        {Country.getAllCountries().map((country) => (
+                          <SelectItem
+                            key={country.isoCode}
+                            value={country.isoCode}
+                          >
+                            {country.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -242,13 +246,11 @@ const ProfileUpdateForm = () => {
                         <SelectValue placeholder="State" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="india">Madhya Pradesh</SelectItem>
-                        <SelectItem value="america">America</SelectItem>
-                        <SelectItem value="australia">Australia</SelectItem>
-                        <SelectItem value="britain">Britain</SelectItem>
-                        <SelectItem value="russia">Russia</SelectItem>
-                        <SelectItem value="china">China</SelectItem>
-                        <SelectItem value="ukrain">Ukrain</SelectItem>
+                        {states.map((state) => (
+                          <SelectItem key={state.isoCode} value={state.isoCode}>
+                            {state.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -270,13 +272,11 @@ const ProfileUpdateForm = () => {
                         <SelectValue placeholder="city" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="india">Bangalore</SelectItem>
-                        <SelectItem value="america">America</SelectItem>
-                        <SelectItem value="australia">Australia</SelectItem>
-                        <SelectItem value="britain">Britain</SelectItem>
-                        <SelectItem value="russia">Russia</SelectItem>
-                        <SelectItem value="china">China</SelectItem>
-                        <SelectItem value="ukrain">Ukrain</SelectItem>
+                        {cities.map((city) => (
+                          <SelectItem key={city.name} value={city.name}>
+                            {city.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -309,13 +309,16 @@ const ProfileUpdateForm = () => {
                 <div className="flex flex-wrap gap-2 items-center">
                   {field.value?.map((item, index) => (
                     <div
-                      onClick={() => handlePreferenceChange(item)}
                       key={index}
                       className="cursor-pointer flex gap-3 items-center rounded-full border px-2 py-1 "
                     >
                       <span className="text-gray-500">{item}</span>
 
-                      <CrossIcon className="h-3 w-3"></CrossIcon>
+                      <FontAwesomeIcon
+                        icon={faXmark}
+                        className="text-orange-600 h-3 w-3"
+                        onClick={() => handlePreferenceChange(item)}
+                      />
                     </div>
                   ))}
                 </div>

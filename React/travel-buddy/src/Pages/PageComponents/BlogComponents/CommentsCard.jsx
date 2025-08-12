@@ -41,6 +41,7 @@ export const CommentsCard = ({ comment,blog}) => {
     repliedToUserId: comment?.authorId,
   };
   const { postComment } = useComments();
+  
   const handleSubmit = () => {
     const reply = replyRef.current.value;
     const finalData = { ...commentData, content: reply };

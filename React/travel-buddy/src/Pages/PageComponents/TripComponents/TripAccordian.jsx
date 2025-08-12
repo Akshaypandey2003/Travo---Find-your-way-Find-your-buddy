@@ -18,13 +18,13 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import TripsCard from "./TripsCard";
-export const TripAccordian = ({ trip }) => {
+export const TripAccordian = ({ trip, isOpen }) => {
   // console.log("Received trip details: ", trip);
   return (
-    <Accordion type="single" collapsible defaultValue="item-1">
+    <Accordion type="single" collapsible defaultValue={isOpen ? "item-1" : undefined}>
       <AccordionItem value="item-1">
-        <AccordionTrigger className="  border-none outline-none focus:outline-none focus:ring-0 focus:ring-offset-0">
-          <div className="flex items-center justify-between w-full">
+        <AccordionTrigger className="border-none outline-none focus:outline-none focus:ring-0 focus:ring-offset-0">
+          <div className="flex items-center justify-between w-[50rem]">
             <div className="flex items-center">
               <FontAwesomeIcon
                 icon={faLocationDot}
@@ -41,8 +41,6 @@ export const TripAccordian = ({ trip }) => {
                 <h1 className="font-light"> {trip?.tripCountry}</h1>
               </div>
             </div>
-           
-            
           </div>
         </AccordionTrigger>
         <AccordionContent>

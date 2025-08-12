@@ -18,7 +18,7 @@ export function CarouselPlugin() {
     Autoplay({ delay: 2000, stopOnInteraction: true })
   );
 }
-const imgs = ["/Beach1.jpg", "/Beach2.jpg", "/mountains1.jpg", "/mountains2.jpg", "/palace-1.jpg", "/resort-2.jpg"];
+const imgs = ["https://res.cloudinary.com/dwg7vniow/image/upload/v1751808427/Beach1_ru7xus.jpg", "https://res.cloudinary.com/dwg7vniow/image/upload/v1751808450/Beach2_aofhe0.jpg", "https://res.cloudinary.com/dwg7vniow/image/upload/v1751808585/mountains1_bnfhbr.jpg", "https://res.cloudinary.com/dwg7vniow/image/upload/v1751808631/mountains2_hpdkds.jpg", "https://res.cloudinary.com/dwg7vniow/image/upload/v1751808658/palace-1_pxsg8t.jpg", "https://res.cloudinary.com/dwg7vniow/image/upload/v1751808697/resort-2_upapaz.jpg"];
 export const ImgCarousel = () => {
 
 const [imgSrc,setImgSrc] = useState("");

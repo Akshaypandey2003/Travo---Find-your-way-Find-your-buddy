@@ -8,6 +8,7 @@ import lombok.*;
 @Builder
 @Getter
 @Setter
+@ToString
 public class Message {
 
     private String messageId; // Unique ID for the message

@@ -89,7 +89,7 @@ export const Chat = ({ chat }) => {
     <Card
       className={`${
         activeChat?.chatId === chat?.chatId && theme === "dark"
-          ? "bg-gray-900"
+          ? "bg-black"
           : activeChat?.chatId === chat?.chatId &&
             theme === "light" &&
             "bg-orange-100"

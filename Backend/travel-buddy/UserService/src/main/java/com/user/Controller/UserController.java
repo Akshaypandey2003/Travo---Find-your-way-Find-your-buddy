@@ -139,7 +139,7 @@ public class UserController {
     }
 
     @GetMapping("/get-user/{userId}")
-    public ResponseEntity<User> getUserById(@PathVariable String userId) {
+    public ResponseEntity<User> getUserById(@PathVariable("userId") String userId) {
         
         return new ResponseEntity<>(userService.getUserById(userId), HttpStatus.OK);
     }

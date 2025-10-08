@@ -35,7 +35,14 @@ public class TripController {
     public ResponseEntity<Trip> createTrip(@RequestBody Trip trip)
     {
         Trip createdTrip = tripService.createTrip(trip);
+        System.out.println("Created Trip: " + createdTrip);
         return ResponseEntity.status(201).body(createdTrip);
+    }
+     @PutMapping("/update-trip")
+    public ResponseEntity<Trip> updateTrip(@RequestBody Trip trip) {
+         System.out.println("Updating trip with ID: " + trip.getTripId());
+        Trip updatedTrip = tripService.updateTrip(trip);
+        return ResponseEntity.ok(updatedTrip);
     }
     @DeleteMapping("/delete-trip/{tripId}")
     public ResponseEntity<Map<String,String>> createTrip(@PathVariable String tripId)
@@ -138,11 +145,7 @@ public class TripController {
         }
     }
 
-    @PutMapping("/update-trip/{tripId}")
-    public ResponseEntity<Trip> updateTrip(@PathVariable String tripId, @RequestBody Trip tripDetails) {
-        Trip updatedTrip = tripService.updateTrip(tripId, tripDetails);
-        return ResponseEntity.ok(updatedTrip);
-    }
+   
 
     @GetMapping("/get-trip/{tripId}")
     public ResponseEntity<Trip> getTripById(@PathVariable String tripId) {
@@ -157,7 +160,7 @@ public class TripController {
     }
 
     @GetMapping("/get-trips-by-user/{userId}")
-    public ResponseEntity<List<Trip>> getTripsByUserId(@PathVariable String userId) {
+    public ResponseEntity<List<Trip>> getTripsByUserId(@PathVariable("userId") String userId) {
         List<Trip> trips = tripService.getTripsByUserId(userId);
         return ResponseEntity.ok(trips);
     }

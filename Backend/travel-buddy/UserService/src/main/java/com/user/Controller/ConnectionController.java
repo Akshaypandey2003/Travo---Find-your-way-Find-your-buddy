@@ -28,7 +28,7 @@ public class ConnectionController
     private ConnectionService connectionService;
 
     @PostMapping("/send/{senderId}/{receiverId}")
-    public ResponseEntity<Connections> sendRequest(@PathVariable String senderId, @PathVariable String receiverId)
+    public ResponseEntity<Connections> sendRequest(@PathVariable("senderId") String senderId, @PathVariable("receiverId") String receiverId)
     {
         return new ResponseEntity<>(connectionService.sendFriendRequest(senderId, receiverId),HttpStatus.OK);
     }

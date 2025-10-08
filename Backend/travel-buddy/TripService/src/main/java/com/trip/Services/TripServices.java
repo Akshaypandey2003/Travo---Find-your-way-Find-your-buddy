@@ -11,7 +11,7 @@ public interface TripServices {
     Map<String,String> deleteTrip(String tripId);
 
     // Update a trip
-    Trip updateTrip(String tripId, Trip tripDetails);
+    Trip updateTrip(Trip trip);
 
     // Get a trip by ID
     Trip getTripById(String tripId);

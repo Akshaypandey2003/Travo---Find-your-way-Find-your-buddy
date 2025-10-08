@@ -32,6 +32,15 @@ import {
 import useTrip from "../../../CustomHooks/useTrip";
 import TripFeedbackForm from "./TripFeedbackForm";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import PlanTripForm from "../../User/PlanTripForm";
 
 const UserAvatar = ({ user }) => (
   <Avatar>
@@ -61,20 +70,20 @@ const InfoItem = ({ icon, label, value }) => (
 );
 
 export const TripsCard = ({ trip }) => {
-
   // console.log("Current Trip is: ",trip);
   const { getUser } = useUserData();
   const [tripOwner, setOwner] = useState(null);
   const [showMore, setShowMore] = useState(false);
 
-  const { fetchTripFeedbacks,postTripFeedback } = useTrip();
+  const { fetchTripFeedbacks, postTripFeedback, deleteTrip } = useTrip();
+  
+  const theme = useSelector((store) => store.auth.theme, shallowEqual);
+  const tripFeedbacks = useSelector((store) => {
+    const feedbackMap = store.trip?.tripFeedbacks || {};
+    return feedbackMap[trip?.tripId] || [];
+  });
 
-const tripFeedbacks = useSelector((store) => {
-  const feedbackMap = store.trip?.tripFeedbacks || {};
-  return feedbackMap[trip?.tripId] || [];
-});
-
-console.log("Trip feedbacks are: ", tripFeedbacks);
+  console.log("Trip feedbacks are: ", tripFeedbacks);
 
   const { user: loggedInUser, usersList } = useSelector(
     (store) => store.auth,
@@ -169,11 +178,12 @@ console.log("Trip feedbacks are: ", tripFeedbacks);
             icon={faUserGroup}
             label="Members"
             value={trip?.memberSize}
+            textColor="text-gray-400"
           />
           <InfoItem
             icon={faCalendarAlt}
-            label="Trip Date"
-            value={trip?.tripDate}
+            label="Trip Start Date"
+            value={trip?.tripStartDate}
           />
           <InfoItem
             icon={faClock}
@@ -202,53 +212,71 @@ console.log("Trip feedbacks are: ", tripFeedbacks);
             </div>
           )}
 
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Members</p>
-            <ScrollArea className="w-80 h-14 border rounded-md border-orange-100 p-1">
-              <div className="flex gap-2">
-                {trip?.tripMembers?.length > 0 ? (
-                  trip.tripMembers.map((id, i) => (
-                    <>
-                      <TripMemberHover
-                        key={i}
-                        memberId={id}
-                        tripId={trip?.tripId}
-                      />
-                    </>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">No members yet</p>
-                )}
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </div>
+          {trip?.tripMembers?.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Members</p>
+              <ScrollArea className="w-80 h-14 border rounded-md border-orange-100 p-1">
+                <div className="flex gap-2">
+                  {trip?.tripMembers?.length > 0 &&
+                    trip.tripMembers.map((id, i) => (
+                      <>
+                        <TripMemberHover
+                          key={i}
+                          memberId={id}
+                          tripId={trip?.tripId}
+                        />
+                      </>
+                    ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="text-right flex justify-between">
         {currUserId === tripOwner?.userId ? (
           <div className="flex justify-end gap-4 items-center text-orange-600">
-            <button
-              onClick={() => {
-                // Edit modal logic
-                console.log("Edit Trip Clicked");
-              }}
-              className="hover:text-orange-800 transition"
-              title="Edit Trip"
-            >
-              <FontAwesomeIcon icon={faEdit} className="h-4 w-4" />
-            </button>
-            <button
+            <Dialog modal={true}>
+              <DialogTrigger
+                aschild="true"
+                className="py-1 px-2 border-2 text-orange-700 font-semibold border-orange-700 hover:border-orange-500  hover:text-orange-500"
+              >
+                <FontAwesomeIcon icon={faEdit} className="h-4 w-4 " />
+              </DialogTrigger>
+
+              <DialogContent className="sm:max-w-[550px]">
+                <ScrollArea className="h-96 rounded-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      <h1>Edit Trip</h1>
+                    </DialogTitle>
+                    <DialogDescription>
+                      <h1>Modify your trip details below.</h1>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="m-4">
+                    <PlanTripForm trip={trip} />
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
+            <Button
               onClick={() => {
                 // Delete confirmation logic
-                console.log("Delete Trip Clicked");
+                console.log("Deleting Trip", trip);
+                deleteTrip(trip?.tripId);
               }}
-              className="hover:text-red-600 transition"
+              className="hover:text-red-600 transition hover:border-none"
               title="Delete Trip"
+              variant="ghost"
             >
-              <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-            </button>
+              <FontAwesomeIcon
+                icon={faTrash}
+                className="h-4 w-4 border-none hover:border-none"
+              />
+            </Button>
           </div>
         ) : !trip?.tripMembers?.includes(loggedInUser?.userId) ? (
           <div className="flex justify-end text-orange-600">
@@ -280,13 +308,15 @@ console.log("Trip feedbacks are: ", tripFeedbacks);
 
       {showMore && <FeedbackSection feedbacks={tripFeedbacks} />}
 
-      {(trip?.tripMembers?.includes(loggedInUser?.userId) || trip?.createdBy===loggedInUser?.userId) &&
-        !tripFeedbacks.some((fb) => fb.authorId === loggedInUser?.userId) && (
+      {(trip?.tripMembers?.includes(loggedInUser?.userId) ||
+        trip?.createdBy === loggedInUser?.userId) &&
+        !tripFeedbacks.some((fb) => fb.authorId === loggedInUser?.userId) &&
+        trip?.tripStatus == "COMPLETED" && (
           <TripFeedbackForm
             tripId={trip?.tripId}
             onSubmit={(feedback) => {
               // Call your API or Redux dispatch to save feedback
-               postTripFeedback(feedback);
+              postTripFeedback(feedback);
               console.log("Submitting feedback:", feedback);
               // Optionally dispatch(updateTripFeedbacks({ tripId: trip.tripId, feedbacks: [feedback], append: true }))
               toast.success("Feedback submitted successfully!");

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,6 +49,7 @@ public class TripController {
                     tripServiceUrl, HttpMethod.POST, entity, Trip.class);
 
             Trip savedTrip = response.getBody();
+            System.out.println("Saved Trip: " + savedTrip);
 
             String userServiceUrl = "http://localhost:8088/user/get-user/" + savedTrip.getCreatedBy();
 
@@ -101,7 +103,73 @@ public class TripController {
             return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+ 
+     @PutMapping("/update-trip")
+    public ResponseEntity<?> updateTrip(@RequestBody Trip trip) {
+        try {
+            System.out.println("Updating trip with ID: " + trip);
 
+            String tripServiceUrl = "http://localhost:8090/auth/user/trip/update-trip";
+
+            HttpEntity<Trip> entity = new HttpEntity<>(trip);
+
+            ResponseEntity<Trip> response = restTemplate.exchange(
+                    tripServiceUrl, HttpMethod.PUT, entity, Trip.class);
+
+            Trip savedTrip = response.getBody();
+
+            String userServiceUrl = "http://localhost:8088/user/get-user/" + savedTrip.getCreatedBy();
+
+            ResponseEntity<User> userResponse = restTemplate.exchange(
+                    userServiceUrl, HttpMethod.GET, null, new ParameterizedTypeReference<User>() {
+                    });
+            User user = userResponse.getBody();
+            Set<String> connections = new TreeSet<>();
+            String isPrivateTrip = savedTrip.getIsPrivateTrip();
+            if (isPrivateTrip.equalsIgnoreCase("true")) {
+                for (String con : user.getCloseFriends())
+                    connections.add(con);
+            } else {
+                for (String con : user.getFollowers())
+                    connections.add(con);
+                for (String con : user.getFollowing())
+                    connections.add(con);
+            }
+
+            for (String con : connections) {
+                if (!con.equals(user.getUserId())) {
+                    try {
+                        // Creating notification object
+                        Notification notification = new Notification();
+                        notification.setNotificationFrom(user.getUserId());
+                        notification.setNotificationTo(con);
+                        notification.setTripId(savedTrip.getTripId());
+                        notification.setType(Notification.NotificationType.NEW_TRIP);
+                        notification.setMessage("has updated the trip " + savedTrip.getTripName());
+
+                        // sending notification object to notification service(User service)
+                        String notificationUrl = "http://localhost:8088/auth/user/notification/send-notification";
+
+                        HttpEntity<Notification> notificatoinEntity = new HttpEntity<>(notification);
+
+                        ResponseEntity<?> responseNotification = restTemplate.exchange(
+                                notificationUrl, HttpMethod.POST, notificatoinEntity,
+                                new ParameterizedTypeReference<Object>() {
+                                });
+                    } catch (Exception e) {
+                        System.err.println("Failed to notify " + con + ": " + e.getMessage());
+                    }
+                }
+            }
+
+            System.out.println("Response from Trip Service: " + response);
+
+            return new ResponseEntity<>(response.getBody(), response.getStatusCode());
+        } catch (Exception e) {
+            MessageResponse msg = new MessageResponse("Error creating trip: " + e.getMessage(), "error");
+            return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     @PostMapping("/post-trip-feedback")
     public ResponseEntity<?> submitFeedback(@RequestBody FeedBack feedback) {
         try {

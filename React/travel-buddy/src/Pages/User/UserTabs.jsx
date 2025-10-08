@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useUserData from "../../CustomHooks/useUserData";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faVrCardboard, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faBlog, faMapMarked, faMapMarkedAlt, faPenFancy, faPooStorm, faSignsPost, faVrCardboard, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import TripAccordian from "../PageComponents/TripComponents/TripAccordian";
 import CreateBlogForm from "../PageComponents/BlogComponents/CreateBlogForm";
@@ -100,7 +100,7 @@ export const UserTabs = () => {
   ];
   const blog = useSelector((store) => store.blog, shallowEqual);
   const { getUser, fetchFriendRequests } = useUserData();
-  const {fetchTripFeedBacks} = useTrip();
+  const { fetchTripFeedBacks } = useTrip();
 
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -140,7 +140,7 @@ export const UserTabs = () => {
   let completedTrips = currentUser?.trips?.filter(
     (trip) => trip.tripStatus === "COMPLETED"
   );
-  // console.log("Upcoming trips before filtering", upcomingTrips);
+  
   if (
     currentUser?.userId != loggedInUser?.userId &&
     !currentUser?.closeFriends?.includes(loggedInUser?.userId)
@@ -217,8 +217,12 @@ export const UserTabs = () => {
 
           {/* )} */}
           {currentUser?.userId == loggedInUser?.userId && (
-            <TabsTrigger value="requests" className="border-none text-black gap-2">
-              Requests { user?.friendRequests?.length > 0 &&  user?.friendRequests?.length} 
+            <TabsTrigger
+              value="requests"
+              className="border-none text-black gap-2"
+            >
+              Requests{" "}
+              {user?.friendRequests?.length > 0 && user?.friendRequests?.length}
             </TabsTrigger>
           )}
           <TabsTrigger value="feedback" className="border-none text-black">
@@ -229,19 +233,23 @@ export const UserTabs = () => {
           <div className="w-[80rem] py-5  flex">
             <ScrollArea className="w-[80%] h-[100vh] overflow-y-auto py-5 px-10">
               {!currentUserBlogs || currentUserBlogs.length === 0 ? (
-                <div className="flex justify-between items-center py-1 px-1">
-                  <div className="flex items-center gap-2  rounded-2xl w-auto">
+                <div className="flex flex-col justify-between items-center py-1 px-1 gap-2">
+                  <div className="flex flex-col items-center text-center text-gray-500">
                     <FontAwesomeIcon
-                      size="xl"
-                      icon={faWarning}
+                      icon={faBlog}
+                      size="4x"
                       className="text-orange-400"
                     />
-                    <Badge
-                      variant="outline"
-                      className="text-lg border-none text-orange-400"
-                    >
-                      Haven't Posted anything currentlly !!
-                    </Badge>
+
+                    <h2 className="text-xl text-gray-400">
+                      <strong>
+                      No Travel Tales Yet
+                      </strong>
+                    </h2>
+                    <p className="text-sm mt-1">
+                       Start your journey by sharing the first story of your adventure!
+                     
+                    </p>
                   </div>
                   {currentUser?.userId === loggedInUser?.userId && (
                     <div>
@@ -260,35 +268,40 @@ export const UserTabs = () => {
           </div>
         </TabsContent>
         <TabsContent value="trips">
-          <div className="w-[80rem] py-5  flex ">
-            {/* <ScrollArea className="w-[80%] h-96 overflow-y-auto py-5 px-10"> */}
+          <div className="w-[80rem] py-5  flex flex-col">
+            <ScrollArea className="w-[80%] h-96 overflow-y-auto py-5 px-10">
             {upcomingTrips?.length == 0 &&
             ongoingTrips?.length == 0 &&
             completedTrips?.length == 0 ? (
               currentUser?.userId == loggedInUser?.userId ? (
                 <>
-                  <div className="flex items-center gap-2  rounded-2xl w-auto">
+                  <div className="flex flex-col items-center w-1/2">
                     <FontAwesomeIcon
-                      size="xl"
-                      icon={faWarning}
+                      icon={faMapMarked}
+                      size="4x"
                       className="text-orange-400"
                     />
-                    <Badge
-                      variant="outline"
-                      className="text-lg border-none text-orange-400"
-                    >
-                      You did not plan any trip yet !! please plan some trip or
-                      join some trips. .
-                    </Badge>
+
+                    <h2 className=" text-gray-400">
+                      <strong>
+                      No trips planned yet, start planning some or join a trip!
+                      </strong>
+                    </h2>
+                    <p className="text-sm">
+                      You’re all caught up. Check back later!
+                    </p>
                   </div>
-                  <div className="gap-4  items-center justify-start flex-nowrap mt-4">
-                    <h1 className=" text-xl text-orange-500 font-bold">
-                      Upcoming Trips
-                    </h1>
-                    {tripSuggestions?.map((item, index) => (
-                      <TripAccordian key={index} trip={item} />
-                    ))}
-                  </div>
+
+                  {tripSuggestions?.length > 0 && (
+                    <div className="gap-4  items-center justify-start flex-nowrap mt-4">
+                      <h1 className=" text-xl text-orange-500 font-bold">
+                        Suggested Trips
+                      </h1>
+                      {tripSuggestions?.map((item, index) => (
+                        <TripAccordian key={index} trip={item} />
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 currentUser?.userId != loggedInUser?.userId && (
@@ -345,7 +358,7 @@ export const UserTabs = () => {
                 })}
               </div>
             )}
-            {/* </ScrollArea> */}
+            </ScrollArea>
           </div>
         </TabsContent>
         <TabsContent value="following">
@@ -370,9 +383,13 @@ export const UserTabs = () => {
                 ))
               ) : (
                 <div className="flex flex-col items-center text-center text-gray-500">
-                 <FontAwesomeIcon icon={faWarning} size="4x" className="text-orange-300"/>
+                  <FontAwesomeIcon
+                    icon={faWarning}
+                    size="4x"
+                    className="text-orange-400"
+                  />
 
-                  <h2 className="text-xl font-semibold text-gray-700">
+                  <h2 className="text-xl font-semibold text-gray-400">
                     No Friend Requests
                   </h2>
                   <p className="text-sm mt-1">
@@ -386,15 +403,19 @@ export const UserTabs = () => {
         <TabsContent value="feedback">
           <div className=" w-[80rem] p-10 flex items-center gap-2  rounded-2xl">
             <div className="flex flex-col items-center text-center text-gray-500">
-                 <FontAwesomeIcon icon={faWarning} size="4x" className="text-orange-300"/>
+              <FontAwesomeIcon
+                icon={faWarning}
+                size="4x"
+                className="text-orange-400"
+              />
 
-                  <h2 className="text-xl font-semibold text-gray-700">
-                    No Feedbacks Yet
-                  </h2>
-                  <p className="text-sm mt-1">
-                    You’re all caught up. Check back later!
-                  </p>
-                </div>
+              <h2 className="text-xl font-semibold text-gray-400">
+                No Feedbacks Yet
+              </h2>
+              <p className="text-sm mt-1">
+                You’re all caught up. Check back later!
+              </p>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

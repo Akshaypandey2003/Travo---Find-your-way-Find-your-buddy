@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { shallowEqual, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
@@ -32,12 +33,13 @@ import {
 import { useState } from "react";
 import useTrip from "../../CustomHooks/useTrip";
 import DatePicker from "react-datepicker";
-import { INDIAN_STATES } from "../../Constants/constants";
 import { Country, State, City } from "country-state-city";
 
-const PlanTripForm = () => {
+const PlanTripForm = (
+  { trip } // Accept trip prop for editing existing trip
+) => {
   const user = useSelector((store) => store.auth.user, shallowEqual);
-  const { createTrip } = useTrip();
+  const { createTrip, updateTrip } = useTrip();
   // const [open, setOpen] = useState(false);
   //   const { updateUser } = useAuth();
   //   const [preview, setPreview] = useState(null);
@@ -54,27 +56,27 @@ const PlanTripForm = () => {
   const form = useForm({
     defaultValues: {
       createdBy: user?.userId,
-      tripName: "",
-      tripCountry: "",
-      tripState: "",
-      tripCity: "",
-      tripDate: "",
-      tripDuration: "",
-      tripDescription: "",
-      memberSize: "",
-      isPrivateTrip: "",
-      tripCategory: "",
-      tripTags: [],
+      tripName: trip?.tripName || "",
+      tripCountry: trip?.tripCountry || "",
+      tripState: trip?.tripState || "",
+      tripCity: trip?.tripCity || "",
+      tripStartDate: trip?.tripStartDate || "",
+      tripDuration: trip?.tripDuration || "",
+      tripDescription: trip?.tripDescription || "",
+      memberSize: trip?.memberSize || "",
+      isPrivateTrip: trip?.isPrivateTrip || "",
+      tripCategory: trip?.tripCategory || "",
+      tripTags: trip?.tripTags || [],
     },
   });
 
   const onSubmit = (data) => {
-    const finalData = {
+    const tripData = {
       ...data,
-      //   profilePic: selectedFile,  // Attach the file here
+      ...(trip?.tripId && { tripId: trip.tripId }), // Add tripId only if updating
     };
-    console.log("Planned Trip is:", finalData);
-    createTrip(data);
+    console.log("Planned Trip is:", tripData);
+    trip ? updateTrip(tripData) : createTrip(tripData);
   };
 
   const handleTagsChange = (item) => {
@@ -254,63 +256,29 @@ const PlanTripForm = () => {
           <div className="flex gap-2 items-center relative">
             <FormField
               control={form.control}
-              name="tripDate"
-              render={({ field }) => (
-                <FormItem className="relative">
-                  {/* <FormLabel>Trip Date</FormLabel> */}
-                  <FormControl>
-                    <Input
-                      type="date"
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      className="w-full"
-                    />
-                    {/* <DatePicker selected={startDate} onChange={(date) => setStartDate(date)} /> */}
-                  </FormControl>
-                  {/* <Popover open={open} onOpenChange={setOpen} modal={false}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-[240px] pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Start Date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
+              name="tripStartDate"
+              render={({ field }) => {
+                // Calculate tomorrow's date in yyyy-MM-dd format
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                const minDate = tomorrow.toISOString().split("T")[0];
 
-                    <PopoverContent
-                      align="start"
-                      sideOffset={8}
-                      className="w-auto p-0"
-                      avoidCollisions={false}
-                      onOpenAutoFocus={(e) => e.preventDefault()}
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                          field.onChange(date);
-                          setOpen(false);
-                        }}
-                        disabled={(date) => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          return date < today;
-                        }}
-                        initialFocus
+                return (
+                  <FormItem className="relative">
+                    <FormControl>
+                      <Input
+                        type="date"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        min={minDate} // disables past & current dates
+                        className="w-full"
                       />
-                    </PopoverContent>
-                  </Popover> */}
-                  <FormMessage />
-                </FormItem>
-              )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
@@ -327,11 +295,11 @@ const PlanTripForm = () => {
                         <SelectValue placeholder="Duration" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="india">2-3 days</SelectItem>
-                        <SelectItem value="america">3-5 Days</SelectItem>
-                        <SelectItem value="australia">5-10 Days</SelectItem>
-                        <SelectItem value="britain">10-15 days</SelectItem>
-                        <SelectItem value="russia">15+ Days</SelectItem>
+                        <SelectItem value="2-3 days">2-3 days</SelectItem>
+                        <SelectItem value="3-5 Days">3-5 Days</SelectItem>
+                        <SelectItem value="5-10 Days">5-10 Days</SelectItem>
+                        <SelectItem value="10-15 days">10-15 days</SelectItem>
+                        <SelectItem value="15+ Days">15+ Days</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>

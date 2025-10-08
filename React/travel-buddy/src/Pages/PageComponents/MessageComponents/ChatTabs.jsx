@@ -360,7 +360,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                       value={searchQuery}
                     />
 
-                    <Badge className={` text-orange-400 hover:cursor-pointer ${theme==="dark"? "bg-gray-900 hover:bg-gray-800":"bg-white hover:bg-white"}`}>
+                    <Badge className={` text-orange-400 hover:cursor-pointer ${theme==="dark"? "bg-black hover:bg-black":"bg-white hover:bg-white"}`}>
                       <FontAwesomeIcon icon={faMagnifyingGlass} size="lg" />
                     </Badge>
                   </div>
@@ -389,7 +389,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                               onCheckedChange={handleCheckboxChange}
                             />
                             <div
-                              className={`my-2 px-1 py-1  flex items-center justify-between ${theme==="dark"?"hover:bg-gray-900" :"hover:bg-orange-100"}`}
+                              className={`my-2 px-1 py-1  flex items-center justify-between ${theme==="dark"?"hover:bg-black" :"hover:bg-orange-100"}`}
                               onClick={() => handleUserSelect(user)}
                             >
                               <UserCard key={index} user={user} />
@@ -427,7 +427,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                               onCheckedChange={handleCheckboxChange}
                             />
                             <div
-                              className={`my-2 px-2 py-1 hover:bg-orange-100 flex items-center justify-between ${theme==="dark"?"hover:bg-gray-900" :"hover:bg-orange-100"}`}
+                              className={`my-2 px-2 py-1 hover:bg-orange-100 flex items-center justify-between ${theme==="dark"?"hover:bg-black" :"hover:bg-orange-100"}`}
                               onClick={() => handleUserSelect(user)}
                             >
                               <UserCard key={index} user={user} />
@@ -507,7 +507,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                     <Badge
                       className={` text-orange-400 hover:cursor-pointer ${
                         theme === "dark"
-                          ? "bg-gray-900 hover:bg-gray-800"
+                          ? "bg-black hover:bg-black"
                           : "bg-white hover:bg-white"
                       }`}
                     >
@@ -542,7 +542,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                             <div
                               className={`my-2 px-1 py-1   flex items-center gap-1 ${
                                 theme === "dark"
-                                  ? "hover:bg-gray-900"
+                                  ? "hover:bg-black"
                                   : "hover:bg-orange-100"
                               }`}
                               onClick={() => handleUserSelect(user)}
@@ -583,7 +583,7 @@ export const ChatTabs = ({ chatUser, participants }) => {
                             <div
                               className={`my-2 px-2 py-1  cursor-pointer ${
                                 theme === "dark"
-                                  ? "hover:bg-gray-900"
+                                  ? "hover:bg-black"
                                   : "hover:bg-orange-100"
                               }`}
                               onClick={() => handleUserSelect(user)}

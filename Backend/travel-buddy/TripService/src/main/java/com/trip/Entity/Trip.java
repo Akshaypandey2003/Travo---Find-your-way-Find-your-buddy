@@ -20,6 +20,7 @@ import lombok.*;
 
 @Document
 public class Trip {
+    
     @Id
     private String tripId;
     private String tripName;

@@ -39,6 +39,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import useBlog from "../../../CustomHooks/useBlog";
 import BlogComments from "./BlogComments";
 import useHelperMethods from "../../../CustomHooks/useHelperMethods";
+import ImageCarousel from "./ImageCaraousel";
 
 export const BlogCard = ({ blog }) => {
   const { getUser } = useUserData();
@@ -79,6 +80,13 @@ export const BlogCard = ({ blog }) => {
  
   const goToImage = (index) => {
     setCurrentImageIndex(index);
+
+     if (scrollContainerRef.current && imageRefs.current[index]) {
+      scrollContainerRef.current.scrollTo({
+      left: imageRefs.current[index].offsetLeft,
+      behavior: "smooth",
+    });
+  }
   };
 
   const handleScroll = () => {
@@ -101,13 +109,13 @@ export const BlogCard = ({ blog }) => {
     setCurrentImageIndex(closestIndex);
   };
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-      return () => container.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const container = scrollContainerRef.current;
+  //   if (container) {
+  //     container.addEventListener("scroll", handleScroll);
+  //     return () => container.removeEventListener("scroll", handleScroll);
+  //   }
+  // }, []);
   
   // console.log("Author is: ",author);
   return (
@@ -115,7 +123,7 @@ export const BlogCard = ({ blog }) => {
       <CardHeader>
         <div className="blog-header flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Avatar>
+            <Avatar className=" border-2 border-orange-700">
               <AvatarImage
                 src={
                   author?.profilePic
@@ -133,10 +141,10 @@ export const BlogCard = ({ blog }) => {
             <div className="flex items-center gap-2">
               <CreateBlogForm formType={"update"} blog={blog} />
               <AlertDialog>
-                <AlertDialogTrigger className="border border-red-500 py-1 px-2">
+                <AlertDialogTrigger className="border border-orange-700 py-1 px-2">
                   <FontAwesomeIcon
                     icon={faTrash}
-                    className=" text-red-500 text-lg"
+                    className=" text-orange-700 text-lg"
                   />
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -178,51 +186,7 @@ export const BlogCard = ({ blog }) => {
 
           {totalImages > 0 && (
             <div className="flex flex-col items-center justify-center">
-              <ScrollArea className="overflow-x-auto max-w-96 shadow-xl">
-                <div
-                  ref={scrollContainerRef}
-                  onScroll={handleScroll}
-                  className="bg-gray-100 flex items-center justify-start flex-nowrap scroll-smooth w-full overflow-x-auto"
-                  // style={{ scrollSnapType: "x mandatory" }}
-                >
-                  {blog?.blogImages?.map((item, index) => (
-                    <div
-                      key={index}
-                      ref={(el) => (imageRefs.current[index] = el)}
-                      className="w-96 flex-shrink-0 scroll-snap-align-start"
-                    >
-                      <img
-                        src={item}
-                        alt={`preview-${index}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                  <div className="w-96 overflow-hidden shadow-lg">
-                    <img
-                      src={blog.blogImages[currentImageIndex]}
-                      alt={`blog-image-${currentImageIndex}`}
-                      className="w-full h-full object-cover transition duration-700 ease-in-out"
-                    />
-                  </div>
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-
-              {/* Dots */}
-              <div className="flex gap-2 mt-3">
-                {blog.blogImages.map((_, index) => (
-                  <div
-                    key={index}
-                    onClick={() => goToImage(index)}
-                    className={`w-3 h-3 rounded-full cursor-pointer transition-all ${
-                      index === currentImageIndex
-                        ? "bg-orange-500 scale-110"
-                        : "bg-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
+               <ImageCarousel images={blog.blogImages} />
             </div>
           )}
         </div>

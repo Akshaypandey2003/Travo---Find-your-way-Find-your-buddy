@@ -26,7 +26,7 @@ public class Message {
     private String mediaType; // image/png, video/mp4, etc.
 
     private boolean isRead;
-
+ 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

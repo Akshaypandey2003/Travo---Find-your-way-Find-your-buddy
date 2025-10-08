@@ -33,11 +33,6 @@ const useNotificationSocket = () => {
           if(!notification?.messageId && !notification?.chatId)
             dispatch(addNewNotification(notification))
 
-          if(notification?.type=="ACCEPTED" && notification?.tripId)
-          {
-            console.log("Going to usetrip to fetch trip with id: ", notification?.tripId);
-             getTrip(notification?.tripId);
-          }
           notification?.messageId ? dispatch(addMessageToChat({chatId:notification?.chatId,message:notification})): dispatch(addChats(notification));
           
           // e.g., dispatch notification to Redux or show toast

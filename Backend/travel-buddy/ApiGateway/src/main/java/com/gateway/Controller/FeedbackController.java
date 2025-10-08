@@ -23,7 +23,4 @@ import org.springframework.core.ParameterizedTypeReference;
 @RestController
 @RequestMapping("/auth/api/feedback")
 public class FeedbackController {
-    
-  
-
 }

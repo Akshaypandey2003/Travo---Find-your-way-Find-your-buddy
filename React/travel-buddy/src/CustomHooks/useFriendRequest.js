@@ -20,7 +20,7 @@ const useFriendRequest = () => {
     }
     try {
       const response = await fetch(
-        `http://localhost:8088/connection/send/${loggedInUser?.userId}/${userId}`,
+        `http://localhost:8088/auth/connection/send/${loggedInUser?.userId}/${userId}`,
         {
           method: "POST",
           headers: {

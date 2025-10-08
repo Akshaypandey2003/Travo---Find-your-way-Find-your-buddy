@@ -22,9 +22,16 @@ import {
 } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faChain,
   faComment,
   faCommentAlt,
+  faHandshake,
+  faHandshakeAlt,
+  faInbox,
+  faIndent,
   faMagnifyingGlass,
+  faMailBulk,
+  faMessage,
   faPaperPlane,
   faUserGroup,
 } from "@fortawesome/free-solid-svg-icons";
@@ -228,8 +235,20 @@ export const MessagePage = () => {
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center">
-                <h1>No chats yet !!</h1>
+              <div className="flex flex-col items-center gap-2 mt-10">
+                <FontAwesomeIcon
+                  icon={faMailBulk}
+                  size="4x"
+                  className="text-orange-400"
+                />
+                <h2 className="text-center">
+                  <strong>
+                       Your inbox is on vacation  
+                  </strong>
+                  <br />
+                   Say hi to a buddy and break the silence!
+                </h2>
+                  
               </div>
             )}
           </ScrollArea>
@@ -314,8 +333,7 @@ export const MessagePage = () => {
               <CardContent className="h-[80%] flex items-center justify-center p-0">
                 <ScrollArea className="h-[100%] w-full">
                   <div className="w-full">
-                    {currMessage && currMessage.length > 0 ? 
-                    (
+                    {currMessage && currMessage.length > 0 ? (
                       <div className="flex flex-col justify-end  gap-2 p-4">
                         {currMessage.map((message, index) => (
                           <MessageCard
@@ -326,18 +344,18 @@ export const MessagePage = () => {
                         ))}
                         <div ref={messagesEndRef} />
                       </div>
-                    ) : activeChat?.groupChat && !activeChat?.groupImageUrl ? 
-                    (
+                    ) : activeChat?.groupChat && !activeChat?.groupImageUrl ? (
                       <div className="h-[30rem] flex flex-col justify-center items-center">
                         <FontAwesomeIcon
                           icon={faUserGroup}
                           className="text-orange-300"
                           size="5x"
                         />
-                        <h1 className="font-bold">Start a conversation.........</h1>
+                        <h1 className="font-bold">
+                          Start a conversation.........
+                        </h1>
                       </div>
-                    ) : 
-                    (
+                    ) : (
                       <div className="h-[30rem] flex justify-center items-center">
                         <div className="">
                           <Avatar className="h-32 w-32 m-auto">
@@ -356,10 +374,11 @@ export const MessagePage = () => {
                             </AvatarFallback>
                           </Avatar>
                         </div>
-                        <h1 className="font-bold">Start a conversation.........</h1>
+                        <h1 className="font-bold">
+                          Start a conversation.........
+                        </h1>
                       </div>
-                    )     }
-                    
+                    )}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -393,17 +412,17 @@ export const MessagePage = () => {
               <FontAwesomeIcon
                 icon={faComment}
                 size="4x"
-                className="text-orange-200"
+                className="text-orange-400"
               />
               <div className="w-96 text-center">
-                <h1>
+                <h2 className="text-center">
                   <strong>
-                    {" "}
-                    A space to talk, share, and build connections.{" "}
+                     A space to talk, share, and build connections.
                   </strong>
-                  Create group chats, discover new people, and keep every
+                  <br/>
+                   Create group chats, discover new people, and keep every
                   conversation alive in real time
-                </h1>
+                </h2>
               </div>
             </div>
           )}

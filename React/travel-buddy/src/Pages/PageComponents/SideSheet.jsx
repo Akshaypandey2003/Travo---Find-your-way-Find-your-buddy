@@ -31,11 +31,14 @@ import {
   faChartLine,
   faClockRotateLeft,
   faComment,
+  faHandshake,
   faKey,
   faMessage,
   faMoon,
   faSun,
+  faUser,
   faUserGroup,
+  faWarning,
 } from "@fortawesome/free-solid-svg-icons";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -104,12 +107,14 @@ export const SideSheet = () => {
   for (const chatId in messages) {
     const chatMessages = messages[chatId];
 
-    const unread = chatMessages.filter((msg) => msg.read === false && msg.senderId !== currentUser.userId);
+    const unread = chatMessages.filter(
+      (msg) => msg.read === false && msg.senderId !== currentUser.userId
+    );
 
     unreadMessages.push(...unread);
   }
-  console.log("Unread Messages are: ", unreadMessages);
-  return ( 
+  // console.log("Unread Messages are: ", unreadMessages);
+  return (
     <Sheet>
       <SheetTrigger className="border border-orange-700 rounded-full bg-orange-200">
         <Avatar>
@@ -140,10 +145,8 @@ export const SideSheet = () => {
               </p>
             ) : (
               <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Non
-                velit dolores est similique magnam possimus itaque voluptatibus
-                suscipit exercitationem voluptas, ipsum repudiandae nobis quam
-                explicabo, sit iusto! Ipsam, quas enim.
+                New destinations, new friends, and unforgettable memories await.
+                Pack your curiosity — the world is calling your name! 🌍
               </p>
             )}
           </SheetDescription>
@@ -172,7 +175,7 @@ export const SideSheet = () => {
           <Dialog>
             <DialogTrigger
               aschild="true"
-              className="py-1 px-2 hover:bg-orange-200 border-none font-semibold outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
+              className={`${userData?.theme === "dark" && "hover:text-black"} *:py-2 px-2 hover:bg-orange-200 border-none font-semibold outline-none focus:outline-none focus:ring-0 focus:ring-offset-0`}
             >
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faBell} />
@@ -181,7 +184,11 @@ export const SideSheet = () => {
                   {notifications?.notifications?.length > 0 && (
                     <Badge
                       variant="outline"
-                      className="bg-orange-300 border-none px-2 rounded-2xl"
+                      className={` ${
+                        userData?.theme === "dark"
+                          ? "bg-black"
+                          : "bg-orange-200"
+                      } border-none px-2 rounded-2xl`}
                     >
                       {notifications?.notifications?.length}
                     </Badge>
@@ -196,12 +203,25 @@ export const SideSheet = () => {
                     <h1>Notifications</h1>
                   </DialogTitle>
                   <DialogDescription>
-                    See how people are interacting with your profile & get latest updates.
+                    See how people are interacting with your profile & get
+                    latest updates.
                   </DialogDescription>
                 </DialogHeader>
-                {notifications?.notifications?.length == 0 && (
-                  <div className="border border-black flex items-center">
-                    <h1 className=" mx-auto">Notifications not available!!</h1>
+
+                {notifications?.notifications?.statusCode == "NOT_FOUND" && (
+                  <div className="flex flex-col items-center gap-2 m-auto mt-10">
+                    <FontAwesomeIcon
+                      icon={faBell}
+                      size="4x"
+                      className="text-orange-400"
+                    />
+
+                    <h2 className="text-xl font-semibold text-gray-400 text-center">
+                      No new notifications right now
+                    </h2>
+                    <p className="text-sm mt-1">
+                      You’re all caught up. Check back later!
+                    </p>
                   </div>
                 )}
                 {friendRequests?.length > 0 && (
@@ -209,79 +229,9 @@ export const SideSheet = () => {
                     notifications={friendRequests}
                     type={"Follow Requests"}
                   />
-                  // <div className="m-4 border-b-2 border-orange-200">
-                  //   <h1>Follow Requests</h1>
-                  //   <div className="message-area absolute left-14  m-auto min-w-96 px-2">
-                  //     <AnimatePresence>
-                  //       {notifications?.notificationStatus && (
-                  //         <motion.div
-                  //           initial={{ opacity: 0, y: -20 }} // fadeIn + slide down
-                  //           animate={{ opacity: 1, y: 0 }}
-                  //           exit={{ opacity: 0, y: -20 }} // fadeOut + slide up
-                  //           transition={{ duration: 0.5 }}
-                  //         >
-                  //           <Alert
-                  //             variant=""
-                  //             className={`${
-                  //               notifications?.success
-                  //                 ? "bg-green-200"
-                  //                 : "bg-red-500"
-                  //             } text-lg font-semibold`}
-                  //           >
-                  //             <AlertDescription className="message-box ">
-                  //               <h1>{notifications?.message}</h1>
-                  //             </AlertDescription>
-                  //           </Alert>
-                  //         </motion.div>
-                  //       )}
-                  //     </AnimatePresence>
-                  //   </div>
-                  //   {friendRequests?.length > 0 &&
-                  //     friendRequests?.map((item, index) => (
-                  //       <NotificationCard
-                  //         key={index}
-                  //         notification={item}
-                  //       />
-                  //     ))}
-                  // </div>
                 )}
                 {likes?.length > 0 && (
                   <NotificationAccordian notifications={likes} type={"Likes"} />
-                  // <div className="m-4 border-b-2 border-orange-200">
-                  //   <h1>Likes</h1>
-                  //   {/* <div className="message-area absolute left-14  m-auto min-w-96 px-2">
-                  //     <AnimatePresence>
-                  //       {notifications?.notificationStatus && (
-                  //         <motion.div
-                  //           initial={{ opacity: 0, y: -20 }} // fadeIn + slide down
-                  //           animate={{ opacity: 1, y: 0 }}
-                  //           exit={{ opacity: 0, y: -20 }} // fadeOut + slide up
-                  //           transition={{ duration: 0.5 }}
-                  //         >
-                  //           <Alert
-                  //             variant=""
-                  //             className={`${
-                  //               notifications?.success
-                  //                 ? "bg-green-200"
-                  //                 : "bg-red-500"
-                  //             } text-lg font-semibold`}
-                  //           >
-                  //             <AlertDescription className="message-box ">
-                  //               <h1>{notifications?.message}</h1>
-                  //             </AlertDescription>
-                  //           </Alert>
-                  //         </motion.div>
-                  //       )}
-                  //     </AnimatePresence>
-                  //   </div> */}
-                  //   {likes?.length > 0 &&
-                  //     likes?.map((item, index) => (
-                  //       <NotificationCard
-                  //         key={index}
-                  //         notification={item}
-                  //       />
-                  //     ))}
-                  // </div>
                 )}
                 {comments?.length > 0 && (
                   <NotificationAccordian
@@ -316,9 +266,9 @@ export const SideSheet = () => {
             className=" hover:text-black px-2 py-1 hover:bg-orange-200 rounded-lg flex items-center justify-between"
           >
             <div>
-                <FontAwesomeIcon icon={faComment} /> <span>Messages</span>
+              <FontAwesomeIcon icon={faComment} /> <span>Messages</span>
             </div>
-           
+
             {unreadMessages.length > 0 && (
               <Badge
                 variant="outline"
@@ -332,7 +282,7 @@ export const SideSheet = () => {
           <Dialog>
             <DialogTrigger
               aschild="true"
-              className="py-1 px-2 hover:bg-orange-200 border-none font-semibold outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
+              className={`${userData?.theme === "dark" && "hover:text-black"} py-2 px-2 hover:bg-orange-200 border-none font-semibold outline-none focus:outline-none focus:ring-0 focus:ring-offset-0`}
             >
               <div className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faUserGroup} />
@@ -341,7 +291,11 @@ export const SideSheet = () => {
                   {currentUser?.closeFriends?.length > 0 && (
                     <Badge
                       variant="outline"
-                      className="bg-orange-300 border-none px-2 rounded-2xl"
+                      className={` ${
+                        userData?.theme === "dark"
+                          ? "bg-black"
+                          : "bg-orange-200"
+                      } border-none px-2 rounded-2xl`}
                     >
                       {currentUser?.closeFriends?.length}
                     </Badge>
@@ -362,11 +316,21 @@ export const SideSheet = () => {
                 </DialogHeader>
 
                 {currentUser?.following?.length == 0 && (
-                  <div className="border border-black flex items-center">
-                    <h1 className=" mx-auto">
-                      No connection available, Please make connections !
-                    </h1>
+                  <div className="flex flex-col items-center gap-2 m-auto mt-10">
+                    <FontAwesomeIcon
+                      icon={faHandshake}
+                      size="4x"
+                      className="text-orange-400"
+                    />
+
+                    <h2 className="text-xl font-semibold text-gray-400 text-center">
+                      No close buddies yet. Tag your besties for the next trip!
+                    </h2>
+                    <p className="text-sm mt-1">
+                      You’re all caught up. Check back later!
+                    </p>
                   </div>
+                  
                 )}
                 {currentUser?.following?.length > 0 && (
                   <div className="p-4 ">
@@ -378,11 +342,14 @@ export const SideSheet = () => {
               </ScrollArea>
             </DialogContent>
           </Dialog>
-          <div className="px-2 py-1 hover:bg-orange-200 rounded-lg">
-            <Link to={`/user_profile/${userData?.user?.userId}`}>
-              <FontAwesomeIcon icon={faKey} /> <span>Change Password</span>
-            </Link>
-          </div>
+          <Link
+            to={`/user_profile/${userData?.user?.userId}`}
+            className=" hover:text-black px-2 py-1 hover:bg-orange-200 rounded-lg flex items-center justify-between"
+          >
+            <div>
+              <FontAwesomeIcon icon={faUser} /> <span>My Profile</span>
+            </div>
+          </Link>
         </SheetHeader>
         <SheetFooter className="mt-2">
           <Button

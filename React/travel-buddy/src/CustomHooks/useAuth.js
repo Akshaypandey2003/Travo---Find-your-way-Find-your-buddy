@@ -61,6 +61,7 @@ const useAuth = () => {
       });
 
       const data = await response.json();
+      console.log("Data received from register API: ", data);
 
       if (!response.ok) throw new Error(data.messageReponse.message || "Registration failed");
 
@@ -73,7 +74,7 @@ const useAuth = () => {
       const completion = getProfileCompletion(data.user);
       dispatch(profileCompletion(completion));
 
-      navigate("/user_profile");
+      navigate(`/user_profile/${data?.user?.userId}`);
     } catch (error) {
         dispatch(authFailure(error.message));
     } finally {

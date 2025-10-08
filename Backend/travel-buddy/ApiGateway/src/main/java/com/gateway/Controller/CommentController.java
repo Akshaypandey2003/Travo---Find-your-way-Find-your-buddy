@@ -33,7 +33,7 @@ public class CommentController {
 
     @PostMapping("/post/{postAuthor}")
     public ResponseEntity<Object> createComment(@RequestBody Comment comment, @PathVariable String postAuthor) {
-        System.out.println("Post author is: "+postAuthor);
+        System.out.println("Post author is: " + postAuthor);
         try {
             System.out.println("Received comment data in apigateway is: " + comment);
             RestTemplate restTemplate = new RestTemplate();
@@ -41,30 +41,30 @@ public class CommentController {
             HttpEntity<Comment> entity = new HttpEntity<>(comment);
             String commentServiceUrl = "http://localhost:8091/auth/comment/post";
 
-            
             ResponseEntity<Comment> response = restTemplate.exchange(commentServiceUrl, HttpMethod.POST, entity,
                     Comment.class);
-            
+
             Comment savedComment = response.getBody();
-            
-             //Creating notification object
-            Notification notification = new Notification();
-            notification.setNotificationFrom(savedComment.getAuthorId());
-            notification.setNotificationTo(postAuthor);
-            notification.setType(Notification.NotificationType.COMMENT);  
-            notification.setMessage("has commented on your post.");
-                   
-           //sending notification object to notification service(User service)
-            String notificationUrl = "http://localhost:8088/auth/user/notification/send-notification";
 
-            
-            HttpEntity<Notification> notificatoinEntity = new HttpEntity<>(notification);
+            if (!savedComment.getAuthorId().equalsIgnoreCase(postAuthor)) {
+                // Creating notification object
+                Notification notification = new Notification();
+                notification.setNotificationFrom(savedComment.getAuthorId());
+                notification.setNotificationTo(postAuthor);
+                notification.setType(Notification.NotificationType.COMMENT);
+                notification.setMessage("has commented on your post.");
 
-            ResponseEntity<?> responseNotification = restTemplate.exchange(
-                   notificationUrl, HttpMethod.POST, notificatoinEntity, new ParameterizedTypeReference<Object>() {
-                    });
+                // sending notification object to notification service(User service)
+                String notificationUrl = "http://localhost:8088/auth/user/notification/send-notification";
 
-            System.out.println("Notification sent successfully: " + response.getBody());
+                HttpEntity<Notification> notificatoinEntity = new HttpEntity<>(notification);
+
+                ResponseEntity<?> responseNotification = restTemplate.exchange(
+                        notificationUrl, HttpMethod.POST, notificatoinEntity, new ParameterizedTypeReference<Object>() {
+                        });
+
+                System.out.println("Notification sent successfully: " + responseNotification.getBody());
+            }
 
             return new ResponseEntity<>(response.getBody(), response.getStatusCode());
         } catch (Exception e) {
@@ -100,7 +100,8 @@ public class CommentController {
         try {
             RestTemplate restTemplate = new RestTemplate();
 
-            String commentServiceUrl = "http://localhost:8091/auth/comment/get-comments/" + blogId+ "?page=" + page + "&size=" + size;
+            String commentServiceUrl = "http://localhost:8091/auth/comment/get-comments/" + blogId + "?page=" + page
+                    + "&size=" + size;
 
             ResponseEntity<CommentsPageResponse> response = restTemplate.exchange(
                     commentServiceUrl,
@@ -119,10 +120,11 @@ public class CommentController {
     @GetMapping("/get-comments/{blogId}/{parentCommentId}")
     public ResponseEntity<Object> getComments(@PathVariable String blogId,
             @PathVariable String parentCommentId) {
-         try {
+        try {
             RestTemplate restTemplate = new RestTemplate();
 
-            String commentServiceUrl = "http://localhost:8091/auth/comment/get-comments/" + blogId+"/" + parentCommentId;
+            String commentServiceUrl = "http://localhost:8091/auth/comment/get-comments/" + blogId + "/"
+                    + parentCommentId;
 
             ResponseEntity<List<Comment>> response = restTemplate.exchange(
                     commentServiceUrl,
@@ -141,10 +143,11 @@ public class CommentController {
     @GetMapping("/get-comments/{blogId}/{parentCommentId}/{repliedToUserId}")
     public ResponseEntity<Object> getComments(@PathVariable String blogId, @PathVariable String parentCommentId,
             @PathVariable String repliedToUserId) {
-         try {
+        try {
             RestTemplate restTemplate = new RestTemplate();
 
-            String commentServiceUrl = "http://localhost:8091/auth/comment/get-comments/" + blogId+"/" + parentCommentId + "/" + repliedToUserId;
+            String commentServiceUrl = "http://localhost:8091/auth/comment/get-comments/" + blogId + "/"
+                    + parentCommentId + "/" + repliedToUserId;
 
             ResponseEntity<List<Comment>> response = restTemplate.exchange(
                     commentServiceUrl,
@@ -162,10 +165,10 @@ public class CommentController {
 
     @PutMapping("/like-comment/{commentId}/{userId}")
     public ResponseEntity<Object> likeComment(@PathVariable String commentId, @PathVariable String userId) {
-         try {
+        try {
             RestTemplate restTemplate = new RestTemplate();
 
-            String commentServiceUrl = "http://localhost:8091/auth/comment/like-comment/" + commentId+"/"+userId;
+            String commentServiceUrl = "http://localhost:8091/auth/comment/like-comment/" + commentId + "/" + userId;
 
             ResponseEntity<Comment> response = restTemplate.exchange(
                     commentServiceUrl,

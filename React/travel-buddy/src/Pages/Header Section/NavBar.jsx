@@ -53,15 +53,17 @@ export const NavBar = () => {
   }, [lastScrollY]);
   return (
     <div
-      className={`w-[100vw] flex justify-between items-center py-2 px-20 fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+      className={`w-[100vw] flex justify-between items-center h-20 py-2 px-20 fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
         isVisible ? "translate-y-0" : "-translate-y-full"
-      } backdrop-blur-md  dark:bg-orange-600/10 `}
+      } backdrop-blur-md dark:bg-orange-600/10`}
     >
-      <div className="flex gap-4 items-center">
-        <div className="w-20 h-20">
-          <img src="../AppLogo.png" alt="" className="w-52" />
-        </div>
-        <h1 className="text-3xl font-bold">Travo</h1>
+      <div className="flex gap-4 items-center mt-4">
+        <img
+          src="https://res.cloudinary.com/dwg7vniow/image/upload/v1757867374/Travel_Logo_third_gge6hk.png"
+          alt="Travo Logo"
+          className="w-48 max-w-48 object-contain"
+        />
+        {/* <h1 className="text-3xl font-bold">Travo</h1> */}
       </div>
       <div className="navbar-menu">
         <ul className="flex gap-20">

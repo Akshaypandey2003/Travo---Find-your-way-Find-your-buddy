@@ -52,32 +52,27 @@ public class TripServiceImpl implements TripServices {
     }
 
     @Override
-    public Trip updateTrip(String tripId, Trip tripDetails) {
-
-        Trip existingTrip = tripRespository.findById(tripId)
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
-        if (tripDetails.getTripCity() != null)
-            existingTrip.setTripCity(tripDetails.getTripCity());
-        if (tripDetails.getTripCountry() != null)
-            existingTrip.setTripCountry(tripDetails.getTripCountry());
-        if (tripDetails.getTripState() != null)
-            existingTrip.setTripState(tripDetails.getTripState());
-        if (tripDetails.getTripStartDate() != null)
-            existingTrip.setTripStartDate(tripDetails.getTripStartDate());
-        if (tripDetails.getTripEndDate() != null)
-            existingTrip.setTripEndDate(tripDetails.getTripEndDate());
-        if (tripDetails.getTripDuration() != null)
-            existingTrip.setTripDuration(tripDetails.getTripDuration());
-        if (tripDetails.getTripDescription() != null)
-            existingTrip.setTripDescription(tripDetails.getTripDescription());
+    public Trip updateTrip(Trip trip) {
+        
+        System.out.println("Inside service layer, Trip ID: " + trip.getTripId());
+        Trip existingTrip = tripRespository.findById(trip.getTripId())
+                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + trip.getTripId()));
+        if (trip.getTripCity() != null)
+            existingTrip.setTripCity(trip.getTripCity());
+        if (trip.getTripCountry() != null)
+            existingTrip.setTripCountry(trip.getTripCountry());
+        if (trip.getTripState() != null)
+            existingTrip.setTripState(trip.getTripState());
+        if (trip.getTripStartDate() != null)
+            existingTrip.setTripStartDate(trip.getTripStartDate());
+        if (trip.getTripEndDate() != null)
+            existingTrip.setTripEndDate(trip.getTripEndDate());
+        if (trip.getTripDuration() != null)
+            existingTrip.setTripDuration(trip.getTripDuration());
+        if (trip.getTripDescription() != null)
+            existingTrip.setTripDescription(trip.getTripDescription());
 
         existingTrip.setTripUpdatedAt(LocalDateTime.now());
-
-        // if(existingTrip.getMemberSize()!=0)
-        // existingTrip.setMemberSize(tripDetails.getMemberSize());
-        // existingTrip.setPrivateTrip(tripDetails.isPrivateTrip());
-        // existingTrip.setTripCategory(tripDetails.getTripCategory());
-        // existingTrip.setTripTags(tripDetails.getTripTags());
         return tripRespository.save(existingTrip);
     }
 

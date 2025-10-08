@@ -105,7 +105,7 @@ export const CreateBlogForm = ({ formType, blog }) => {
           {formType === "create" ? (
             "Create Blog"
           ) : (
-            <FontAwesomeIcon icon={faEdit} className="text-red-500" />
+            <FontAwesomeIcon icon={faEdit} className="text-orange-700" />
           )}
         </Button>
       </DialogTrigger>

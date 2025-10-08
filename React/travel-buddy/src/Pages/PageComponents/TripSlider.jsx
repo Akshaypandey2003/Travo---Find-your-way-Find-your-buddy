@@ -112,11 +112,11 @@ const TripSlider = ({ trips, tripType }) => {
       <ScrollArea className="whitespace-nowrap">
         {filteredTrips.length > 0 ? (
           <div
-            className="flex w-max space-x-4 pb-4 scroll-smooth snap-x py-4"
+            className="flex w-max space-x-4 pb-4 scroll-smooth snap-x py-4 px-4"
             ref={scrollRef}
           >
             {filteredTrips.map((trip) => (
-              <div key={trip?.tripId} className="min-w-[300px] snap-start">
+              <div key={trip?.tripId} className="min-w-[300px] snap-start ">
                 <TripDescCard trip={trip} />
               </div>
             ))}

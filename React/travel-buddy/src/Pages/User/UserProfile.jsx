@@ -30,6 +30,7 @@ const UserProfile = () => {
   // const user = useSelector((store) => store.auth.user, shallowEqual);
   const success = useSelector((store) => store.auth.success, shallowEqual);
   const {getUser} = useUserData();
+  const theme = useSelector((store) => store.auth.theme, shallowEqual);
   const [currentUser, setCurrentUser] = useState(null);
   const profileStatus = useSelector(
     (store) => store.auth.profileStatus,
@@ -117,7 +118,7 @@ const UserProfile = () => {
               exit={{ opacity: 0, y: -20 }} // fadeOut + slide up
               transition={{ duration: 0.5 }}
             >
-              <Alert variant="" className="bg-green-200 text-lg font-semibold">
+              <Alert variant="" className={`${theme==="dark"?"bg-black":"bg-orange-100 "} text-lg font-semibold max-w-96 min-w-64 m-auto`}>
                 <AlertDescription className="message-box ">
                   {success}
                 </AlertDescription>
@@ -134,7 +135,7 @@ const UserProfile = () => {
               exit={{ opacity: 0, y: -20 }} // fadeOut + slide up
               transition={{ duration: 0.5 }}
             >
-              <Alert variant="" className="bg-green-200 text-lg font-semibold">
+              <Alert variant="" className={`${theme==="dark"?"bg-black":"bg-orange-100 "} text-lg font-semibold max-w-96 min-w-64 m-auto`}>
                 <AlertDescription className="message-box text-center">
                   {blog?.message}
                 </AlertDescription>

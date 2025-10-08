@@ -3,15 +3,15 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
-  addTrips,
+  addUserTrips,
   removeTripMembers,
   removeTripRequest,
-  removeTrips,
+  removeUserTrips,
   updateTripMembers,
   updateTripRequest,
 } from "../Redux/Slices/authSlice";
 import { filterNotifications } from "../Redux/Slices/notificationSlice";
-import { updateTripFeedbacks } from "../Redux/Slices/tripSlice";
+import { addTrips, filterTrips, updateTripFeedbacks } from "../Redux/Slices/tripSlice";
 
 const useTrip = () => {
   const loggedInUser = useSelector((state) => state.auth.user);
@@ -243,21 +243,63 @@ const useTrip = () => {
       if (response.ok) {
         const contentType = response.headers.get("content-type");
         let data;
-
+        console.log("Response ok from create trip", response);
         if (contentType && contentType.includes("application/json")) {
           data = await response.json();
-
-          dispatch(addTrips(data)); // Dispatch the action to add the trip to the store
+          console.log("Trip created:", data);
+          dispatch(addTrips(data));      // Adding trips to trip slice
+          dispatch(addUserTrips(data)); //  Adding trips to auth slice
         } else {
           data = await response.text(); // fallback to plain text
         }
-        console.log("Trip created:", data);
+        
       } else {
         const err = await response.json();
         console.error("Error creating trip:", err.message);
       }
     } catch (error) {
       console.error("Network error while creating trip:", error.message);
+    }
+  };
+  const updateTrip = async (tripData) => {
+    if (!loggedInUser) {
+      navigate("/login");
+    }
+    console.log(
+      `${loggedInUser?.userId} has Updated a trip with data:`,
+      tripData
+    );
+    try {
+      const response = await fetch(
+        `http://localhost:8085/auth/user/trip/update-trip`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(tripData),
+        }
+      );
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type");
+        let data;
+
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+          
+          dispatch(addUserTrips(data)); // Dispatch the action to add the trip to the auth slice
+          dispatch(addTrips(data)); // Dispatch the action to add the trip to the store
+        } else {
+          data = await response.text(); // fallback to plain text
+        }
+        console.log("Trip updated Successfully:", data);
+      } else {
+        const err = await response.json();
+        console.error("Error updating trip:", err.message);
+      }
+    } catch (error) {
+      console.error("Network error while updating trip:", error.message);
     }
   };
   const deleteTrip = async (tripId) => {
@@ -276,7 +318,6 @@ const useTrip = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(tripId),
         }
       );
 
@@ -286,8 +327,8 @@ const useTrip = () => {
 
         if (contentType && contentType.includes("application/json")) {
           data = await response.json();
-
-          dispatch(removeTrips(tripId)); // Dispatch the action to remove the trip from the store
+          dispatch(filterTrips(tripId));
+          dispatch(removeUserTrips(tripId)); // Dispatch the action to remove the trip from the store
         } else {
           data = await response.text(); // fallback to plain text
         }
@@ -340,7 +381,7 @@ const useTrip = () => {
   };
 
   const postTripFeedback = async (feedback) => {
-    console.log("Posting feedback: ",feedback);
+    console.log("Posting feedback: ", feedback);
     try {
       const response = await fetch(
         `http://localhost:8085/auth/user/trip/post-trip-feedback`,
@@ -349,8 +390,7 @@ const useTrip = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(feedback)
-,
+          body: JSON.stringify(feedback),
         }
       );
 
@@ -365,9 +405,10 @@ const useTrip = () => {
         }
         data.author = feedback.author;
         console.log("Trip feedback submitted successfully", data);
-        dispatch(updateTripFeedbacks({tripId:data?.tripId,feedbacks:data}));
-      }
-       else {
+        dispatch(
+          updateTripFeedbacks({ tripId: data?.tripId, feedbacks: data })
+        );
+      } else {
         const err = await response.json();
         console.error("Error submitting trip feedback:", err.message);
       }
@@ -383,6 +424,7 @@ const useTrip = () => {
     deleteTripRequest,
     removeTripMember,
     getTrip,
+    updateTrip,
     fetchTripFeedbacks,
     postTripFeedback,
   };

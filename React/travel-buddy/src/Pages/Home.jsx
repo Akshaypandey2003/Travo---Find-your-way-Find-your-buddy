@@ -165,9 +165,9 @@ export const Home = () => {
           </p>
           <p className="text-lg text-gray-500">
             Why travel alone when you can share the adventure? Find your ideal
-            travel buddy and make every trip a memorable one!.
+            travel buddy and make every trip a memorable one!
           </p>
-          <Card className="flex px-5 mt-10">
+          {/* <Card className="flex px-5 mt-10">
             <div className="border-r-2  flex p-2 gap-2 items-center ">
               <div className="w-9 h-9  rounded-full p-2 bg-orange-200  ">
                 <img src="../place.png" alt="" />
@@ -195,7 +195,7 @@ export const Home = () => {
                 Get Started
               </Button>
             </div>
-          </Card>
+          </Card> */}
           <HeroSectionImageCarousel />
         </div>
         <div className="w-[50%] ">
@@ -240,11 +240,11 @@ export const Home = () => {
           </Card>
         </div>
       </div>
-      <div className="p-10  mt-10">
+      <div className="px-10  mt-20">
         {/* <SmoothAutoScroller data={randomData} reverse={false} speed={0.5} /> */}
         <SmoothAutoScroller data={randomData} reverse={false} speed={0.5} />
 
-        <div className="my-10">
+        <div className="my-5">
           {upcomingTrips && upcomingTrips.length > 0 && (
             <TripSlider trips={upcomingTrips} tripType={"UPCOMING"} />
           )}

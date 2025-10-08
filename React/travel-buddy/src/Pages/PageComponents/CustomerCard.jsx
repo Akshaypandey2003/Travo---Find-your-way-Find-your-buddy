@@ -38,7 +38,7 @@ export const CustomerCard = ({ user }) => {
       <Card
         className={`relative z-10 p-4 h-[20rem] flex flex-col justify-between rounded-2xl border transform transition duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-md group-hover:shadow-orange-200 ${
           theme === "dark"
-            ? "bg-gray-950 border-gray-800"
+            ? "bg-black"
             : "bg-white border-gray-100"
         }`}>
         {/* Header */}
@@ -142,7 +142,7 @@ export const CustomerCard = ({ user }) => {
                         key={i}
                         className={`text-xs ${
                           theme === "dark"
-                            ? "bg-gray-900 border-gray-400 text-inherit"
+                            ? "bg-black border-gray-400 text-inherit"
                             : "bg-orange-50 border-orange-500 text-orange-600"
                         }`}
                       >

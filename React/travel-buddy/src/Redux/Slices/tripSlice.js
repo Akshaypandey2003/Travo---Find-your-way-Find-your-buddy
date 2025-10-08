@@ -33,9 +33,16 @@ const tripSlice = createSlice({
           state.failure = false;
           state.message = "Single trip added successfully.";
         } else {
-          state.success = false;
-          state.failure = false;
-          state.message = "Trip already exists. Skipping.";
+          const index = state.trips.findIndex(
+            (trip) => trip.tripId === action.payload.tripId
+          );
+          if (index !== -1) {
+            state.trips[index] = action.payload;
+            state.success = true;
+            state.failure = false;
+            state.message = "Trip updated successfully.";
+            console.log("Trip updated:", state.trips[index]);
+          }
         }
       } else {
         state.success = false;
@@ -90,7 +97,12 @@ const tripSlice = createSlice({
       state.failure = false;
       state.message = "Feedbacks updated successfully.";
     },
+    filterTrips:(state,action)=>{
+      state.trips = state.trips?.filter(
+        (trip) => trip?.tripId !== action.payload
+      );
+    }
   },
 });
-export const { addTrips, updateTripFeedbacks } = tripSlice.actions;
+export const { addTrips, updateTripFeedbacks,filterTrips } = tripSlice.actions;
 export default tripSlice.reducer;

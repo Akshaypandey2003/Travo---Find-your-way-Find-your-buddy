@@ -232,7 +232,6 @@ const updateBlogViews = async(blogId, userId)=>{
       {
           console.log("Blog view updated successfully: ",data);
           dispatch(updatePostViews({blogId,userId}));
-          // dispatch(updateSuccess({success:true,message:data?.messageResponse?.message}));
       }
   } catch (error) {
       console.log("Some error occured while updating blog views",error.message);

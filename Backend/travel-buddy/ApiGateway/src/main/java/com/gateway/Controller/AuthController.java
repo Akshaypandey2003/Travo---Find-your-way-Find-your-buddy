@@ -60,7 +60,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody UserDto userDto) {
-        System.out.println("Registering user: " + userDto);
 
         // Encode the password before sending to User Microservice
         String encodedPassword = passwordEncoder.encode(userDto.getPassword());
@@ -137,6 +136,7 @@ public class AuthController {
                             tripServiceUrl, HttpMethod.GET, null, new ParameterizedTypeReference<List<Trip>>() {
                             });
                     user.setTrips(tripResponse.getBody());
+                    System.out.println("Trips retrieved for user: " + user.getUserId());
                 } catch (Exception e) {
                     user.setTrips(new ArrayList<>()); // Empty trip list if failed
                 }

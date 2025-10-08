@@ -177,7 +177,7 @@ const useUserData = () => {
       return null;
     }
   };
-  const getUser = async (userId) => {
+  const getUser = useCallback(async (userId) => {
     try {
       const response = await fetch(
         `http://localhost:8085/user/get-user/${userId}`,
@@ -198,7 +198,7 @@ const useUserData = () => {
       console.error("Error fetching users:", error);
       return [];
     }
-  };
+  });
 
   const addCloseFriend = async (userId) => {
     try {

@@ -15,7 +15,8 @@ export const NotificationCard = ({ notification }) => {
   const { acceptFriendRequest, deleteNotification } = useUserData();
   const { acceptTripRequest, sendTripRequest } = useTrip();
   const dispatch = useDispatch();
-
+  const theme = useSelector((store) => store.auth.theme);
+  
   const notifications = useSelector(
     (store) => store.notifications,
     shallowEqual
@@ -31,7 +32,7 @@ export const NotificationCard = ({ notification }) => {
 
   return (
     <>
-      <div className="notification-card flex items-center justify-between bg-orange-100 my-2 p-2 rounded-lg shadow-md gap-2 ">
+      <div className={`notification-card flex items-center justify-between ${theme === "dark" ? "bg-black" : "bg-orange-100"} my-2 p-2 rounded-lg shadow-md gap-2`}>
         <div className="flex items-center gap-2">
           <Avatar className="border border-black">
             <AvatarImage
@@ -52,7 +53,7 @@ export const NotificationCard = ({ notification }) => {
         notification?.type != "COMMENT" &&
         notification?.type != "NEW_TRIP" &&
         notification?.type != "ACCEPTED" ? (
-          <div>
+          <div className="flex gap-2">
             <Badge
               variant="outline"
               className="bg-orange-400  hover:cursor-pointer hover:bg-orange-300 hover:border hover:border-orange-600"

@@ -92,7 +92,7 @@ function App() {
             >
               <Alert
                 variant=""
-                className="bg-green-200 text-lg font-semibold max-w-96 min-w-64 m-auto"
+                className={`${theme==="dark"?"bg-black":"bg-orange-100 "} text-lg font-semibold max-w-96 min-w-64 m-auto`}
               >
                 <AlertDescription className="message-box ">
                   <div className="flex items-center gap-2">
@@ -108,9 +108,10 @@ function App() {
                     </Avatar>
                     <div className="flex items-center">
                       <h1>
-                        {notifications?.newNotification?.senderName + " "}
+                        {notifications?.newNotification?.senderName}
+                        {"\u00A0"}
+                        {notifications?.newNotification?.message}
                       </h1>
-                      <h1>{notifications?.newNotification?.message}</h1>
                     </div>
                   </div>
                 </AlertDescription>

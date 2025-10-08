@@ -15,24 +15,58 @@ import Footer from "./Footer Section/Footer";
 import CustomerCard from "./PageComponents/CustomerCard";
 import { SafetyCard } from "./PageComponents/SafetyCard";
 import { useSelector } from "react-redux";
-const customerCardInfo = [
+import FeedbackCard from "./PageComponents/FeedbackCard";
+
+
+const feedbacksInfo = [
   {
-    name: "Atul Garg",
-    userImg: "../Shivam.JPG",
+    name: "Riya Sharma",
+    gender: "Female",
+    userImg: "",
+    comment:
+      "This platform made it super easy for me to find a travel buddy. The whole trip was fun and stress-free!",
+    rating: 5,
+    createdAt: "2025-08-10T10:30:00Z",
   },
   {
-    name: "Anjali Kumari",
-    userImg: "../Anjali.jpg",
+    name: "Arjun Mehta",
+    gender: "Male",
+    userImg: "",
+    comment:
+      "I loved how simple it was to connect with like-minded travelers. Definitely planning my next trip here!",
+    rating: 4,
+    createdAt: "2025-08-15T14:45:00Z",
   },
   {
-    name: "Akshay Pandey",
-    userImg: "../AkshayImg.JPG",
+    name: "Priya Verma",
+    gender: "Female",
+    userImg: "",
+    comment:
+      "Great community and smooth experience. Found amazing companions for my Goa trip. Highly recommend!",
+    rating: 5,
+    createdAt: "2025-09-01T09:15:00Z",
   },
   {
-    name: "Khushi",
-    userImg: "../Khushi.jpg",
+    name: "Rohan Gupta",
+    gender: "Male",
+    userImg: "",
+    comment:
+      "The idea is fantastic! A little more filtering on trip types would make it perfect. Still, a great start.",
+    rating: 3,
+    createdAt: "2025-09-05T19:00:00Z",
+  },
+  {
+    name: "Sneha Patel",
+    gender: "Female",
+    userImg: "",
+    comment:
+      "I not only found travel buddies but also made lifelong friends. This app really changed how I travel.",
+    rating: 5,
+    createdAt: "2025-09-08T12:20:00Z",
   },
 ];
+
+
 
 const safetyCardInfo = [
   {
@@ -86,8 +120,10 @@ const safetyCardInfo = [
 ];
 export const About = () => {
   const theme = useSelector((store) => store.auth.theme);
+  const feedbacks = useSelector((store) => store.trip.tripFeedbacks);
+  console.log("Feedbacks from About page:", feedbacks);
   return (
-    <div className="mt-36">
+    <div className="mt-16">
       <div className="p-10  m-auto">
         <ImgCarousel />
       </div>
@@ -209,7 +245,7 @@ export const About = () => {
       {/* ---------------------------- Fourth Container---------------------- */}
       <div
         className={`p-10  rounded-3xl my-12 w-[85rem] m-auto ${
-          theme === "dark" ? "bg-gray-900" : "bg-gray-100"
+          theme === "dark" ? "bg-black border-gray-800" : "bg-gray-100"
         }`}
       >
         <div className=" w-[40rem] m-auto text-center">
@@ -367,8 +403,8 @@ export const About = () => {
         <div className=" gap-[2rem] mt-10 w-[80rem] p-4">
           <ScrollArea className="whitespace-nowrap">
             <div className="flex w-max space-x-4 pb-4 scroll-smooth snap-x py-4">
-              {customerCardInfo.map((item, index) => (
-                <CustomerCard key={index} item={item} />
+              {feedbacksInfo.map((item, index) => (
+                <FeedbackCard key={index} feedback={item} />
               ))}
             </div>
             <ScrollBar orientation="horizontal" />
@@ -410,7 +446,7 @@ export const About = () => {
       {/* ---------------------------- Eighth Container---------------------- */}
       <div
         className={`p-10  rounded-3xl w-[85rem] m-auto ${
-          theme === "dark" ? "bg-gray-900" : "bg-gray-100"
+          theme === "dark" ? "bg-black" : "bg-gray-100"
         }`}
       >
         <div className=" w-[40rem] m-auto text-center">

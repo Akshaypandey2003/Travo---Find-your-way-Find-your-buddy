@@ -24,7 +24,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOriginPatterns(Collections.singletonList("*")); // Allow all origins
+                    config.setAllowedOriginPatterns(Collections.singletonList("*")); 
+                    config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));// Allow all origins
                     config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(Collections.singletonList("*")); 
                     config.setAllowCredentials(true);
@@ -38,11 +39,6 @@ public class SecurityConfig {
                 .pathMatchers("/blog/**").permitAll() // Require authentication for user endpoints
                 .pathMatchers("/admin/**").hasRole("ADMIN") // Only admins can access
                 .anyExchange().authenticated()); // All other endpoints require authentication
-
-
-                // .and()
-                // .oauth2ResourceServer()
-                // .jwt();
 
         return http.build();
     }

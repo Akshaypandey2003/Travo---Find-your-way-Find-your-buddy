@@ -64,15 +64,6 @@ public class SecurityConfig {
         return source;
     }
     
-    // public JwtAuthenticationConverter jwtAuthenticationConverter() {
-    //     JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-    //     grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-    //     grantedAuthoritiesConverter.setAuthoritiesClaimName("roles"); // Ensure 'roles' claim exists in JWT
-
-    //     JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-    //     jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-    //     return jwtAuthenticationConverter;
-    // }
     @Bean
     public UserDetailsService userDetailsService() 
     {

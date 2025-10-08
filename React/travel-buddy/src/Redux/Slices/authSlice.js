@@ -32,10 +32,36 @@ const authSlice = createSlice({
     authSucess: (state, action) => {
       state.success = action.payload;
     },
-    addTrips: (state, action) => {
-      state.user.trips.push(action.payload);
+    addUserTrips: (state, action) => {
+      // state.user.trips.push(action.payload);
+      
+      console.log("Payload in addUserTrips:", action.payload);
+      const updatedTrip = action.payload;
+
+      // Ensure we have a tripId in payload
+      if (updatedTrip && updatedTrip.tripId) {
+        const index = state.user.trips.findIndex(
+          (trip) => trip.tripId === updatedTrip.tripId
+        );
+        console.log("Index found in addUserTrips:", index);
+        if (index !== -1) {
+          // Replace existing trip
+          state.user.trips[index] = updatedTrip;
+          state.success = true;
+          state.error = false;
+        } else {
+          // Add as new trip
+          state.user.trips.push(updatedTrip);
+          state.success = true;
+          state.error = false;
+        }
+        console.log("Updated trips in user:", state.user.trips[index]);
+      } else {
+        state.success = false;
+        state.error = true;
+      }
     },
-    removeTrips: (state, action) => {
+    removeUserTrips: (state, action) => {
       state.user.trips = state.user.trips?.filter(
         (trip) => trip?.tripId !== action.payload
       );
@@ -102,8 +128,8 @@ const authSlice = createSlice({
         }
       }
     },
-    updateFollowings: (state,action)=>{
-     state.user.following.push(action.payload);
+    updateFollowings: (state, action) => {
+      state.user.following.push(action.payload);
     },
     setNextPageToken: (state, action) => {
       state.nextPageToken = action.payload;
@@ -215,15 +241,15 @@ export const {
   changeTheme,
   setNextPageToken,
   updateLike,
-  addTrips,
+  addUserTrips,
   updateCloseFriends,
   updateTripRequest,
-  removeTrips,
+  removeUserTrips,
   updateTripMembers,
   removeTripRequest,
   removeTripMembers,
   updateFriendRequests,
   filterFriendRequests,
-   updateFollowings,
+  updateFollowings,
 } = authSlice.actions;
 export default authSlice.reducer;

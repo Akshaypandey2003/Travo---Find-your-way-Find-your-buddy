@@ -65,9 +65,3 @@
 ### 🔒 Authentication & Security
 - ✅ **JWT-based authentication and authorization**
 
-
-## 📦 Setup Instructions
-
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/Akshaypandey2003/travo.git

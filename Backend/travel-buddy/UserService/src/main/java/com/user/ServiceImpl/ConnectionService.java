@@ -1,20 +1,19 @@
 package com.user.ServiceImpl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.user.DTO.NotificationMessage;
 import com.user.Entity.Connections;
 import com.user.Entity.Notification;
+import com.user.Entity.Notification.NotificationType;
+import com.user.Entity.User;
 import com.user.Repository.ConnectionRepo;
 import com.user.Repository.UserRepo;
 import com.user.Service.UserService;
-import com.user.Entity.User;
-import com.user.Entity.Notification.NotificationType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class ConnectionService {

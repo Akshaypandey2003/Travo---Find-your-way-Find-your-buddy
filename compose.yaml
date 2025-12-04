@@ -1,0 +1,261 @@
+version: "3.9"
+
+services:
+
+  # Frontend
+  frontend:
+    build:
+      context: ./React/travel-buddy
+    container_name: travel-buddy-frontend
+    user: root
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+
+  # Service Registry (Eureka)
+  service-registry:
+    build:
+      context: ./Backend/travel-buddy/ServiceRegistery
+    container_name: service-registry
+    ports:
+    - "8761:8761"
+    restart: unless-stopped
+    networks:
+    - microservices-network
+    environment:
+    - SPRING_PROFILES_ACTIVE=docker
+    - SERVER_PORT=8761
+    - EUREKA_HOSTNAME=service-registry
+    healthcheck:
+     test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+     interval: 10s
+     timeout: 5s
+     retries: 10
+
+
+  # Config Server
+  config-server:
+    build:
+      context: ./Backend/travel-buddy/ConfigServer
+    container_name: config-server
+    ports:
+      - "8086:8086"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8086
+      # let Config Server talk to Eureka by service name
+      - SPRING_EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+      # make config client resilient
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS=6
+      - SPRING_CLOUD_CONFIG_RETRY_INITIAL_INTERVAL=2000
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./Backend/travel-buddy/ApiGateway
+    container_name: api-gateway
+    ports:
+      - "8085:8085"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - service-registry
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8085
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Users
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+  # User Service
+  user-service:
+    build:
+      context: ./Backend/travel-buddy/UserService
+    container_name: user-service
+    ports:
+      - "8088:8088"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - mongodb
+      - config-server
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8088
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS=6
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Users
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+
+  # Trip Service
+  trip-service:
+    build:
+      context: ./Backend/travel-buddy/TripService
+    container_name: trip-service
+    ports:
+      - "8090:8090"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - mongodb
+      - config-server
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8090
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS=6
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Trips
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+
+  # Blog Comments Service
+  blog-comments-service:
+    build:
+      context: ./Backend/travel-buddy/BlogCommentsService
+    container_name: blog-comments-service
+    ports:
+      - "8091:8091"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - mongodb
+      - config-server
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8091
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/BlogComments
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+
+  # Blogs Service
+  blogs-service:
+    build:
+      context: ./Backend/travel-buddy/Blogs
+    container_name: blogs-service
+    ports:
+      - "8094:8094"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - mongodb
+      - config-server
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8094
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Blogs
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+
+  # Chats Service
+  chats-service:
+    build:
+      context: ./Backend/travel-buddy/Chats
+    container_name: chats-service
+    ports:
+      - "8092:8092"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - mongodb
+      - config-server
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8092
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Chats
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+
+  # Feedback Service
+  feedback-service:
+    build:
+      context: ./Backend/travel-buddy/FeedbackService
+    container_name: feedback-service
+    ports:
+      - "8093:8093"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    depends_on:
+      - mongodb
+      - config-server
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8093
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+      - SPRING_CLOUD_CONFIG_FAILFAST=false
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Feedbacks
+      - SPRING_EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - SPRING_EUREKA_CLIENT_FETCH_REGISTRY=true
+
+
+  # MongoDB (shared for all services)
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    networks:
+      - microservices-network
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+# Networks & Volumes
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+
+# environment:
+#   - SPRING_PROFILES_ACTIVE=docker
+#   - SERVER_PORT=8088
+#   - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8086
+#   - SPRING_CLOUD_CONFIG_FAILFAST=false
+#   - SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS=6
+#   - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Users

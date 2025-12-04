@@ -14,7 +14,7 @@ spring:
       password: password
 
   config:
-    import: configserver:http://localhost:8086
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
 
 # File size limit for multipart requests
   servlet:

@@ -76,7 +76,8 @@ spring:
   application:
     name: API-GATEWAY
   config:
-    import: configserver:http://localhost:8086
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
+
 
 
 # Okta Configuration

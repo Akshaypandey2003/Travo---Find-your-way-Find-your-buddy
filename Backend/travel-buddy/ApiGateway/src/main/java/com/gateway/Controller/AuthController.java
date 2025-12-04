@@ -166,7 +166,7 @@ public class AuthController {
             List<String> roles = Arrays.asList("ROLE_USER");
 
             // Generate JWT Token
-            String token = jwtProvider.generateToken(userFromDb.getEmail(), roles);
+            String token = jwtProvider.generateToken(userFromDb != null ? userFromDb.getEmail() : null, roles);
 
             return ResponseEntity.ok(new AuthResponse(
                     userFromDb,

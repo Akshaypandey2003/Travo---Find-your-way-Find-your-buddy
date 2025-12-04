@@ -1,0 +1,33 @@
+# API Gateway - application-docker.yaml
+server:
+  port: ${SERVER_PORT:8085}
+
+spring:
+  application:
+    name: API-GATEWAY
+
+      # (routes kept in application.yml or config repo)
+  config:
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
+  
+  cloud:
+    config:
+      failFast: false
+      retry:
+       maxAttempts: 6
+       initialInterval: 2000
+       multiplier: 1.5
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+okta:
+  oauth2:
+    issuer: ${OKTA_ISSUER:https://dev-95846997.okta.com/oauth2/default}
+    audience: ${OKTA_AUDIENCE:api://default}
+    client-id: ${OKTA_CLIENT_ID:0oanj7msm6GM08sZ25d7}
+    client-secret: ${OKTA_CLIENT_SECRET:0Sag_S9QQwPeMrdWR72MDHqi6YKFV-bkPEuDvJN_mZm5xBQJTr9qifk8UWX7xvv1}

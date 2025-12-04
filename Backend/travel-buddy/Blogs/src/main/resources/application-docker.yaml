@@ -1,0 +1,41 @@
+# Blogs Service - application-docker.yaml
+server:
+  port: ${SERVER_PORT:8089}
+
+spring:
+  application:
+    name: BLOGS-SERVICE
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://mongodb:27017/Blogs}
+      database: Blogs
+
+  config:
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
+
+  cloud:
+    config:
+      failFast: false
+      retry:
+       initialInterval: 2000
+       maxAttempts: 6
+       multiplier: 1.5
+
+  security:
+   user:
+    name: ${APP_BASIC_AUTH_USER:admin}
+    password: ${APP_BASIC_AUTH_PASSWORD:password}
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+

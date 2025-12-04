@@ -12,9 +12,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
 @Component
+@SuppressWarnings("unchecked")
 public class JwtProvider {
-    
-    static  SecretKey SECRET_KEY = Keys.hmacShaKeyFor(JWTConstants.SECRET_KEY.getBytes());
+
+    static SecretKey SECRET_KEY = Keys.hmacShaKeyFor(JWTConstants.SECRET_KEY.getBytes());
 
     // private final String SECRET_KEY = JWTConstants.SECRET_KEY;  // Use environment variables in production
     private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour

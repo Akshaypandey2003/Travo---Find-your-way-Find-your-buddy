@@ -1,0 +1,26 @@
+# Config Server - application-docker.yaml
+server:
+  port: ${SERVER_PORT:8086}
+
+spring:
+  application:
+    name: CONFIG-SERVER
+
+eureka:
+  client:
+    # talk to Eureka by service name inside Docker
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+cloud:
+    config:
+      server:
+        git:
+          uri: ${CONFIG_GIT_URI:https://github.com/Akshaypandey2003/Travo-microservices-configuration}
+          clone-on-start: true
+    retry:
+      maxAttempts: 6
+      initialInterval: 2000
+      multiplier: 1.5

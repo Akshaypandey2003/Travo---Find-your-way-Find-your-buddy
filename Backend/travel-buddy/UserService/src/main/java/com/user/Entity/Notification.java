@@ -1,7 +1,6 @@
 package com.user.Entity;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,6 +21,8 @@ public class Notification {
     private String notificationFrom;
     private String notificationTo;
     private NotificationType type;
+
+    @Builder.Default
     private boolean isRead = false;
     private String senderProfilePic;
     private String senderName;
@@ -30,6 +31,8 @@ public class Notification {
     // private Map<String, Object> data;
     
     private String message;
+
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     public enum NotificationType {
         TRIP_REQUEST,

@@ -5,12 +5,13 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
+import com.user.DTO.AuthResponse;
 import com.user.DTO.Author;
 import com.user.Entity.User;
 
 public interface UserService 
 {
-    public User addUser(User user);
+    public AuthResponse addUser(User user);
     public User updateUser(User user);
     public String deleteUser(String userId);
     public List<User> getAllUser(Pageable pageable);
@@ -21,6 +22,8 @@ public interface UserService
     public ResponseEntity<Object> updateLikes(String userId, String senderId);
     public String addCloseFriend(String userId, String friendId);
     public String removeCloseFriend(String userId, String friendId);
+    public AuthResponse generateToken(User user);
+    public AuthResponse generateToken(String email, String password);
 } 
     
    

@@ -32,6 +32,8 @@ public class Trip {
     private LocalDate tripEndDate;
     private String tripDuration;
     private String tripDescription;
+
+    @Builder.Default
     private LocalDateTime tripCreatedAt = LocalDateTime.now();
     private String memberSize;
     
@@ -40,17 +42,25 @@ public class Trip {
     private List<String> tripTags;
     private TripType tripType;
     //when a new member joins the trip, this field will be updated.
+    @Builder.Default
     private List<String> tripMembers = new ArrayList<>();
 
+    
+    
     private LocalDateTime tripUpdatedAt;
 
     @Builder.Default
     private TripStatus tripStatus = TripStatus.UPCOMING;
 
+    @Builder.Default
     private List<String> tripRequests = new ArrayList<>();
    // To be filled after the completion of trip.
     private double tripBudget;
+    
+    @Builder.Default
     private List<String> tripHighlights  = new ArrayList<>();
+
+    @Builder.Default
     private List<String> tripImages =new ArrayList<>();
     
     public enum TripStatus {

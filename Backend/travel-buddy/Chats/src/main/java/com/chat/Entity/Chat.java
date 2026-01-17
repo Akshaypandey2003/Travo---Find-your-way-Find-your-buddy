@@ -26,11 +26,17 @@ public class Chat {
     private String chatId;
 
     private boolean groupChat;
+
+    @Builder.Default
     private Set<String> favoriteBy = new HashSet<>(); // userIds who marked the chat as favorite
     private String groupName; // null for 1-to-1 chats, set for group chats
     private String groupDescription;
     private String groupImageUrl; // null for 1-to-1 chats, set for group chats
+
+    @Builder.Default
     private Set<String> participants = new TreeSet<>(); // userIds
+
+    @Builder.Default
     private Set<String> groupAdmin = new TreeSet<>(); // only if isGroupChat == true
 
     @CreatedDate

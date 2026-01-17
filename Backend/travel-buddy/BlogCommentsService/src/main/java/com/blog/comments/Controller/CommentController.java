@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
-@RequestMapping("/auth/comment")
+@RequestMapping("/comment")
 public class CommentController {
 
     @Autowired
@@ -63,6 +63,8 @@ public class CommentController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    
     @GetMapping("/get-comments/{blogId}/{parentCommentId}")
     public ResponseEntity<List<Comment>> getComments(@PathVariable String blogId,
             @PathVariable String parentCommentId) {

@@ -11,12 +11,14 @@ import { shallowEqual, useSelector } from "react-redux";
 import LoginForm from "./LoginForm";
 
 const loginValidationSchema = Yup.object().shape({
+
   email: Yup.string()
     .matches(
       /^[a-zA-Z0-9._%+-]+@[a-zA-Z.-]+\.[a-zA-Z]{2,}$/,
       "Invalid email address"
     )
     .required("Email is required"),
+    
   password: Yup.string()
     .min(8, "Password must be at least 8 characters long")
     .matches(/[A-Z]/, "Must contain at least one uppercase letter")

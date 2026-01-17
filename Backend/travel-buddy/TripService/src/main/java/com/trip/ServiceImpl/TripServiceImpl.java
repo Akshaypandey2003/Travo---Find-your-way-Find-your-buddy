@@ -25,7 +25,6 @@ import com.trip.Exceptions.TripNotFoundException;
 import com.trip.Repositories.TripRespository;
 import com.trip.Services.TripServices;
 
-import jakarta.annotation.PostConstruct;
 
 @Service
 public class TripServiceImpl implements TripServices {
@@ -161,7 +160,6 @@ public class TripServiceImpl implements TripServices {
         LocalDate tomorrow = today.plusDays(1);
         RestTemplate restTemplate = new RestTemplate();
         String tripServiceUrl = "http://localhost:8088/auth/user/notification/send-notification";
-        HttpEntity<Notification> entity;
 
         // Fetch trips starting tomorrow
         List<Trip> upcomingTrips = tripRespository.findByTripStartDate(tomorrow);
@@ -216,10 +214,5 @@ public class TripServiceImpl implements TripServices {
             // Optionally log error to a logger
         }
     }
-
-    // @PostConstruct
-    // public void init() {
-    //     logger.info("TripServiceImpl initialized!");
-    // }
 
 }

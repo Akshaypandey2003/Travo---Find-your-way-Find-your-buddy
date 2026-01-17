@@ -16,7 +16,7 @@ public class CloudinaryService {
     private Cloudinary cloudinary;
 
     public void deleteImage(String publicId) throws IOException {
-        Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         if (!"ok".equals(result.get("result"))) {
             throw new IOException("Failed to delete image: " + publicId + ". Cloudinary response: " + result);
         }

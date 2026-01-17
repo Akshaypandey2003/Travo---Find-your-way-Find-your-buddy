@@ -1,8 +1,6 @@
 package com.user.Controller;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,12 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.user.Entity.Connections;
 import com.user.Entity.Notification;
-import com.user.Repository.ConnectionRepo;
 import com.user.ServiceImpl.ConnectionService;
-import com.user.ServiceImpl.WebSocketNotificationService;
 
 @RestController
-@RequestMapping("/auth/connection")
+@RequestMapping("/connection")
 public class ConnectionController 
 {
      @Autowired
@@ -37,11 +33,6 @@ public class ConnectionController
     public ResponseEntity<Notification> acceptRequest(@PathVariable String senderId, @PathVariable String receiverId, @PathVariable String notificationId) {
 
         return ResponseEntity.ok(connectionService.acceptFriendRequest(senderId, receiverId,notificationId));
-    }
-    @PostMapping("/accept-connection/{connectionId}/{senderId}/{receiverId}")
-    public ResponseEntity<?> acceptConnectionRequest(@PathVariable String senderId, @PathVariable String receiverId, @PathVariable String connectionId) {
-       
-        return ResponseEntity.ok(connectionService.acceptConnectionRequest(senderId, receiverId,connectionId));
     }
 
     @GetMapping("/received/{userId}")

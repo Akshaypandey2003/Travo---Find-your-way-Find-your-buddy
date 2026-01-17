@@ -25,6 +25,8 @@ public class ChatController {
         notificationService.sendNotification(message,sendTo);
         return ResponseEntity.ok("Message sent ");
     }
+    
+    
     @PostMapping("/new-group/send/{sendTo}")
     public ResponseEntity<String> sendNewChatNotification(@RequestBody Chat chat , @PathVariable String sendTo) {
         System.out.println("MEssage received inside user service: "+chat +" with user id: "+sendTo);

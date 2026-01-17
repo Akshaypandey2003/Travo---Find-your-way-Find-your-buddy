@@ -7,13 +7,14 @@ import {
 
 /* eslint-disable no-unused-vars */
 const useComments = () => {
+
   const dispatch = useDispatch();
 
   const postComment = async (commentData,blogAuthorId) => {
     console.log("Received comment data is: ", commentData);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/api/comment/post/${blogAuthorId}`,
+        `http://localhost:8085/comment/post/${blogAuthorId}`,
         {
           method: "POST",
           headers: {
@@ -35,11 +36,13 @@ const useComments = () => {
       console.log("Some error occured while posting comment", error.message);
     }
   };
+
+
   const getComments = async (blogId, page) => {
     console.log("Fetching comments for blogId: ", blogId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/api/comment/get-comments/${blogId}?page=${page}&size=5`,
+        `http://localhost:8085/comment/get-comments/${blogId}?page=${page}&size=5`,
         {
           method: "GET",
           headers: {
@@ -69,7 +72,7 @@ const useComments = () => {
   const likeComment = async (commentId, userId) => {
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/api/comment/like-comment/${commentId}/${userId}`,
+        `http://localhost:8085/comment/like-comment/${commentId}/${userId}`,
         {
           method: "PUT",
           headers: {
@@ -89,6 +92,8 @@ const useComments = () => {
       console.log("Some error occured while liking comment", error.message);
     }
   };
+
+  
   return { getComments, postComment, likeComment };
 };
 export default useComments;

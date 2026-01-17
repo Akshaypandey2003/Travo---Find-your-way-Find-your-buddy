@@ -18,14 +18,15 @@ import com.chat.Entity.Message;
 import com.chat.Service.MessageService;
 
 @RestController
-@RequestMapping("/auth/chats/message")
+@RequestMapping("/chat/message")
 public class MessageController {
 
     @Autowired
     private MessageService messageService;
 
     @PostMapping("/send")
-    public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+    public ResponseEntity<Message> sendMessage(@RequestBody Message message) 
+    {
         return new ResponseEntity<>(messageService.sendMessage(message), HttpStatus.CREATED);
     }
 

@@ -97,6 +97,8 @@ const useAuth = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.messageReponse.message || "Login failed");
 
+      console.log("Data received from login API: ", data);
+
       localStorage.setItem("token", data.accessToken);
       dispatch(loginSuccess(data.user));
   
@@ -163,7 +165,7 @@ const useAuth = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-          //   "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify(userData),
         }

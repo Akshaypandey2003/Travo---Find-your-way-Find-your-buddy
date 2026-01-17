@@ -56,7 +56,7 @@ const useBlog = ()=>{
     };
 
     const response = await fetch(
-        `http://localhost:8085/auth/blog/create-blog`,
+        `http://localhost:8085/blog/create-blog`,
         {
           method: "POST",
           headers: {
@@ -121,7 +121,7 @@ const updateBlog = async (blogData, blogId) => {
     console.log("Blog data to update after image uploads: ", finalBlogData);
 
     const response = await fetch(
-      `http://localhost:8085/auth/blog/update-blog/${blogId}`,
+      `http://localhost:8085/blog/update-blog/${blogId}`,
       {
         method: "PUT",
         headers: {
@@ -150,7 +150,7 @@ const updateBlog = async (blogData, blogId) => {
 const getAllBlogs = async()=>{
   try {
       const response = await fetch(
-        `http://localhost:8085/auth/blog/get-all-blogs`,
+        `http://localhost:8085/blog/get-all-blogs`,
         {
           method: "GET",
           headers: {
@@ -180,7 +180,7 @@ const updateBlogLike = async(blogId, userId)=>{
   try {
     
       const response = await fetch(
-        `http://localhost:8085/auth/blog/like-blog/${blogId}/${userId}`,
+        `http://localhost:8085/blog/like-blog/${blogId}/${userId}`,
         {
           method: "POST",
           headers: {
@@ -214,7 +214,7 @@ const updateBlogViews = async(blogId, userId)=>{
     try {
     
       const response = await fetch(
-        `http://localhost:8085/auth/blog/update-blog-views/${blogId}/${userId}`,
+        `http://localhost:8085/blog/update-blog-views/${blogId}/${userId}`,
         {
           method: "POST",
           headers: {
@@ -240,7 +240,7 @@ const updateBlogViews = async(blogId, userId)=>{
 const deleteBlog = async(blogId)=>{
   try {
       const response = await fetch(
-        `http://localhost:8085/auth/blog/delete-blog/${blogId}`,
+        `http://localhost:8085/blog/delete-blog/${blogId}`,
         {
           method: "DELETE",
           headers: {

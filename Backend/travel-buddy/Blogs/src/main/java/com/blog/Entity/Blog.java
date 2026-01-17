@@ -27,14 +27,30 @@ public class Blog {
     private String blogContent;
     private String blogAuthor;
     private String blogCaption;
+
+    @Builder.Default
     private LocalDateTime postedDate= LocalDateTime.now();
     private LocalDateTime updatedDate;
+
+    @Builder.Default
     private List<String> blogImages=new ArrayList<>();
+
+    @Builder.Default
     private List<String> cloudinaryImagePublicIds=new ArrayList<>();
+
+   
     private String blogCategory;
+
+    @Builder.Default
     private List<String> blogComments=new ArrayList<>();
+
+    @Builder.Default
     private List<String> blogLikes=new ArrayList<>();
+
+    @Builder.Default
     private List<String> blogShares=new ArrayList<>();
+
+    @Builder.Default
     private Set<String> blogViews=new HashSet<>();
 
 }

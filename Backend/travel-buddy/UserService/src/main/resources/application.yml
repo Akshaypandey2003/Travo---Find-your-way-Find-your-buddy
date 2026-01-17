@@ -1,5 +1,7 @@
 server:
-  port: 8088
+  port: ${PORT:8080}
+
+
 
 spring:
   data:
@@ -15,6 +17,7 @@ spring:
   config:
     import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
 
+
 # File size limit for multipart requests
   servlet:
     multipart:
@@ -26,3 +29,17 @@ okta:
   oauth2:
     issuer: https://dev-95846997.okta.com/oauth2/default
     audience: api://default
+
+#Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+jwt:
+  secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
+  expiration: ${JWT_EXPIRATION:3600000}

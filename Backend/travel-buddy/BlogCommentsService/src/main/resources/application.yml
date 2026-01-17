@@ -16,4 +16,6 @@ spring:
   config:
     import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
 
-# File size limit for multipart requests
+jwt:
+  secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
+  expiration: ${JWT_EXPIRATION:3600000}

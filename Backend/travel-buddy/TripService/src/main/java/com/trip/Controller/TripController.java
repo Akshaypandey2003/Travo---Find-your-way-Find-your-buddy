@@ -1,6 +1,5 @@
 package com.trip.Controller;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ import com.trip.Response.MessageResponse;
 import com.trip.Services.TripServices;
 
 @RestController
-@RequestMapping("/auth/user/trip")
+@RequestMapping("/trip")
 public class TripController {
     
     @Autowired
@@ -93,6 +92,9 @@ public class TripController {
             return ResponseEntity.status(500).body("Error sending trip request: " + e.getMessage());
         }
     }
+    
+    
+    @SuppressWarnings("null")
     @PostMapping("/accept-trip-request/{notificationId}/{tripId}/{requestFrom}/{requestTo}")
     public ResponseEntity<?> acceptTripRequest(@PathVariable String notificationId,@PathVariable String tripId, @PathVariable String requestFrom, @PathVariable String requestTo) {
         try {
@@ -130,7 +132,7 @@ public class TripController {
              System.out.println("Is null: " + (notificationId == null));
             if(!notificationId.equals("null"))
             {
-                ResponseEntity<String> response2 = restTemplate.exchange(
+                 restTemplate.exchange(
                     notificationServiceUrl2, HttpMethod.DELETE, null, String.class);
             }
 
@@ -145,7 +147,6 @@ public class TripController {
         }
     }
 
-   
 
     @GetMapping("/get-trip/{tripId}")
     public ResponseEntity<Trip> getTripById(@PathVariable String tripId) {
@@ -164,6 +165,7 @@ public class TripController {
         List<Trip> trips = tripService.getTripsByUserId(userId);
         return ResponseEntity.ok(trips);
     }
+    
     @GetMapping("/get-trips-by-category/{category}")
     public ResponseEntity<List<Trip>> getTripsByCategory(@PathVariable String category) {
         List<Trip> trips = tripService.getTripsByCategory(category);

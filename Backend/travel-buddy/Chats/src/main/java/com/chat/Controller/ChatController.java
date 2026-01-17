@@ -17,7 +17,7 @@ import com.chat.Entity.Chat;
 import com.chat.Service.ChatService;
 
 @RestController
-@RequestMapping("/auth/chats")
+@RequestMapping("/chat")
 public class ChatController {
     
     @Autowired

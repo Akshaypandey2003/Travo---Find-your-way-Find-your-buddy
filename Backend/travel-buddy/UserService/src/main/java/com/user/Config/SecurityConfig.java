@@ -3,50 +3,59 @@ package com.user.Config;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@SuppressWarnings("unused")
 public class SecurityConfig {
+
+    @Autowired
+    JwtAuthenticationFilter jwtAuthenticationFilter;
     
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-     http
-     .csrf(csrf -> csrf.ignoringRequestMatchers(
-        "/ws/**",
-        "/user/**",
-        "/auth/**",
-        "/auth/user/notification/**",
-        "/chat/**"
-    ))
-     .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-     .authorizeHttpRequests(auth->auth.requestMatchers("/user/**","/auth/**","/connection/**","/auth/user/notification/**","/ws/**","/chat/**").permitAll()
-     .anyRequest()
-     .authenticated());
-    //  .oauth2ResourceServer(oauth2 -> oauth2.jwt()
-    //             .jwtAuthenticationConverter(jwtAuthenticationConverter()));
-     ;
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+                        "/ws/**",
+                        "/user/**",
+                        "/auth/**",
+                        "/auth/user/notification/**",
+                        "/chat/**"))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(
+                        auth -> auth.requestMatchers(
+                                "/auth/**",
+                                "/ws/**",
+                                "/actuator/**").permitAll()
+                                .anyRequest()
+                                .authenticated())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class);
 
-     return http.build();
+        return http.build();
     }
 
-
-     @Bean
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        
+
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOriginPatterns(Collections.singletonList("*"));// Allowed origins
@@ -63,16 +72,9 @@ public class SecurityConfig {
 
         return source;
     }
-    
-    @Bean
-    public UserDetailsService userDetailsService() 
-    {
-        UserDetails user = User.withDefaultPasswordEncoder()
-            .username("admin")
-            .password("password")
-            .roles("USER")
-            .build();
 
-        return new InMemoryUserDetailsManager(user);
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -21,7 +21,7 @@ const useNotificationSocket = () => {
 
     
     const stompClient = new Client({
-      brokerURL: "ws://localhost:8088/ws",
+      brokerURL: "ws://localhost:8080/ws",
       // webSocketFactory: () => socket,
       onConnect: () => {
         console.log("Connected to WebSocket");

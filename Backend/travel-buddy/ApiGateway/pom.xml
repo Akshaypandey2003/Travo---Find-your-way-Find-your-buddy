@@ -31,101 +31,74 @@
 		<spring-cloud.version>2024.0.0</spring-cloud.version>
 	</properties>
 	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>
-		<!-- <dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency> -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-gateway</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-		</dependency>
-         <dependency>
-          <groupId>org.springframework.cloud</groupId>
-          <artifactId>spring-cloud-starter-config</artifactId>
-        </dependency>
 
-		<dependency>
-          <groupId>org.springframework.cloud</groupId>
-          <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
+    <!-- Spring Boot core (REQUIRED) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
 
-		<dependency>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-		<dependency>
-          <groupId>jakarta.servlet</groupId>
-          <artifactId>jakarta.servlet-api</artifactId>
-          <version>6.1.0</version>
-          <scope>provided</scope>
-       </dependency>
+    <!-- Spring Cloud Gateway (Reactive) -->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-gateway</artifactId>
+    </dependency>
 
-		<dependency>
-    		<groupId>io.jsonwebtoken</groupId>
-    		<artifactId>jjwt-api</artifactId>
-    		<version>0.11.5</version>
-		</dependency>
-		<dependency>
-    		<groupId>io.jsonwebtoken</groupId>
-    		<artifactId>jjwt-impl</artifactId>
-    		<version>0.11.5</version>
-    		<scope>runtime</scope>
-		</dependency>
-		<dependency>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-        </dependency>
-        <dependency>
-          <groupId>org.springframework.security</groupId>
-          <artifactId>spring-security-oauth2-jose</artifactId>
-       </dependency>
-       <dependency>
-		 <groupId>io.jsonwebtoken</groupId>
-		 <artifactId>jjwt-jackson</artifactId>
-		 <version>0.11.5</version>
-		 <scope>runtime</scope>
-      </dependency>
+    <!-- Eureka Discovery -->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
 
-        <dependency>
-          <groupId>com.okta.spring</groupId>
-          <artifactId>okta-spring-boot-starter</artifactId>
-          <version>3.0.7</version>
-        </dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-	<dependencyManagement>
+    <!-- Security (JWT validation filter) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- JWT -->
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>0.11.5</version>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>0.11.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>0.11.5</version>
+        <scope>runtime</scope>
+    </dependency>
+
+<!-- .env support (optional) -->
+<dependency>
+	<groupId>io.github.cdimascio</groupId>
+	<artifactId>java-dotenv</artifactId>
+	<version>5.2.2</version>
+</dependency>
+
+	<!-- Lombok (for code generation) -->
+	<dependency>
+		<groupId>org.projectlombok</groupId>
+		<artifactId>lombok</artifactId>
+		<optional>true</optional>
+	</dependency>
+
+<!-- Testing -->
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-test</artifactId>
+	<scope>test</scope>
+</dependency>
+
+</dependencies>
+
+    <dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>

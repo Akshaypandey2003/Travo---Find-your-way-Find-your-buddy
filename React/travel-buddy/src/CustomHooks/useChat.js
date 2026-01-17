@@ -21,7 +21,7 @@ const useChat = () => {
        
       const groupImage = data?.groupImageUrl;
       data.groupImageUrl = "";
-      const response = await fetch(`http://localhost:8085/auth/chats/create`, {
+      const response = await fetch(`http://localhost:8085/chat/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,7 +55,7 @@ const useChat = () => {
     console.log("Fetching chats for user:", userId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/get-chat/${userId}`,
+        `http://localhost:8085/chat/get-chat/${userId}`,
         {
           method: "GET",
           headers: {
@@ -79,7 +79,7 @@ const useChat = () => {
     console.log("Received message to send is: ", message);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/message/send`,
+        `http://localhost:8085/chat/message/send`,
         {
           method: "POST",
           headers: {
@@ -115,7 +115,7 @@ const useChat = () => {
     };
     console.log("Starting chat with: ", payload.participants);
     try {
-      const response = await fetch(`http://localhost:8085/auth/chats/create`, {
+      const response = await fetch(`http://localhost:8085/chat/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -148,7 +148,7 @@ const useChat = () => {
   const fetchMessages = async (chatId) => {
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/message/get-messages/${chatId}`,
+        `http://localhost:8085/chat/message/get-messages/${chatId}`,
         {
           method: "GET",
           headers: {
@@ -172,7 +172,7 @@ const useChat = () => {
     console.log("Updating read status for messageId:", messageId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/message/read/${messageId}`,
+        `http://localhost:8085/chat/message/read/${messageId}`,
         {
           method: "PUT",
           headers: {
@@ -194,11 +194,13 @@ const useChat = () => {
       console.error("Error updating read status:", error.message);
     }
   };
+
+  
   const updateChatMessage = async (messageId, chatId, messageData) => {
     console.log("Updating message for messageId:", messageId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/message/update/${messageId}`,
+        `http://localhost:8085/chat/message/update/${messageId}`,
         {
           method: "PUT",
           headers: {
@@ -225,7 +227,7 @@ const useChat = () => {
     console.log("Updating favorite status for chatId:", chatId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/update-favorite/${chatId}/${userId}`,
+        `http://localhost:8085/chat/update-favorite/${chatId}/${userId}`,
         {
           method: "PUT",
           headers: {
@@ -263,7 +265,7 @@ const useChat = () => {
     );
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/update-group-members/${chatId}`,
+        `http://localhost:8085/chat/update-group-members/${chatId}`,
         {
           method: "PUT",
           headers: {
@@ -289,7 +291,7 @@ const useChat = () => {
     console.log("Updating group for chatId:", chatId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/chats/update/${chatId}`,
+        `http://localhost:8085/chat/update/${chatId}`,
         {
           method: "PUT",
           headers: {
@@ -310,6 +312,8 @@ const useChat = () => {
       console.error("Error updating group:", error.message);
     }
   };
+
+  
   return {
     fetchChats,
     sendMessage,

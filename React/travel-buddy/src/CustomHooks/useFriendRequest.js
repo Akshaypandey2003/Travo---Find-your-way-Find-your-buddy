@@ -20,7 +20,7 @@ const useFriendRequest = () => {
     }
     try {
       const response = await fetch(
-        `http://localhost:8088/auth/connection/send/${loggedInUser?.userId}/${userId}`,
+        `http://localhost:8080/connection/send/${loggedInUser?.userId}/${userId}`,
         {
           method: "POST",
           headers: {
@@ -54,7 +54,7 @@ const useFriendRequest = () => {
     }
     try {
       const response = await fetch(
-        `http://localhost:8088/connection/received/${loggedInUser?.userId}`,
+        `http://localhost:8080/connection/received/${loggedInUser?.userId}`,
         {
           method: "POST",
           headers: {

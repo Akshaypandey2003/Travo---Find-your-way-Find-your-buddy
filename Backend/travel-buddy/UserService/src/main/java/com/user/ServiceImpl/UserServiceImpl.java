@@ -1,6 +1,9 @@
 package com.user.ServiceImpl;
 
+import com.user.Config.JwtProvider;
+import com.user.DTO.AuthResponse;
 import com.user.DTO.Author;
+import com.user.DTO.MessageResponse;
 import com.user.DTO.NotificationMessage;
 import com.user.Entity.Notification;
 import com.user.Entity.Notification.NotificationType;
@@ -15,9 +18,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -32,10 +37,14 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private WebSocketNotificationService webSocketNotificationService;
 
+    @Autowired
+    private JwtProvider jwtProvider;
+
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     // Add a new user
-    public User addUser(User user) {
+    public AuthResponse addUser(User user) {
         try {
             if (user.getProfilePic() == null) {
                 if (user.getGender().equalsIgnoreCase("male"))
@@ -44,11 +53,29 @@ public class UserServiceImpl implements UserService {
                     user.setProfilePic(AppConstants.DEFAULT_FEMALE_PIC);
             }
 
-            return userRepo.save(user);
+            User savedUser = userRepo.save(user);
+             // Assign role based on email
+            List<String> roles = user.getEmail().endsWith("@admin.com") ? Arrays.asList("ROLE_ADMIN")
+                    : Arrays.asList("ROLE_USER");
+
+         // Generate JWT Token
+         String token = jwtProvider.generateToken(user.getEmail(), roles);
+
+         AuthResponse authResponse = new AuthResponse(
+                    savedUser,
+                    token,
+                    "refresh_token",
+                    System.currentTimeMillis() + 3600000,
+                    roles,
+                    new MessageResponse("User registered successfully", "success"));
+        
+        return authResponse;
         } catch (Exception e) {
             throw new RuntimeException("Error while saving user: " + e.getMessage());
         }
     }
+
+
 
     // Retrieve all users
     public List<User> getAllUser(Pageable pageable) {
@@ -72,6 +99,9 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Error while retrieving user: " + e.getMessage());
         }
     }
+
+
+
     public Author getAuthorById(String userId) {
         try {
             User user =  userRepo.findById(userId)
@@ -212,4 +242,47 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Error while removing close friends: " + e.getMessage());
         }
     }
+
+    
+    public AuthResponse generateToken(User user) 
+    {
+        List<String> roles = Arrays.asList("ROLE_USER");
+
+        // Generate JWT Token
+        String token = jwtProvider.generateToken(user.getEmail(),roles);
+
+            return new AuthResponse(
+                    user,
+                    token,
+                    "refresh_token",
+                    System.currentTimeMillis() + 3600000,
+                    roles,
+                    new MessageResponse("User logged in successfully", "success"));
+    }
+
+    public AuthResponse generateToken(String email, String password) {
+
+        User user = userRepo.findByEmail(email);
+        if (user == null) {
+            return null;
+        }
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("INVALID_PASSWORD");
+        }
+
+        List<String> roles = List.of("ROLE_USER");
+
+        String token = jwtProvider.generateToken(user.getEmail(), roles);
+
+        return new AuthResponse(
+                user,
+                token,
+                "refresh_token",
+                System.currentTimeMillis() + 3600000,
+                roles,
+                new MessageResponse("User logged in successfully", "success")
+        );
+    }
+
 }

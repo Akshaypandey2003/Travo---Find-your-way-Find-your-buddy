@@ -16,7 +16,6 @@ import lombok.*;
 
 @Document
 public class User {
-    
     @Id
     private String userId;
     private String name;
@@ -32,11 +31,21 @@ public class User {
     private String city;
     private String bio;
 
-    // ArrayList<String> partnerPreference;
+    @Builder.Default
     private ArrayList<String> likes = new ArrayList<>();
+
+    @Builder.Default
     private ArrayList<String> preferences = new ArrayList<>();
+
+    @Builder.Default
     private ArrayList<String> following = new ArrayList<>();
+
+    @Builder.Default
     private ArrayList<String> followers = new ArrayList<>();
+
+    @Builder.Default
     private ArrayList<String> trips = new ArrayList<>();
+
+    @Builder.Default
     private List<String> closeFriends = new ArrayList<>();
 }

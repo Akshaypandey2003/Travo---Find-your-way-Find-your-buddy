@@ -150,51 +150,6 @@ public class ConnectionService {
         return notification;
     }
 
-
-    public Notification acceptConnectionRequest(String senderId, String receiverId,String connectionId) 
-    {
-        Connections connections = ConnectionsRepo.findByRequestFromAndRequestTo(senderId, receiverId);
-        if (connections == null) {
-            throw new RuntimeException("No friend request found!");
-        }
-        connections.setStatus(true);
-
-        User user1 = userService.getUserById(senderId);
-        User user2 = userService.getUserById(receiverId);
-
-        ArrayList<String> senderFollowers = user1.getFollowers();
-        ArrayList<String> receiverFollowing = user2.getFollowing();
-        if(senderFollowers==null)
-        {
-            senderFollowers = new ArrayList<>();
-            
-        }
-        if(!senderFollowers.contains(receiverId))
-        senderFollowers.add(receiverId);
-        user1.setFollowers(senderFollowers);
-
-        if(receiverFollowing==null)
-        {
-            receiverFollowing = new ArrayList<>();
-            
-        }
-        if(!receiverFollowing.contains(senderId))
-        {
-            receiverFollowing.add(senderId);
-        }
-        user2.setFollowing(receiverFollowing);
-        
-        userRepo.save(user1);
-        userRepo.save(user2);
-
-
-        Notification notification = new Notification();
-        notification.setSenderName(user1.getName());
-        ConnectionsRepo.save(connections);
-
-         return notification;
-    }
-
     // Reject friend request
     public void rejectFriendRequest(String connectionId) {
         Connections connection = ConnectionsRepo.findById(connectionId).orElse(null);

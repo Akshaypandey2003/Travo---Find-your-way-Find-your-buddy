@@ -32,7 +32,7 @@ const useTrip = () => {
     );
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/send-trip-request/${tripId}/${loggedInUser?.userId}/${requestTo}`,
+        `http://localhost:8085/trip/send-trip-request/${tripId}/${loggedInUser?.userId}/${requestTo}`,
         {
           method: "POST",
           headers: {
@@ -67,11 +67,13 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
+
+
   const getTrip = async (tripId) => {
     console.log("Fetching trip with id: ", tripId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/get-trip-by-tripId/${tripId}`,
+        `http://localhost:8085/trip/get-trip/${tripId}`,
         {
           method: "GET",
           headers: {
@@ -99,6 +101,8 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
+
+
   const acceptTripRequest = async (
     notificationId,
     tripId,
@@ -108,7 +112,7 @@ const useTrip = () => {
     console.log("Trip id inside accept trip custom hook: ", tripId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/accept-trip-request/${notificationId}/${tripId}/${notificationFrom}/${loggedInUser?.userId}`,
+        `http://localhost:8085/trip/accept-trip-request/${notificationId}/${tripId}/${notificationFrom}/${loggedInUser?.userId}`,
         {
           method: "POST",
           headers: {
@@ -149,10 +153,12 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
+
+
   const removeTripMember = async (tripId, userId) => {
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/remove-trip-member/${tripId}/${userId}`,
+        `http://localhost:8085/trip/remove-trip-member/${tripId}/${userId}`,
         {
           method: "DELETE",
           headers: {
@@ -184,42 +190,46 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
-  const deleteTripRequest = async (tripId, userId) => {
-    console.log("Trip id inside delete trip  request custom hook: ", tripId);
-    try {
-      const response = await fetch(
-        `http://localhost:8085/auth/user/trip/delete-trip-request/${tripId}/${userId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.ok) {
-        const contentType = response.headers.get("content-type");
-        let data;
 
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        } else {
-          data = await response.text(); // fallback to plain text
-        }
-        console.log("Trip removed successfully:", data);
-        dispatch(
-          removeTripRequest({
-            tripMember: userId,
-            tripId: tripId,
-          })
-        );
-      } else {
-        const err = await response.json();
-        console.error("Error removing trip request:", err.message);
-      }
-    } catch (error) {
-      console.error("Network error:", error.message);
-    }
-  };
+
+  // const deleteTripRequest = async (tripId, userId) => {
+  //   console.log("Trip id inside delete trip  request custom hook: ", tripId);
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:8085/trip/delete-trip-request/${tripId}/${userId}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const contentType = response.headers.get("content-type");
+  //       let data;
+
+  //       if (contentType && contentType.includes("application/json")) {
+  //         data = await response.json();
+  //       } else {
+  //         data = await response.text(); // fallback to plain text
+  //       }
+  //       console.log("Trip removed successfully:", data);
+  //       dispatch(
+  //         removeTripRequest({
+  //           tripMember: userId,
+  //           tripId: tripId,
+  //         })
+  //       );
+  //     } else {
+  //       const err = await response.json();
+  //       console.error("Error removing trip request:", err.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Network error:", error.message);
+  //   }
+  // };
+  
+  
   const createTrip = async (tripData) => {
     if (!loggedInUser) {
       navigate("/login");
@@ -230,7 +240,7 @@ const useTrip = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/create-trip`,
+        `http://localhost:8085/trip/create-trip`,
         {
           method: "POST",
           headers: {
@@ -261,6 +271,8 @@ const useTrip = () => {
       console.error("Network error while creating trip:", error.message);
     }
   };
+
+
   const updateTrip = async (tripData) => {
     if (!loggedInUser) {
       navigate("/login");
@@ -271,7 +283,7 @@ const useTrip = () => {
     );
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/update-trip`,
+        `http://localhost:8085/trip/update-trip`,
         {
           method: "PUT",
           headers: {
@@ -302,6 +314,7 @@ const useTrip = () => {
       console.error("Network error while updating trip:", error.message);
     }
   };
+
   const deleteTrip = async (tripId) => {
     if (!loggedInUser) {
       navigate("/login");
@@ -312,7 +325,7 @@ const useTrip = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/delete-trip/${tripId}`,
+        `http://localhost:8085/trip/delete-trip/${tripId}`,
         {
           method: "DELETE",
           headers: {
@@ -346,7 +359,7 @@ const useTrip = () => {
     console.log("Fetching feedbacks for the trip with id: ", tripId);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/get-trip-feedback/${tripId}`,
+        `http://localhost:8085/feedback/get-trip-feedback/${tripId}`,
         {
           method: "GET",
           headers: {
@@ -380,11 +393,12 @@ const useTrip = () => {
     }
   };
 
+
   const postTripFeedback = async (feedback) => {
     console.log("Posting feedback: ", feedback);
     try {
       const response = await fetch(
-        `http://localhost:8085/auth/user/trip/post-trip-feedback`,
+        `http://localhost:8085/feedback/trip/post-trip-feedback`,
         {
           method: "POST",
           headers: {
@@ -416,12 +430,13 @@ const useTrip = () => {
       console.error("Network error:", error.message);
     }
   };
+  
   return {
     sendTripRequest,
     createTrip,
     deleteTrip,
     acceptTripRequest,
-    deleteTripRequest,
+    // deleteTripRequest,
     removeTripMember,
     getTrip,
     updateTrip,

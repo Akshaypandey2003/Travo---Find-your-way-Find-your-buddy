@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import {
+  faBell,
   faComments,
   faExclamationTriangle,
   faIdCard,
+  faMessage,
   faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import ImgCarousel from "./PageComponents/ImgCarousel";
@@ -15,109 +17,41 @@ import Footer from "./Footer Section/Footer";
 import CustomerCard from "./PageComponents/CustomerCard";
 import { SafetyCard } from "./PageComponents/SafetyCard";
 import { useSelector } from "react-redux";
-import FeedbackCard from "./PageComponents/FeedbackCard";
-
-
-const feedbacksInfo = [
-  {
-    name: "Riya Sharma",
-    gender: "Female",
-    userImg: "",
-    comment:
-      "This platform made it super easy for me to find a travel buddy. The whole trip was fun and stress-free!",
-    rating: 5,
-    createdAt: "2025-08-10T10:30:00Z",
-  },
-  {
-    name: "Arjun Mehta",
-    gender: "Male",
-    userImg: "",
-    comment:
-      "I loved how simple it was to connect with like-minded travelers. Definitely planning my next trip here!",
-    rating: 4,
-    createdAt: "2025-08-15T14:45:00Z",
-  },
-  {
-    name: "Priya Verma",
-    gender: "Female",
-    userImg: "",
-    comment:
-      "Great community and smooth experience. Found amazing companions for my Goa trip. Highly recommend!",
-    rating: 5,
-    createdAt: "2025-09-01T09:15:00Z",
-  },
-  {
-    name: "Rohan Gupta",
-    gender: "Male",
-    userImg: "",
-    comment:
-      "The idea is fantastic! A little more filtering on trip types would make it perfect. Still, a great start.",
-    rating: 3,
-    createdAt: "2025-09-05T19:00:00Z",
-  },
-  {
-    name: "Sneha Patel",
-    gender: "Female",
-    userImg: "",
-    comment:
-      "I not only found travel buddies but also made lifelong friends. This app really changed how I travel.",
-    rating: 5,
-    createdAt: "2025-09-08T12:20:00Z",
-  },
-];
-
-
+import { ImagesSlider } from "../components/ui/images-slider";
+import { ImagesSliderDemo } from "./PageComponents/ImageSlider";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const safetyCardInfo = [
   {
-    title: "Every profile manually reviewed",
+    title: "Verified Traveler Profiles",
     icon: faIdCard,
     className: "text-9xl text-blue-500",
     desc:
-      "Our team manually verifies every new workawayer and host profile" +
-      "before they are listed on the site. To help keep our community" +
-      "safe and fair, and to allow our members to make informed" +
-      "decisions when arranging potential exchanges, we also review" +
-      "every new and renewing workawayer, as well as every new and" +
-      "updated host listing.",
+      "Every profile on Travo goes through a verification process to ensure authentic travelers. This helps you connect only with genuine people and build trust before planning your trip together.",
   },
   {
-    title: "Every profile manually reviewed",
+    title: "Safe & Secure Platform",
     icon: faShieldAlt,
     className: "text-9xl text-green-700",
     desc:
-      "Our team manually verifies every new workawayer and host profile" +
-      "before they are listed on the site. To help keep our community" +
-      "safe and fair, and to allow our members to make informed" +
-      "decisions when arranging potential exchanges, we also review" +
-      "every new and renewing workawayer, as well as every new and" +
-      "updated host listing.",
+      "Your data, chats, and trip details are protected with strong security measures. We prioritize your privacy and ensure a safe environment for all travel interactions.",
   },
   {
-    title: "Every profile manually reviewed",
+    title: "Transparent Reviews & Ratings",
     icon: faComments,
-    className: "text-9xl text-orange-800",
+    className: "text-9xl text-orange-600",
     desc:
-      "Our team manually verifies every new workawayer and host profile" +
-      "before they are listed on the site. To help keep our community" +
-      "safe and fair, and to allow our members to make informed" +
-      "decisions when arranging potential exchanges, we also review" +
-      "every new and renewing workawayer, as well as every new and" +
-      "updated host listing.",
+      "Travelers can rate and review their trip partners after every journey. Honest feedback helps you make informed decisions and choose the right companions for your trips.",
   },
   {
-    title: "Every profile manually reviewed",
+    title: "Report & Support System",
     icon: faExclamationTriangle,
     className: "text-9xl text-red-600",
     desc:
-      "Our team manually verifies every new workawayer and host profile" +
-      "before they are listed on the site. To help keep our community" +
-      "safe and fair, and to allow our members to make informed" +
-      "decisions when arranging potential exchanges, we also review" +
-      "every new and renewing workawayer, as well as every new and" +
-      "updated host listing.",
+      "If something feels wrong, you can instantly report users or trips. Our support team actively reviews reports to maintain a respectful and trustworthy travel community.",
   },
 ];
+
 export const About = () => {
   const theme = useSelector((store) => store.auth.theme);
   const feedbacks = useSelector((store) => store.trip.tripFeedbacks);
@@ -125,7 +59,8 @@ export const About = () => {
   return (
     <div className="mt-16">
       <div className="p-10  m-auto">
-        <ImgCarousel />
+        {/* <ImgCarousel /> */}
+        <ImagesSliderDemo />
       </div>
       {/* --------- Second container ---------------------- */}
       <div className="flex items-center justify-center ">
@@ -206,36 +141,50 @@ export const About = () => {
             journey more comfortable and memorable.
           </p>
         </div>
-        <div className="w-[50%] px-20 py-10">
+        <div className="w-[50%] px-8 py-10">
           <div className="py-4 flex gap-5">
-            <Card className=" p-3">
-              <div className="w-11 h-11  rounded-md p-2 bg-orange-200  ">
+            <Card className="p-4">
+              <div className="w-11 h-11 rounded-md p-2 bg-orange-200 flex items-center justify-center">
                 <img src="../directions-1.png" alt="" />
               </div>
-              <h2 className="font-semibold text-lg">Lots of Choices</h2>
-              <h3 className="text-gray-500">
-                We provide several choices of destinations and affordable
-                traveling packages.
+              <h2 className="font-semibold text-lg mt-3">
+                Discover Perfect Trips
+              </h2>
+              <h3 className="text-gray-500 mt-1">
+                Explore destinations, trip types, and travel plans that match
+                your vibe and preferences.
               </h3>
             </Card>
-            <Card className=" p-3">
-              <div className="w-11 h-11  rounded-md p-2 bg-orange-200  ">
-                <img src="../guide-1.png" alt="" />
+
+            <Card className="p-4">
+              <div className="w-11 h-11 rounded-md p-2 bg-orange-200 flex items-center justify-center">
+                <FontAwesomeIcon
+                  icon={faBell}
+                  className="text-orange-500 text-2xl"
+                />
               </div>
-              <h2 className="font-semibold text-lg">Best Tour Guide</h2>
-              <h3 className="text-gray-500">
-                We provide professional tour guide and people who understand the
-                place.
+              <h2 className="font-semibold text-lg mt-3">
+                Instant Activity Alerts
+              </h2>
+              <h3 className="text-gray-500 mt-1">
+                Get real-time notifications for profile interactions, trip
+                updates, and travel requests.
               </h3>
             </Card>
-            <Card className="p-3">
-              <div className="w-11 h-11  rounded-md p-2 bg-orange-200  ">
-                <img src="../calendar.png" alt="" />
+
+            <Card className="p-4">
+              <div className="w-11 h-11 rounded-md p-2 bg-orange-200 flex items-center justify-center">
+                <FontAwesomeIcon
+                  icon={faMessage}
+                  className="text-orange-500 text-2xl"
+                />
               </div>
-              <h2 className="font-semibold text-lg">Easy Bookings</h2>
-              <h3 className="text-gray-500">
-                We make it easier of our customers to do bookings to the places
-                they want.
+              <h2 className="font-semibold text-lg mt-3">
+                Seamless Travel Chats
+              </h2>
+              <h3 className="text-gray-500 mt-1">
+                Coordinate with fellow travelers through smooth one-to-one and
+                group conversations.
               </h3>
             </Card>
           </div>
@@ -245,7 +194,7 @@ export const About = () => {
       {/* ---------------------------- Fourth Container---------------------- */}
       <div
         className={`p-10  rounded-3xl my-12 w-[85rem] m-auto ${
-          theme === "dark" ? "bg-black border-gray-800" : "bg-gray-100"
+          theme === "dark" && "bg-black border-gray-800" 
         }`}
       >
         <div className=" w-[40rem] m-auto text-center">
@@ -382,7 +331,7 @@ export const About = () => {
         </div>
       </div>
       {/* -------------- Sixth Container --------------------- */}
-      <div className=" px-20 py-10">
+      {/* <div className=" px-20 py-10">
         <div className="w-[50rem] ">
           <div className="flex items-center gap-2 mb-5">
             <div className="w-8 h-8 ">
@@ -410,9 +359,9 @@ export const About = () => {
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </div>
-      </div>
+      </div> */}
       {/* -------------- Seventh Container --------------------- */}
-      <div className=" px-20 py-10 ">
+      <div className="mt-20 px-20 py-10 ">
         <div className="w-[50rem]  m-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-5  ">
             <div className="w-8 h-8 ">
@@ -444,7 +393,7 @@ export const About = () => {
         </div>
       </div>
       {/* ---------------------------- Eighth Container---------------------- */}
-      <div
+      {/* <div
         className={`p-10  rounded-3xl w-[85rem] m-auto ${
           theme === "dark" ? "bg-black" : "bg-gray-100"
         }`}
@@ -465,7 +414,7 @@ export const About = () => {
             Get Started
           </Button>
         </div>
-      </div>
+      </div> */}
       {/* ---------------------------- Footer Section (Eighth Container)---------------------- */}
       <Footer />
     </div>

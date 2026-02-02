@@ -25,7 +25,7 @@ public interface TripServices {
     List<Trip> getTripsByCategory(String category);
 
     public Trip sendTripRequest(String tripId, String requestFrom, String requestTo);
-    public Trip acceptTripRequest(String tripId, String requestFrom);
+    public Trip acceptTripRequest(String tripId, String requestFrom,String tripOwnerId);
     public Trip removeTripMember(String tripId, String memberId);
 
 }

@@ -24,7 +24,8 @@ public class ChatController {
     private ChatService chatService;
 
     @PostMapping("/create")
-    public ResponseEntity<Chat> createChat(@RequestBody Chat chat){
+    public ResponseEntity<Chat> createChat(@RequestBody Chat chat)
+    {
       return ResponseEntity.ok(chatService.createChat(chat));
     }
     
@@ -38,20 +39,20 @@ public class ChatController {
     }
 
     @PutMapping("/update/{chatId}")
-    public ResponseEntity<Chat> updateChat(@PathVariable String chatId, @RequestBody Chat chat){
-        return ResponseEntity.ok(chatService.updateChat(chatId, chat));
+    public ResponseEntity<Chat> updateChat(@PathVariable String adminId, @PathVariable String chatId, @RequestBody Chat chat){
+        return ResponseEntity.ok(chatService.updateChat(adminId, chatId, chat));
     }
     @PutMapping("/update-favorite/{chatId}/{userId}")
     public ResponseEntity<Chat> updateFavorite(@PathVariable String chatId, @PathVariable String userId){
         return ResponseEntity.ok(chatService.updateFavorite(chatId, userId));
     }
     @PutMapping("/update-group-members/{chatId}")
-    public ResponseEntity<Chat> updateGroupMembers(@PathVariable String chatId, @RequestBody Set<String> members ){
-        return ResponseEntity.ok(chatService.updateGroupMembers(chatId, members));
+    public ResponseEntity<Chat> updateGroupMembers(@PathVariable String adminId,@PathVariable String chatId, @RequestBody Set<String> members ){
+        return ResponseEntity.ok(chatService.updateGroupMembers(adminId, chatId, members));
     }
     @DeleteMapping("/delete/{chatId}")
-    public ResponseEntity<Void> deleteChat(@PathVariable String chatId){
-        chatService.deleteChat(chatId);
+    public ResponseEntity<Void> deleteChat(@PathVariable String adminId,@PathVariable String chatId){
+        chatService.deleteChat(adminId, chatId);
         return ResponseEntity.noContent().build();
     }
 

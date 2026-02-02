@@ -3,7 +3,9 @@ package com.trip.Entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,8 +17,8 @@ import lombok.*;
 @NoArgsConstructor
 @Getter
 @Setter
-@Builder
 @ToString
+@Builder
 
 @Document
 public class Trip {
@@ -24,7 +26,9 @@ public class Trip {
     @Id
     private String tripId;
     private String tripName;
-    private String createdBy;
+    private String tripOwnerId;
+    private String tripOwnerName;
+    private String tripOwnerProfilePic;
     private String tripCity;
     private String tripCountry;
     private String tripState;
@@ -39,11 +43,11 @@ public class Trip {
     
     private String isPrivateTrip;
     private String tripCategory;
-    private List<String> tripTags;
+    private Set<String> tripTags;
     private TripType tripType;
     //when a new member joins the trip, this field will be updated.
     @Builder.Default
-    private List<String> tripMembers = new ArrayList<>();
+    private Set<String> tripMembers = new LinkedHashSet<>();
 
     
     

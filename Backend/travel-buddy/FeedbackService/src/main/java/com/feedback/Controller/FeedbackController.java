@@ -22,6 +22,7 @@ public class FeedbackController {
 
      @PostMapping("/submit")
     public ResponseEntity<?> submitFeedback(@RequestBody FeedBack feedback) {
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(feedbackService.submitFeedback(feedback));
     }
 
@@ -29,14 +30,6 @@ public class FeedbackController {
     public ResponseEntity<?> getFeedBack(@PathVariable String tripId) {
         return ResponseEntity.status(HttpStatus.OK).body(feedbackService.getFeedback(tripId));
     }
-
-
-    @GetMapping("/get-trip-feedback/{tripId}")
-    public ResponseEntity<?> postFeedBack(@PathVariable String tripId) {
-        return ResponseEntity.status(HttpStatus.OK).body(feedbackService.getFeedback(tripId));
-    }
-
-
 
     @GetMapping("/check/{tripId}/{userId}")
     public boolean checkIfSubmitted(@PathVariable String tripId, @PathVariable String userId) {

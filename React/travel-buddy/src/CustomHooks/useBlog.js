@@ -33,8 +33,9 @@ const useBlog = ()=>{
   };
 
  const postBlog = async (blogData) => {
-
   try {
+
+    const token = localStorage.getItem("token");
     console.log("Received blog data is: ", blogData);
 
     const imageUploadPromises = blogData.blogImages.map(async (imageFile) => {
@@ -61,7 +62,7 @@ const useBlog = ()=>{
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-          //   "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify(finalBlogData),
         }
@@ -89,6 +90,8 @@ const useBlog = ()=>{
 const updateBlog = async (blogData, blogId) => {
   console.log("Received blog id in update blog function: ", blogId);
   console.log("Received blog in update blog function: ", blogData);
+
+  const token = localStorage.getItem("token");
 
   try {
     const imageUploadPromises = blogData.blogImages.map(async (imageFile, index) => {
@@ -126,7 +129,7 @@ const updateBlog = async (blogData, blogId) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          // "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(finalBlogData),
       }
@@ -147,15 +150,16 @@ const updateBlog = async (blogData, blogId) => {
 };
 
 
-const getAllBlogs = async()=>{
+const getAllBlogs = async(page)=>{
+  const token = localStorage.getItem("token");
   try {
       const response = await fetch(
-        `http://localhost:8085/blog/get-all-blogs`,
+        `http://localhost:8085/blog/get-all-blogs?page=${page}&size=10`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-          //   "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
         }
       );
@@ -168,6 +172,7 @@ const getAllBlogs = async()=>{
       {
           console.log("All Blogs fetched successfully: ",data);
           dispatch(addBlog(data));
+          return data;
           // dispatch(updateSuccess({success:true,message:data?.messageResponse?.message}));
       }
   } catch (error) {
@@ -177,6 +182,8 @@ const getAllBlogs = async()=>{
 
 const updateBlogLike = async(blogId, userId)=>{
   console.log("User with id : ",userId," is liking blog with id: ",blogId);
+
+  const token = localStorage.getItem("token");
   try {
     
       const response = await fetch(
@@ -185,7 +192,7 @@ const updateBlogLike = async(blogId, userId)=>{
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-          //   "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
         }
       );
@@ -206,6 +213,8 @@ const updateBlogLike = async(blogId, userId)=>{
 }
 
 const updateBlogViews = async(blogId, userId)=>{
+
+  const token = localStorage.getItem("token");
   if(!userId)
   {
     console.log("User id is not present");
@@ -219,7 +228,7 @@ const updateBlogViews = async(blogId, userId)=>{
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-          //   "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
         }
       );
@@ -238,6 +247,7 @@ const updateBlogViews = async(blogId, userId)=>{
   } 
 }
 const deleteBlog = async(blogId)=>{
+  const token = localStorage.getItem("token");
   try {
       const response = await fetch(
         `http://localhost:8085/blog/delete-blog/${blogId}`,
@@ -245,7 +255,7 @@ const deleteBlog = async(blogId)=>{
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-          //   "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
         }
       );

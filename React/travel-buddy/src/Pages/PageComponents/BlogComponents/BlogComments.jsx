@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -9,16 +11,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCommentDots, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import CommentsCard from "./CommentsCard";
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useSelector, shallowEqual, useDispatch } from "react-redux";
+import { faCommentDots, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import useComments from "../../../CustomHooks/useComments";
-import store from "../../../Redux/Store";
-import { Skeleton } from "@/components/ui/skeleton";
+import CommentsCard from "./CommentsCard";
 import CommentsCardSkeleton from "./CommentsCardSkeleton";
 
 export const BlogComments = ({ blog }) => {
@@ -69,7 +68,7 @@ export const BlogComments = ({ blog }) => {
     // Assuming your `getComments` supports pagination
     setPage((prev) => prev + 1);
     setIsFetchingMore(false);
-  }, [page, blog?.blogId, getComments, isFetchingMore]);
+  }, [page, blog?.blogId, isFetchingMore]);
 
   useEffect(() => {
     if (fetchComments) {

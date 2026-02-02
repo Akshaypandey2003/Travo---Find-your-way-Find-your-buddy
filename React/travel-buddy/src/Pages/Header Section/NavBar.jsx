@@ -16,17 +16,18 @@ import { useEffect, useState } from "react";
 export const NavBar = () => {
   const dispatch = useDispatch();
   const userData = useSelector((store) => store.auth, shallowEqual);
+  
   const profileStatus = useSelector(
     (store) => store.auth.profileStatus,
-    shallowEqual
+    shallowEqual,
   );
   const notifications = useSelector(
     (store) => store.notifications,
-    shallowEqual
+    shallowEqual,
   );
   const friendRequests = Array.isArray(notifications?.notifications)
     ? notifications.notifications.filter(
-        (item) => item.type === "FRIEND_REQUEST"
+        (item) => item.type === "FRIEND_REQUEST",
       )
     : [];
 
@@ -89,14 +90,17 @@ export const NavBar = () => {
           {/* <li className="cursor-pointer font-bold">
             <Link to="/destinations" className="text-inherit no-underline hover:text-inherit hover:no-underline">Destinations</Link>
           </li> */}
-          <li className="cursor-pointer font-bold">
-            <Link
-              to="/blogs/:id"
-              className="text-inherit no-underline hover:text-inherit hover:no-underline"
-            >
-              Blogs
-            </Link>
-          </li>
+
+          {userData?.user && (
+            <li className="cursor-pointer font-bold">
+              <Link
+                to="/blogs/:id"
+                className="text-inherit no-underline hover:text-inherit hover:no-underline"
+              >
+                Blogs
+              </Link>
+            </li>
+          )}
         </ul>
       </div>
       {userData.user == null ? (

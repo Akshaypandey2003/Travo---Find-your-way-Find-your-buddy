@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import useBlog from "../CustomHooks/useBlog";
 import SmoothAutoScroller from "./PageComponents/SmoothAutoScroller";
 import TripSlider from "./PageComponents/TripSlider";
 import { PeopleSection } from "./PageComponents/PeopleSection";
+import useNotificationsData from "../CustomHooks/useNotificationsData";
 
 const customerCardInfo = [
   {
@@ -70,8 +72,10 @@ const destData = destinationsData;
 const userData = usersData;
 
 export const Home = () => {
+
   const { getPlaces } = usePlacesData();
-  const { getAllUsers, getAllNotifications } = useUserData();
+  const { getAllUsers } = useUserData();
+  const { getAllNotifications } = useNotificationsData();
   const { getAllBlogs } = useBlog();
   const places = useSelector((store) => store.places.placesData, shallowEqual);
   const dispatch = useDispatch();
@@ -116,7 +120,6 @@ export const Home = () => {
     ) {
       getAllNotifications(loggedInUser?.userId);
     }
-    getAllBlogs();
   }, [loggedInUser]);
 
   return (
@@ -167,6 +170,7 @@ export const Home = () => {
             Why travel alone when you can share the adventure? Find your ideal
             travel buddy and make every trip a memorable one!
           </p>
+
           {/* <Card className="flex px-5 mt-10">
             <div className="border-r-2  flex p-2 gap-2 items-center ">
               <div className="w-9 h-9  rounded-full p-2 bg-orange-200  ">
@@ -196,6 +200,7 @@ export const Home = () => {
               </Button>
             </div>
           </Card> */}
+
           <HeroSectionImageCarousel />
         </div>
         <div className="w-[50%] ">
@@ -241,7 +246,6 @@ export const Home = () => {
         </div>
       </div>
       <div className="px-10  mt-20">
-        {/* <SmoothAutoScroller data={randomData} reverse={false} speed={0.5} /> */}
         <SmoothAutoScroller data={randomData} reverse={false} speed={0.5} />
 
         <div className="my-5">

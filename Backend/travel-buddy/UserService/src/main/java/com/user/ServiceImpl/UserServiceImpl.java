@@ -1,48 +1,44 @@
 package com.user.ServiceImpl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.user.Config.JwtProvider;
 import com.user.DTO.AuthResponse;
 import com.user.DTO.Author;
 import com.user.DTO.MessageResponse;
-import com.user.DTO.NotificationMessage;
-import com.user.Entity.Notification;
-import com.user.Entity.Notification.NotificationType;
 import com.user.Entity.User;
 import com.user.Exceptions.UserNotFoundException;
 import com.user.Helper.AppConstants;
 import com.user.Repository.UserRepo;
 import com.user.Service.UserService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired
     private UserRepo userRepo;
-
-    @Autowired
-    private NotificationService notificationService;
-
-    @Autowired
-    private WebSocketNotificationService webSocketNotificationService;
-
-    @Autowired
     private JwtProvider jwtProvider;
+    private PasswordEncoder passwordEncoder;
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public UserServiceImpl(UserRepo userRepo,
+                           JwtProvider jwtProvider,
+                           PasswordEncoder passwordEncoder) {
+        this.userRepo = userRepo;
+        this.jwtProvider = jwtProvider;
+        this.passwordEncoder = passwordEncoder;
+    }
+
     // Add a new user
     public AuthResponse addUser(User user) {
         try {
@@ -59,7 +55,7 @@ public class UserServiceImpl implements UserService {
                     : Arrays.asList("ROLE_USER");
 
          // Generate JWT Token
-         String token = jwtProvider.generateToken(user.getEmail(), roles);
+         String token = jwtProvider.generateToken(savedUser.getUserId(), savedUser.getEmail(), roles);
 
          AuthResponse authResponse = new AuthResponse(
                     savedUser,
@@ -151,7 +147,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    public ResponseEntity<Object> updateLikes(String userId, String senderId) {
+    public String updateLikes(String userId, String senderId) {
         try {
             User user = userRepo.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
@@ -159,49 +155,23 @@ public class UserServiceImpl implements UserService {
             userRepo.save(user);
             User user2 = userRepo.findById(senderId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + senderId + " not found"));
-            // Creating notification object
-            Notification notification = new Notification();
-            notification.setNotificationFrom(senderId);
-            notification.setNotificationTo(userId);
-            notification.setType(NotificationType.LIKE);
-            notification.setMessage("Liked your profile.");
-            notification.setSenderName(user2.getName());
-            notification.setSenderProfilePic(user2.getProfilePic());
-
-            // Map<String,Object>map = new HashMap<>();
-            // map.put(senderId,"wants to follow you");
-            // notification.setData(map);
-
-            NotificationMessage wsMessage = new NotificationMessage();
-            wsMessage.setNotificationFrom(senderId);
-            wsMessage.setNotificationTo(userId);
-            wsMessage.setMessage("Liked your profile");
-            wsMessage.setType(notification.getType()+"");
-            wsMessage.setSenderName(user2.getName());
-            wsMessage.setSenderProfilePic(user2.getProfilePic());
 
             if (user.getLikes() == null) {
                 user.setLikes(new ArrayList<>());
                 user.getLikes().add(senderId);
-                Notification savedNotification = notificationService.sendNotification(notification);
-                wsMessage.setNotificationId(savedNotification.getNotificationId());
-                webSocketNotificationService.sendNotification(wsMessage);
-                logger.info("User liked the profile at line 146.");
+               
             } else if (user.getLikes().contains(senderId)) {
 
                 user.getLikes().remove(senderId);
                 logger.info("User unliked the profile.");
             } else {
                 user.getLikes().add(senderId);
-                Notification savedNotification = notificationService.sendNotification(notification);
-                wsMessage.setNotificationId(savedNotification.getNotificationId());
-                webSocketNotificationService.sendNotification(wsMessage);
                 logger.info("User liked the profile at line 156.");
             }
 
             userRepo.save(user);
 
-            return ResponseEntity.ok("User likes updated successfully.");
+            return "Liked";
         } catch (Exception e) {
             throw new RuntimeException("Error while updating likes: " + e.getMessage());
         }
@@ -249,7 +219,7 @@ public class UserServiceImpl implements UserService {
         List<String> roles = Arrays.asList("ROLE_USER");
 
         // Generate JWT Token
-        String token = jwtProvider.generateToken(user.getEmail(),roles);
+        String token = jwtProvider.generateToken(user.getUserId(), user.getEmail(), roles);
 
             return new AuthResponse(
                     user,
@@ -260,7 +230,7 @@ public class UserServiceImpl implements UserService {
                     new MessageResponse("User logged in successfully", "success"));
     }
 
-    public AuthResponse generateToken(String email, String password) {
+    public AuthResponse generateToken(String userId,String email, String password) {
 
         User user = userRepo.findByEmail(email);
         if (user == null) {
@@ -273,7 +243,7 @@ public class UserServiceImpl implements UserService {
 
         List<String> roles = List.of("ROLE_USER");
 
-        String token = jwtProvider.generateToken(user.getEmail(), roles);
+        String token = jwtProvider.generateToken(userId, user.getEmail(), roles);
 
         return new AuthResponse(
                 user,

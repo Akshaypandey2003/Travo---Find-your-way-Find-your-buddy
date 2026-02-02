@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import {
   BrowserRouter as Router,
@@ -28,8 +29,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DEFAULT_MALE_PIC } from "./Constants/constants";
 import useChat from "./CustomHooks/useChat";
 import { addTrips } from "./Redux/Slices/tripSlice";
+import LandingPageHome from "./Pages/LandingPage/LandingPageHome";
 
 function App() {
+
   const loggedInUser = useSelector((store) => store.auth.user);
   const location = useLocation();
   const hideNavBarRoutes = ["/login", "/register"];
@@ -41,11 +44,14 @@ function App() {
   const { fetchChats } = useChat();
   const { fetchMessages } = useChat();
 
+  console.log("Logged in user in App.jsx: ", loggedInUser);
+
   useNotificationSocket();
   const notifications = useSelector(
     (store) => store.notifications,
     shallowEqual
   );
+
   // useWebSocket();
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,7 +128,7 @@ function App() {
       </div>
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={loggedInUser ? <Home /> : <LandingPageHome />} />
         <Route path="/about" element={<About />} />
         <Route
           path="/destination/details/:placeId"

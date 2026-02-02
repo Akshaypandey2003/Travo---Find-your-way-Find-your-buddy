@@ -50,7 +50,10 @@ export const CreateBlogForm = ({ formType, blog }) => {
 
   const form = useForm({
     defaultValues: {
-      blogAuthor: blog?.blogAuthor || user?.userId,
+      blogAuthorId: blog?.blogAuthor || user?.userId,
+      blogAuthorName: blog?.blogAuthorName || user?.name,
+      blogAuthorProfilePic:
+        blog?.blogAuthorProfilePic || user?.profilePic || "",
       blogTitle: blog?.blogTitle || "",
       blogContent: blog?.blogContent || "",
       blogCaption: blog?.blogCaption || "",

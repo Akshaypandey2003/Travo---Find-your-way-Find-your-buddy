@@ -8,14 +8,19 @@ import {
   updateMessage,
 } from "../Redux/Slices/chatSlice";
 import useAuth from "./useAuth";
+import { useCallback } from "react";
+import useUserData from "./useUserData";
 
 /* eslint-disable no-unused-vars */
 const useChat = () => {
   const dispatch = useDispatch();
   const loggedInUser = useSelector((store) => store.auth.user);
   const { uploadImageToCloudinary } = useAuth();
+  const usersList = useSelector((store) => store.auth.usersList);
+  const {getUser} = useUserData();
 
   const createGroup = async (data) => {
+    const token = localStorage.getItem("token");
     console.log("Data inside createGroup custom hook: ", data);
     try {
        
@@ -25,6 +30,7 @@ const useChat = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(data),
       });
@@ -52,6 +58,7 @@ const useChat = () => {
   };
 
   const fetchChats = async (userId) => {
+    const token = localStorage.getItem("token");
     console.log("Fetching chats for user:", userId);
     try {
       const response = await fetch(
@@ -60,6 +67,7 @@ const useChat = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -75,7 +83,9 @@ const useChat = () => {
       console.error("Error fetching chats:", error.message);
     }
   };
+
   const sendMessage = async ({ message }) => {
+    const token = localStorage.getItem("token");
     console.log("Received message to send is: ", message);
     try {
       const response = await fetch(
@@ -84,6 +94,7 @@ const useChat = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(message),
         }
@@ -110,6 +121,8 @@ const useChat = () => {
   };
 
   const startChat = async ({ message, receiver }) => {
+
+    const token = localStorage.getItem("token");
     const payload = {
       participants: [loggedInUser?.userId, receiver],
     };
@@ -119,6 +132,7 @@ const useChat = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(payload),
       });
@@ -146,6 +160,8 @@ const useChat = () => {
   };
 
   const fetchMessages = async (chatId) => {
+
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://localhost:8085/chat/message/get-messages/${chatId}`,
@@ -153,6 +169,7 @@ const useChat = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -169,6 +186,8 @@ const useChat = () => {
   };
 
   const updateReadStatus = async ({ messageId, chatId }) => {
+
+    const token = localStorage.getItem("token");
     console.log("Updating read status for messageId:", messageId);
     try {
       const response = await fetch(
@@ -177,6 +196,7 @@ const useChat = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -197,6 +217,7 @@ const useChat = () => {
 
   
   const updateChatMessage = async (messageId, chatId, messageData) => {
+    const token = localStorage.getItem("token");
     console.log("Updating message for messageId:", messageId);
     try {
       const response = await fetch(
@@ -205,6 +226,7 @@ const useChat = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(messageData),
         }
@@ -224,6 +246,8 @@ const useChat = () => {
   };
 
   const updateFavorite = async (chatId, userId) => {
+
+    const token = localStorage.getItem("token");
     console.log("Updating favorite status for chatId:", chatId);
     try {
       const response = await fetch(
@@ -232,6 +256,7 @@ const useChat = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -249,6 +274,8 @@ const useChat = () => {
   };
 
   const updateGroupMembers = async (chatId, members) => {
+
+    const token = localStorage.getItem("token");
     let finalMembers;
     if (Array.isArray(members)) {
       finalMembers = members.map((member) =>
@@ -270,6 +297,7 @@ const useChat = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(finalMembers),
         }
@@ -288,6 +316,8 @@ const useChat = () => {
   };
   
   const updateGroupChat = async (chatId, groupData) => {
+
+    const token = localStorage.getItem("token");
     console.log("Updating group for chatId:", chatId);
     try {
       const response = await fetch(
@@ -296,6 +326,7 @@ const useChat = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(groupData),
         }
@@ -313,6 +344,77 @@ const useChat = () => {
     }
   };
 
+    const getGroupParticipantsData = async (participantIds = []) => {
+      const existingUsersMap = new Map(
+        usersList.map((user) => [user.userId, user])
+      );
+  
+      // Separate existing users and missing userIds
+      const existingUsers = [];
+      const missingUserIds = [];
+  
+      for (const id of participantIds) {
+        if (existingUsersMap.has(id)) {
+          existingUsers.push(existingUsersMap.get(id));
+        } else {
+          missingUserIds.push(id);
+        }
+      }
+  
+      // Fetch missing users
+      const fetchedUsers = await Promise.all(
+        missingUserIds.map(async (id) => {
+          try {
+            const user = await getUser(id);
+            return user;
+          } catch (err) {
+            console.error("Error fetching user:", id, err);
+            return null;
+          }
+        })
+      );
+  
+      // Filter out failed fetches (null)
+      const finalFetchedUsers = fetchedUsers.filter(Boolean);
+  
+      // Merge and return
+      return [...existingUsers, ...finalFetchedUsers];
+    };
+  
+    const extractAllFriends = useCallback(async () => {
+  
+      console.log("inside extractFriends");
+      if (!loggedInUser) return [];
+  
+      const allFriendIds = [
+        ...new Set([
+          ...(loggedInUser.followers || []),
+          ...(loggedInUser.followings || []),
+        ]),
+      ];
+      console.log("All friend IDs:", allFriendIds);
+  
+      const friendsData = await Promise.all(
+        allFriendIds.map(async (id) => {
+          let user = usersList.find((u) => u.userId === id);
+          if (!user) {
+            try {
+              user = await getUser(id);
+              console.log("Fetched friend: ", user);
+            } catch (err) {
+              console.error(`Failed to fetch user ${id}:`, err);
+              user = null;
+            }
+          }
+          console.log("Fetched friend: ", user);
+          return user;
+        })
+      ).catch((err) => {
+        console.error("Promise.all error:", err);
+      });
+      console.log("All fetched friends data inside custom hook: ", friendsData);
+      return friendsData.filter(Boolean);
+    }, [loggedInUser, usersList, getUser]); // ✅ Add these
   
   return {
     fetchChats,
@@ -325,6 +427,8 @@ const useChat = () => {
     createGroup,
     updateGroupMembers,
     updateGroupChat,
+    getGroupParticipantsData,
+    extractAllFriends
   };
 };
 export default useChat;

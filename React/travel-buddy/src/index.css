@@ -1,3 +1,31 @@
+html, body, #root {
+  height: 100%;
+}
+body {
+  margin: 0;
+}
+/* 🌞 Light theme gradient */
+html:not(.dark) body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+
+  background: linear-gradient(
+    180deg,
+    #ffffff 5%,
+    #fed7aa 100%,
+    #fff7ed 100%,
+    #ffffff 100%
+  );
+}
+
+/* 🌙 Dark theme background */
+html.dark body {
+  background: #0a0a0a; /* or any dark color you like */
+}
+
 *,
 *::before,
 *::after {
@@ -242,7 +270,8 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* background-color: #242424; */
+  background: transparent;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

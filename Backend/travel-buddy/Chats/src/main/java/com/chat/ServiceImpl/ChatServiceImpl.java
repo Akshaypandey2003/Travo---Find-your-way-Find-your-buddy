@@ -2,6 +2,7 @@ package com.chat.ServiceImpl;
 
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,8 +12,10 @@ import com.chat.Exceptions.ChatNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
 import com.chat.Service.ChatService;
+import com.chat.Service.NotificationProducer;
 
 @Service
+@SuppressWarnings("unused")
 public class ChatServiceImpl implements ChatService {
 
     @Autowired
@@ -21,10 +24,26 @@ public class ChatServiceImpl implements ChatService {
     @Autowired
     private MessageRepository messageRepo;
 
+    @Autowired
+    private NotificationProducer notificationProducer;
+
     @Override
     public Chat createChat(Chat chat) {
         try {
-            return chatRepo.save(chat);
+
+            Chat savedChat = chatRepo.save(chat);
+
+            if (savedChat.isGroupChat()) {
+
+                for(String participant : savedChat.getParticipants()) {
+
+                   notificationProducer.groupCreated(((TreeSet<String>) chat.getGroupAdmin()).first(),
+                        participant, savedChat.getChatId(), savedChat.getGroupName());
+                }
+                
+            }
+
+            return savedChat;
         } catch (Exception e) {
             throw new RuntimeException("Error creating chat: " + e.getMessage(), e);
         }
@@ -58,7 +77,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public Chat updateChat(String chatId, Chat chat) {
+    public Chat updateChat(String adminId, String chatId, Chat chat) {
         try {
             Chat existingChat = chatRepo.findById(chatId)
                     .orElseThrow(() -> new ChatNotFoundException("Chat not found with id: " + chatId));
@@ -82,12 +101,21 @@ public class ChatServiceImpl implements ChatService {
 
                 existingChat.setParticipants(chat.getParticipants());
             }
+
+            for (String participant : existingChat.getParticipants()) {
+
+                notificationProducer.groupUpdated(adminId, participant, existingChat.getChatId(),
+                        existingChat.getGroupName());
+
+            }
+
             return chatRepo.save(existingChat);
         } catch (Exception e) {
             throw new RuntimeException("Error updating chat: " + e.getMessage(), e);
         }
     }
-   public Chat updateFavorite(String chatId, String userId) {
+
+    public Chat updateFavorite(String chatId, String userId) {
         try {
             Chat chat = chatRepo.findById(chatId)
                     .orElseThrow(() -> new ChatNotFoundException("Chat not found with id: " + chatId));
@@ -105,7 +133,8 @@ public class ChatServiceImpl implements ChatService {
             throw new RuntimeException("Error updating favorite status: " + e.getMessage(), e);
         }
     }
-   public Chat updateGroupMembers(String chatId, Set<String> members) {
+
+    public Chat updateGroupMembers(String adminId, String chatId, Set<String> members) {
         try {
             Chat chat = chatRepo.findById(chatId)
                     .orElseThrow(() -> new ChatNotFoundException("Chat not found with id: " + chatId));
@@ -113,23 +142,50 @@ public class ChatServiceImpl implements ChatService {
             Set<String> existingMembers = chat.getParticipants();
 
             for (String member : members) {
+
                 if (!existingMembers.contains(member)) {
+
+                    notificationProducer.addGroupMember(
+                            adminId,
+                            member,
+                            chat.getChatId(),
+                            chat.getGroupName());
                     existingMembers.add(member); // Add new member
                 } else {
+                    notificationProducer.removeGroupMember(
+                            adminId,
+                            member,
+                            chat.getChatId(),
+                            chat.getGroupName());
                     existingMembers.remove(member); // Remove existing member
                 }
             }
             chat.setParticipants(existingMembers);
-            
+
             return chatRepo.save(chat);
 
         } catch (Exception e) {
             throw new RuntimeException("Error updating group members: " + e.getMessage(), e);
         }
     }
+
     @Override
-    public void deleteChat(String chatId) {
+    public void deleteChat(String adminId, String chatId) {
         try {
+
+            Chat existingChat = chatRepo.findById(chatId)
+                    .orElseThrow(() -> new ChatNotFoundException("Chat not found with id: " + chatId));
+
+            for (String participant : existingChat.getParticipants()) {
+
+                notificationProducer.deleteGroup(
+                        adminId,
+                        participant,
+                        chatId,
+                        existingChat.getGroupName());
+
+            }
+
             messageRepo.deleteByChatId(chatId);
             chatRepo.deleteById(chatId);
         } catch (Exception e) {

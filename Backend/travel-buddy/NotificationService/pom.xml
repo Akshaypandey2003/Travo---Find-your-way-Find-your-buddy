@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+       <groupId>com.travelbuddy</groupId>
+       <artifactId>Travo-Backend</artifactId>
+       <version>1.0.0</version>
+       <relativePath>../pom.xml</relativePath>
+    </parent>
+
+
+	<groupId>com.notification</groupId>
+	<artifactId>Notification-Service</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>NotificationService</name>
+	<description>Notification Service for TRAVO</description>
+	
+
+	<dependencies>
+
+		<!-- OpenFeign -->
+		<dependency>
+		    <groupId>org.springframework.cloud</groupId>
+		    <artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+		<dependency>
+           <groupId>com.travelbuddy</groupId>
+           <artifactId>NotificationEvents</artifactId>
+           <version>1.0.0</version>
+      </dependency>
+
+      <!-- loading .env -->
+      <dependency>
+         <groupId>io.github.cdimascio</groupId>
+         <artifactId>java-dotenv</artifactId>
+         <version>5.2.2</version>
+      </dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

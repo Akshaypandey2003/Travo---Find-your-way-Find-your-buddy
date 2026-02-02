@@ -1,27 +1,13 @@
 server:
-  port: 8089
+  port: ${PORT:8089}
 
 spring:
+  application:
+    name: blog-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017
       database: Blogs
-  application:
-    name: BLOGS-SERVICE
-  security:
-    user:
-      name: admin
-      password: password
 
   config:
-    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
+    import: optional:configserver:http://localhost:8086
 
-# File size limit for multipart requests
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
-jwt:
-  secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
-  expiration: ${JWT_EXPIRATION:3600000}

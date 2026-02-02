@@ -9,6 +9,6 @@ import java.util.List;
 public interface BlogRepo extends MongoRepository<Blog,String> {
     
     public List<Blog> findByBlogCategory(String blogCategory);
-    public List<Blog> findByBlogAuthor(String authorId);
+    public List<Blog> findByBlogAuthorId(String authorId);
     public List<Blog> findByBlogTitle(String title);
 }

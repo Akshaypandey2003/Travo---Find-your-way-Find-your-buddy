@@ -25,7 +25,9 @@ public class Blog {
     private String blogId;
     private String blogTitle;
     private String blogContent;
-    private String blogAuthor;
+    private String blogAuthorId;
+    private String blogAuthorName;
+    private String blogAuthorProfilePic;
     private String blogCaption;
 
     @Builder.Default

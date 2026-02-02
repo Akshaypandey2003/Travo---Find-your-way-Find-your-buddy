@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +18,9 @@ const useTrip = () => {
   const dispatch = useDispatch();
 
   const sendTripRequest = async ({ notificationId, tripId, requestTo }) => {
+
+    const token = localStorage.getItem("token");
+
     if (!loggedInUser) {
       navigate("/login");
       return;
@@ -37,6 +39,7 @@ const useTrip = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -71,6 +74,7 @@ const useTrip = () => {
 
   const getTrip = async (tripId) => {
     console.log("Fetching trip with id: ", tripId);
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://localhost:8085/trip/get-trip/${tripId}`,
@@ -78,6 +82,7 @@ const useTrip = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -108,6 +113,7 @@ const useTrip = () => {
     tripId,
     notificationFrom
   ) => {
+    const token = localStorage.getItem("token");
     //We need to add trip details of trip with tripID to the user with id notificationFrom and delete the notification with id notification id
     console.log("Trip id inside accept trip custom hook: ", tripId);
     try {
@@ -117,6 +123,7 @@ const useTrip = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -156,6 +163,8 @@ const useTrip = () => {
 
 
   const removeTripMember = async (tripId, userId) => {
+
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://localhost:8085/trip/remove-trip-member/${tripId}/${userId}`,
@@ -163,6 +172,7 @@ const useTrip = () => {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -231,6 +241,8 @@ const useTrip = () => {
   
   
   const createTrip = async (tripData) => {
+
+    const token = localStorage.getItem("token");
     if (!loggedInUser) {
       navigate("/login");
     }
@@ -245,6 +257,7 @@ const useTrip = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(tripData),
         }
@@ -274,6 +287,8 @@ const useTrip = () => {
 
 
   const updateTrip = async (tripData) => {
+
+    const token = localStorage.getItem("token");
     if (!loggedInUser) {
       navigate("/login");
     }
@@ -288,6 +303,7 @@ const useTrip = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(tripData),
         }
@@ -316,6 +332,8 @@ const useTrip = () => {
   };
 
   const deleteTrip = async (tripId) => {
+
+    const token = localStorage.getItem("token");
     if (!loggedInUser) {
       navigate("/login");
     }
@@ -330,6 +348,7 @@ const useTrip = () => {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -356,6 +375,8 @@ const useTrip = () => {
   };
 
   const fetchTripFeedbacks = async (tripId) => {
+
+    const token = localStorage.getItem("token");
     console.log("Fetching feedbacks for the trip with id: ", tripId);
     try {
       const response = await fetch(
@@ -364,6 +385,7 @@ const useTrip = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
         }
       );
@@ -395,6 +417,7 @@ const useTrip = () => {
 
 
   const postTripFeedback = async (feedback) => {
+    const token = localStorage.getItem("token");
     console.log("Posting feedback: ", feedback);
     try {
       const response = await fetch(
@@ -403,6 +426,7 @@ const useTrip = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(feedback),
         }

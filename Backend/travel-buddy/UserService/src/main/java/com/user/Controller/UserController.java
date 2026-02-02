@@ -110,7 +110,7 @@ public class UserController {
         return new ResponseEntity<>(userService.getUserById(userId), HttpStatus.OK);
     }
 
-    @GetMapping("/get-user-by-preferences")
+    @PostMapping("/get-user-by-preferences")
     public ResponseEntity<List<User>> getUserByPreferences(@RequestBody List<String> preferences) {
         return new ResponseEntity<>(userService.getUserByPreferences(preferences), HttpStatus.OK);
     }

@@ -1,28 +1,15 @@
+
 server:
-  port: 8090
+  port: ${PORT:8090}
 
 spring:
+  application:
+    name: trip-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017
       database: Trips
-  application:
-    name: TRIPS-SERVICE
-  security:
-    user:
-      name: admin
-      password: password
-
-
+      
   config:
-    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
+    import: optional:configserver:http://localhost:8086
 
-# File size limit for multipart requests
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
 
-jwt:
-  secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
-  expiration: ${JWT_EXPIRATION:3600000}

@@ -7,25 +7,29 @@ const blogsSlice = createSlice({
     blogs: [],
     success: false,
     failure: false,
+    nextPageToken: true,
     message: "",
   },
   reducers: {
     addBlog: (state, action) => {
-      const incomingBlogs = Array.isArray(action.payload)
-        ? action.payload
-        : [action.payload];
+      //--Old code ---------
+      // const incomingBlogs = Array.isArray(action.payload)
+      //   ? action.payload
+      //   : [action.payload];
 
-      const filteredBlogs = state.blogs.filter(
-        (blog) =>
-          blog?.blogId != null &&
-          !incomingBlogs?.some(
-            (existingBlog) => existingBlog.blogId === blog.blogId
-          )
-      );
+      // const filteredBlogs = state.blogs.filter(
+      //   (blog) =>
+      //     blog?.blogId != null &&
+      //     !incomingBlogs?.some(
+      //       (existingBlog) => existingBlog.blogId === blog.blogId
+      //     )
+      // );
 
-      state.blogs = Array.isArray(filteredBlogs)
-        ? [...filteredBlogs, ...incomingBlogs]
-        : [...incomingBlogs];
+      // state.blogs = Array.isArray(filteredBlogs)
+      //   ? [...filteredBlogs, ...incomingBlogs]
+      //   : [...incomingBlogs];
+
+       state.blogs.push(...action.payload);
     },
     filterBlog: (state, action) => {
       const { blogId } = action.payload;
@@ -94,6 +98,9 @@ const blogsSlice = createSlice({
         }
       }
     },
+    setBlogsNextPageToken: (state, action) => {
+      state.nextPageToken = action.payload;
+    }
   },
 });
 export const {
@@ -104,5 +111,6 @@ export const {
   filterBlog,
   updatePostLike,
   updatePostViews,
+  setBlogsNextPageToken,
 } = blogsSlice.actions;
 export default blogsSlice.reducer;

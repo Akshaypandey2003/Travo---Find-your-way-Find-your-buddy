@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -14,18 +13,19 @@ const useFriendRequest = () => {
 
   const sendFriendRequest = async ({userId}) => {
     
+    const token = localStorage.getItem("token");
     if (!loggedInUser) {
       navigate("/login");
       return;
     }
     try {
       const response = await fetch(
-        `http://localhost:8080/connection/send/${loggedInUser?.userId}/${userId}`,
+        `http://localhost:8085/connection/send/${loggedInUser?.userId}/${userId}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Authorization: `Bearer ${loggedInUser?.token}`, // assuming you store token in auth slice
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
             senderId: loggedInUser.userId,
@@ -48,18 +48,20 @@ const useFriendRequest = () => {
   };
 
   const getReceivedFriendRequest = async () => {
+
+    const token = localStorage.getItem("token");
     if (!loggedInUser) {
       navigate("/login");
       return;
     }
     try {
       const response = await fetch(
-        `http://localhost:8080/connection/received/${loggedInUser?.userId}`,
+        `http://localhost:8085/connection/received/${loggedInUser?.userId}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Authorization: `Bearer ${loggedInUser?.token}`, // assuming you store token in auth slice
+            "Authorization": `Bearer ${token}`,
           },
         }
       );

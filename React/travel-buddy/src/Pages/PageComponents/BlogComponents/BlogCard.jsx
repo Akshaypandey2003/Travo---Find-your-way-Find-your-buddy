@@ -1,27 +1,4 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { shallowEqual, useSelector } from "react-redux";
-import { useEffect, useRef, useState } from "react";
-import useUserData from "../../../CustomHooks/useUserData";
-import {
-  DEFAULT_FEMALE_PIC,
-  DEFAULT_MALE_PIC,
-} from "../../../Constants/constants";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCommentDots,
-  faEye,
-  faHeart,
-  faShare,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,137 +10,105 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  faEye,
+  faHeart,
+  faShare,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
+import { DEFAULT_GENERIC_PROFILE_PIC} from "../../../Constants/constants";
 import CreateBlogForm from "./CreateBlogForm";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-
+import { useNavigate } from "react-router-dom";
 import useBlog from "../../../CustomHooks/useBlog";
-import BlogComments from "./BlogComments";
 import useHelperMethods from "../../../CustomHooks/useHelperMethods";
+import BlogComments from "./BlogComments";
 import ImageCarousel from "./ImageCaraousel";
 
 export const BlogCard = ({ blog }) => {
-  const { getUser } = useUserData();
-  const { deleteBlog, updateBlogLike } = useBlog();
-  const {formatTimeAgo} = useHelperMethods();
-  const [showComment, setShowComment] = useState(false);
-  const user = useSelector((store) => store.auth, shallowEqual);
-  const [author, setAuthor] = useState(null);
-  const loggedInUser = user?.user;
-  const usersList = user?.usersList;
+  const { deleteBlog, updateBlogLike, updateBlogView } = useBlog();
+  const { formatTimeAgo } = useHelperMethods();
+  const navigate = useNavigate();
+  const cardRef = useRef(null);
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const scrollContainerRef = useRef(null);
-  const imageRefs = useRef([]);
-  const totalImages = blog?.blogImages?.length || 0;
+  const loggedInUser = useSelector((store) => store.auth.user);
 
-  const localUser =
-    blog?.blogAuthor === loggedInUser?.userId
-      ? loggedInUser
-      : usersList?.find((user) => user.userId === blog?.blogAuthor);
-
+  // ✅ View count when card visible
   useEffect(() => {
-    if (localUser) {
-      setAuthor(localUser);
-    }
-  }, [localUser]);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          updateBlogView(blog.blogId, loggedInUser.userId);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.6 }
+    );
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!localUser && !author) {
-        const fetchedUser = await getUser(blog?.blogAuthor);
-        setAuthor(fetchedUser);
-      }
-    };
-    fetchUser();
-  }, [localUser, author]);
+    if (cardRef.current) observer.observe(cardRef.current);
 
- 
-  const goToImage = (index) => {
-    setCurrentImageIndex(index);
+    return () => observer.disconnect();
+  }, []);
 
-     if (scrollContainerRef.current && imageRefs.current[index]) {
-      scrollContainerRef.current.scrollTo({
-      left: imageRefs.current[index].offsetLeft,
-      behavior: "smooth",
-    });
-  }
-  };
-
-  const handleScroll = () => {
-    console.log("Handle scroll function");
-    if (!scrollContainerRef.current) return;
-    const container = scrollContainerRef.current;
-
-    let closestIndex = 0;
-    let minDistance = Infinity;
-
-    imageRefs.current.forEach((imgRef, index) => {
-      if (!imgRef) return;
-      const distance = Math.abs(imgRef.offsetLeft - container.scrollLeft);
-      if (distance < minDistance) {
-        closestIndex = index;
-        minDistance = distance;
-      }
-    });
-
-    setCurrentImageIndex(closestIndex);
-  };
-
-  // useEffect(() => {
-  //   const container = scrollContainerRef.current;
-  //   if (container) {
-  //     container.addEventListener("scroll", handleScroll);
-  //     return () => container.removeEventListener("scroll", handleScroll);
-  //   }
-  // }, []);
-  
-  // console.log("Author is: ",author);
   return (
-    <Card className="w-full max-w-3xl mb-4 p-4 mx-auto">
+    <Card
+      ref={cardRef}
+      className="w-full max-w-3xl mb-4 p-4 mx-auto cursor-pointer"
+      onClick={() => navigate(`/blogs/${blog.blogId}`)}
+    >
       <CardHeader>
-        <div className="blog-header flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Avatar className=" border-2 border-orange-700">
+            <Avatar className="border-2 border-orange-700">
               <AvatarImage
                 src={
-                  author?.profilePic
-                    ? author?.profilePic
-                    : author?.gender?.toLowerCase() === "male"
-                    ? DEFAULT_MALE_PIC
-                    : DEFAULT_FEMALE_PIC
+                  blog.blogAuthorProfilePic
+                    ? blog.blogAuthorProfilePic
+                    : DEFAULT_GENERIC_PROFILE_PIC
                 }
               />
-              <AvatarFallback>{author?.name?.charAt(0)}</AvatarFallback>
+              <AvatarFallback>
+                {blog.blogAuthorName?.charAt(0)}
+              </AvatarFallback>
             </Avatar>
-            <h1 className="text-lg font-semibold">{author?.name}</h1>
+            <h1 className="text-lg font-semibold">
+              {blog.blogAuthorName}
+            </h1>
           </div>
-          {author?.userId === loggedInUser?.userId && (
-            <div className="flex items-center gap-2">
-              <CreateBlogForm formType={"update"} blog={blog} />
+
+          {blog.blogAuthorId === loggedInUser.userId && (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CreateBlogForm formType="update" blog={blog} />
+
               <AlertDialog>
                 <AlertDialogTrigger className="border border-orange-700 py-1 px-2">
                   <FontAwesomeIcon
                     icon={faTrash}
-                    className=" text-orange-700 text-lg"
+                    className="text-orange-700 text-lg"
                   />
                 </AlertDialogTrigger>
+
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
                       Are you absolutely sure?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      your blog and remove your blog data from our servers.
+                      This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="border-2 border-orange-600 text-orange-600 hover:text-orange-800 hover:border-orange-400 hover:bg-orange-100">
-                      Cancel
-                    </AlertDialogCancel>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      className="bg-orange-600 hover:bg-orange-500"
-                      onClick={() => deleteBlog(blog?.blogId)}
+                      onClick={() => deleteBlog(blog.blogId)}
                     >
                       Continue
                     </AlertDialogAction>
@@ -176,65 +121,59 @@ export const BlogCard = ({ blog }) => {
       </CardHeader>
 
       <CardContent>
-        <div>
-          <div className="p-4">
-            <h1 className="font-semibold">
-              {blog?.blogTitle}: {blog?.blogCaption}
-            </h1>
-            <p className="mt-5">{blog?.blogContent}</p>
-          </div>
-
-          {totalImages > 0 && (
-            <div className="flex flex-col items-center justify-center">
-               <ImageCarousel images={blog.blogImages} />
-            </div>
-          )}
+        <div className="p-4">
+          <h1 className="font-semibold">
+            {blog.blogTitle}: {blog.blogCaption}
+          </h1>
+          <p className="mt-5">{blog.blogContent}</p>
         </div>
+
+        {blog.blogImages?.length > 0 && (
+          <ImageCarousel images={blog.blogImages} />
+        )}
       </CardContent>
+
       <CardFooter>
         <div className="w-full">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
+              <div
+                className="flex items-center gap-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateBlogLike(blog.blogId, loggedInUser.userId);
+                }}
+              >
                 <FontAwesomeIcon
-                  className={`${
-                    blog?.blogLikes?.includes(loggedInUser?.userId)
-                      ? "text-orange-500"
-                      : "text-orange-300"
-                  } hover:cursor-pointer`}
-                  onClick={() =>
-                    updateBlogLike(blog?.blogId, loggedInUser?.userId)
-                  }
                   icon={faHeart}
                   size="xl"
+                  className={
+                    blog.blogLikes?.includes(loggedInUser.userId)
+                      ? "text-orange-500"
+                      : "text-orange-300"
+                  }
                 />
-                <h1>{blog?.blogLikes?.length}</h1>
+                <h1>{blog.blogLikes?.length}</h1>
               </div>
-              <div className="flex items-center gap-1">
+
+              <div onClick={(e) => e.stopPropagation()}>
                 <BlogComments blog={blog} />
               </div>
 
-              <FontAwesomeIcon
-                className="text-orange-400 hover:cursor-pointer"
-                icon={faShare}
-                size="xl"
-              />
+              <FontAwesomeIcon icon={faShare} size="xl" />
             </div>
-            <div className=" gap-2 items-center">
-              <div className="flex items-center gap-1">
-                <FontAwesomeIcon
-                  className="text-orange-400 hover:cursor-pointer text-sm"
-                  icon={faEye}
-                />
-                <h1 className="text-xs">
-                  {blog?.blogViews?.length}{" "}
-                  {blog?.blogViews?.length > 1 ? "views" : "view"}
-                </h1>
-              </div>
+
+            <div className="flex items-center gap-1 text-xs">
+              <FontAwesomeIcon icon={faEye} />
+              <span>
+                {blog.blogViews?.length}{" "}
+                {blog.blogViews?.length > 1 ? "views" : "view"}
+              </span>
             </div>
           </div>
-          <h1 className="font-light text-xs"> Posted {" "}
-            {formatTimeAgo(blog?.postedDate)}
+
+          <h1 className="font-light text-xs mt-2">
+            Posted {formatTimeAgo(blog.postedDate)}
           </h1>
         </div>
       </CardFooter>

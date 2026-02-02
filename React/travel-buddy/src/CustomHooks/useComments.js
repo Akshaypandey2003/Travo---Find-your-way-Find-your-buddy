@@ -5,12 +5,12 @@ import {
   updateCommentLike,
 } from "../Redux/Slices/commentSlice";
 
-/* eslint-disable no-unused-vars */
 const useComments = () => {
 
   const dispatch = useDispatch();
 
   const postComment = async (commentData,blogAuthorId) => {
+    const token = localStorage.getItem("token");
     console.log("Received comment data is: ", commentData);
     try {
       const response = await fetch(
@@ -19,7 +19,7 @@ const useComments = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            //   "Authorization": `Bearer ${token}`,
+              "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify(commentData),
         }
@@ -40,6 +40,7 @@ const useComments = () => {
 
   const getComments = async (blogId, page) => {
     console.log("Fetching comments for blogId: ", blogId);
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://localhost:8085/comment/get-comments/${blogId}?page=${page}&size=5`,
@@ -47,7 +48,7 @@ const useComments = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            //   "Authorization": `Bearer ${token}`,
+              "Authorization": `Bearer ${token}`,
           },
         }
       );
@@ -70,6 +71,7 @@ const useComments = () => {
   };
 
   const likeComment = async (commentId, userId) => {
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `http://localhost:8085/comment/like-comment/${commentId}/${userId}`,
@@ -77,7 +79,7 @@ const useComments = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            //   "Authorization": `Bearer ${token}`,
+              "Authorization": `Bearer ${token}`,
           },
         }
       );

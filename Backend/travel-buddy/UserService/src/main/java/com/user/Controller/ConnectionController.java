@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.user.Entity.Connections;
-import com.user.Entity.Notification;
 import com.user.ServiceImpl.ConnectionService;
 
 @RestController
@@ -24,15 +23,16 @@ public class ConnectionController
     private ConnectionService connectionService;
 
     @PostMapping("/send/{senderId}/{receiverId}")
-    public ResponseEntity<Connections> sendRequest(@PathVariable("senderId") String senderId, @PathVariable("receiverId") String receiverId)
+    public ResponseEntity<Connections> sendRequest(@PathVariable String senderId, @PathVariable String receiverId)
     {
         return new ResponseEntity<>(connectionService.sendFriendRequest(senderId, receiverId),HttpStatus.OK);
     }
 
     @PostMapping("/accept/{notificationId}/{senderId}/{receiverId}")
-    public ResponseEntity<Notification> acceptRequest(@PathVariable String senderId, @PathVariable String receiverId, @PathVariable String notificationId) {
+    public ResponseEntity<?> acceptRequest(@PathVariable String notificationId, @PathVariable String senderId, @PathVariable String receiverId) {
 
-        return ResponseEntity.ok(connectionService.acceptFriendRequest(senderId, receiverId,notificationId));
+        connectionService.acceptFriendRequest(senderId, receiverId,notificationId);
+        return ResponseEntity.ok("Friend Request Accepted Successfully!!");
     }
 
     @GetMapping("/received/{userId}")

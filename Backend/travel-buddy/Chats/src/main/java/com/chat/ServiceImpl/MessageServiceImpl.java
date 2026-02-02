@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.chat.Entity.Chat;
@@ -12,8 +13,10 @@ import com.chat.Exceptions.MessageNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
 import com.chat.Service.MessageService;
+import com.events.Entity.NotificationEvent;
 
 @Service
+@SuppressWarnings("unused")
 public class MessageServiceImpl implements MessageService {
 
     @Autowired
@@ -22,14 +25,37 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private ChatRepo chatRepo;
 
+    @Autowired
+    private KafkaTemplate<String, NotificationEvent> kafkaTemplate;
+
+    @Autowired
+    private ChatNotificationProducer chatNotificationProducer;
+
+
     @Override
     public Message sendMessage(Message message) {
         try {
+
             Chat chat = chatRepo.findById(message.getChatId())
                     .orElseThrow(() -> new RuntimeException("Chat not found"));
             chat.setRecentConversationAt(LocalDateTime.now());
+
             chatRepo.save(chat);
-            return messageRepo.save(message);
+            
+            Message savedMessage = messageRepo.save(message);
+
+            for(String participant: chat.getParticipants()) {
+                if(!participant.equals(savedMessage.getSenderId())) {
+                    chatNotificationProducer.messageSent(
+                        savedMessage.getSenderId(),
+                        participant,
+                        message.getChatId(),
+                        chat.getGroupName()
+                    );
+                }
+            }
+
+            return savedMessage;
         } catch (Exception e) {
             throw new RuntimeException("Error sending message: " + e.getMessage(), e);
         }

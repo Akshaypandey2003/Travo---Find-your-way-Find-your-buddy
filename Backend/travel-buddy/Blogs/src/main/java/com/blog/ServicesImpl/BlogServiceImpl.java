@@ -9,11 +9,13 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.blog.Client.UserServiceClient;
 import com.blog.Entity.Blog;
 import com.blog.Exceptions.BlogNotFoundException;
 import com.blog.Repositories.BlogRepo;
 import com.blog.Services.BlogService;
 import com.blog.Services.CloudinaryService;
+import com.blog.Services.NotificationProducer;
 
 @Service
 public class BlogServiceImpl implements BlogService {
@@ -24,10 +26,30 @@ public class BlogServiceImpl implements BlogService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private NotificationProducer notificationProducer;
+
+    @Autowired
+    private UserServiceClient userServiceClient;
+
+
     @Override
     public Blog createBlog(Blog blog) {
-        blog.setPostedDate(LocalDateTime.now());
-        return blogRepo.save(blog);
+         blog.setPostedDate(LocalDateTime.now());
+        Blog savedBlog = blogRepo.save(blog);
+
+        List<String> friends = userServiceClient.getFriendsByUser(blog.getBlogAuthorId());
+        Set<String> friendSet = new HashSet<>(friends);
+
+        for(String friend: friendSet)
+        {
+                 notificationProducer.postBlogNotification(
+                    savedBlog.getBlogAuthorId(), friend, 
+                    savedBlog.getBlogId(),savedBlog.getBlogTitle());
+
+        }
+       
+        return savedBlog;
     }
 
     @Override
@@ -131,7 +153,7 @@ public class BlogServiceImpl implements BlogService {
 
     @Override
     public List<Blog> getBlogsByAuthor(String authorId) {
-        List<Blog> blogs = blogRepo.findByBlogAuthor(authorId);
+        List<Blog> blogs = blogRepo.findByBlogAuthorId(authorId);
         if (blogs != null && !blogs.isEmpty()) {
             return blogs;
         }
@@ -191,6 +213,10 @@ public class BlogServiceImpl implements BlogService {
             likedUsers.remove(userId);
         } else {
             likedUsers.add(userId);
+            notificationProducer.likeBlogNotification(
+                userId, 
+                blog.getBlogAuthorId(), blog.getBlogId(),
+                blog.getBlogTitle());
         }
         return blogRepo.save(blog);
     }

@@ -33,16 +33,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        "/ws/**",
                         "/user/**",
+                        "/connection/**",
                         "/auth/**",
-                        "/auth/user/notification/**",
                         "/chat/**"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers(
                                 "/auth/**",
-                                "/ws/**",
                                 "/actuator/**").permitAll()
                                 .anyRequest()
                                 .authenticated())

@@ -12,5 +12,5 @@ import com.feedback.Entity.FeedBack;
 public interface FeedbackRepo extends MongoRepository<FeedBack,String> {
       Optional<FeedBack> findByTripIdAndAuthorId(String tripId, String userId);
 
-    List<FeedBack> findAllByTripId(String tripId);
+       List<FeedBack> findAllByTripId(String tripId);
 }

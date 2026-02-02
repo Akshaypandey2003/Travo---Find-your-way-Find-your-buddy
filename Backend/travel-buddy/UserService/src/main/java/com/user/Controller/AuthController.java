@@ -42,7 +42,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody User user) {
 
         try {
-        AuthResponse response = userService.generateToken(user.getEmail(), user.getPassword());
+        AuthResponse response = userService.generateToken(user.getUserId(),user.getEmail(), user.getPassword());
 
         if (response == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

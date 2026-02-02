@@ -3,7 +3,6 @@ package com.user.Service;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 
 import com.user.DTO.AuthResponse;
 import com.user.DTO.Author;
@@ -19,11 +18,11 @@ public interface UserService
     public Author getAuthorById(String userId);
     public User getUserByEmail(String email);
     public List<User> getUserByPreferences(List<String> preferences);
-    public ResponseEntity<Object> updateLikes(String userId, String senderId);
+    public String  updateLikes(String userId, String senderId);
     public String addCloseFriend(String userId, String friendId);
     public String removeCloseFriend(String userId, String friendId);
     public AuthResponse generateToken(User user);
-    public AuthResponse generateToken(String email, String password);
+    public AuthResponse generateToken(String userId,String email, String password);
 } 
     
    

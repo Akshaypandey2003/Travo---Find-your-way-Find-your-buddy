@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: API-GATEWAY
+    name: api-gateway
 
       # (routes kept in application.yml or config repo)
   config:

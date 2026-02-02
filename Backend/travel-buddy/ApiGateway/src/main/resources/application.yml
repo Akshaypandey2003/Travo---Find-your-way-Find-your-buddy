@@ -1,17 +1,11 @@
 server:
-  port: 8085
+  port: ${PORT:8085}
 
-eureka:
-  instance:
-    prefer-ip-address: true
-  client:
-    fetch-registry: true
-    register-with-eureka: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-
-
-spring:
+spring:  
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://localhost:8086
   cloud:
     gateway:
       routes:
@@ -41,62 +35,45 @@ spring:
         - Path=/booking/**
 
       - id: USER-SERVICE-SECURED
-        uri: lb://USER-SERVICE
+        uri: lb://user-service
         predicates:
-        - Path=/user/**
+        - Path=/user/**,/connection/**
 
       - id: USER-SERVICE-PUBLIC
-        uri: lb://USER-SERVICE
+        uri: lb://user-service
         predicates:
-        - Path=/auth/**
+        - Path=/auth/**,/user/public/**
         
       
       - id: TRIPS-SERVICE
-        uri: lb://TRIPS-SERVICE
+        uri: lb://trip-service
         predicates:
         - Path=/trip/**
 
       - id: FEEDBACK-SERVICE
-        uri: lb://FEEDBACK-SERVICE
+        uri: lb://feedback-service
         predicates:
         - Path=/feedback/**
 
       - id: CHATS-SERVICE
-        uri: lb://CHATS-SERVICE
+        uri: lb://chat-service
         predicates:
-        - Path=/chat/**, /chat/message/**
+        - Path=/chat/**,/chat/message/**
 
       - id: BLOGS-SERVICE
-        uri: lb://BLOGS-SERVICE
+        uri: lb://blog-service
         predicates:
-        - Path=/blog/**
+        - Path=/blog/**,/comment/**
 
-      - id: BLOGS-COMMENT-SERVICE
-        uri: lb://BLOGS-COMMENT-SERVICE
+      - id: NOTIFICATION-SERVICE
+        uri: lb://notification-service
         predicates:
-        - Path=/comment/**
-
-      - id: USER-WEBSOCKET-ROUTE
-        uri: lb://USER-SERVICE
-        predicates:
-            - Path=/ws/**
-
-        # filters:
-        #     - name: RewritePath
-        #       args:
-        #         regexp: /ws/(?<segment>.*)
-        #         replacement: /${segment}
+          - Path=/ws/**,/notification/**
       
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
-  
-  application:
-    name: API-GATEWAY
-  config:
-    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
-
 
 logging:
   level:
@@ -104,6 +81,7 @@ logging:
     reactor.netty.http.client: DEBUG
 
 
+#JWT Configuration
 jwt:
   secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
   expiration: ${JWT_EXPIRATION:3600000}

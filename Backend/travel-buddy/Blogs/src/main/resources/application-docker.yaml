@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: BLOGS-SERVICE
+    name: blog-service
 
   data:
     mongodb:

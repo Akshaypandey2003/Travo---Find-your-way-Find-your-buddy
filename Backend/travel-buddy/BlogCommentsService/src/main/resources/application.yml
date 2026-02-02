@@ -4,18 +4,10 @@ server:
 spring:
   data:
     mongodb:
-      uri: mongodb://localhost:27017
       database: BlogComments
   application:
     name: BLOGS-COMMENT-SERVICE
-  security:
-    user:
-      name: admin
-      password: password
 
   config:
     import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
 
-jwt:
-  secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
-  expiration: ${JWT_EXPIRATION:3600000}

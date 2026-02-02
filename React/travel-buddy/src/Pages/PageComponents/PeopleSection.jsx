@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
@@ -36,7 +37,7 @@ export const PeopleSection = () => {
       dispatch(setNextPageToken(false));
     }
     setLoading(false);
-  }, [page, loading, getAllUsers]);
+  }, [page, loading]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

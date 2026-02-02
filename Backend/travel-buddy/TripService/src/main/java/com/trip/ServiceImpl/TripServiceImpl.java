@@ -4,33 +4,34 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.trip.Entity.Notification;
 import com.trip.Entity.Trip;
 import com.trip.Entity.Trip.TripStatus;
 import com.trip.Exceptions.TripNotFoundException;
 import com.trip.Repositories.TripRespository;
+import com.trip.Services.TripNotificationProducer;
 import com.trip.Services.TripServices;
 
 
 @Service
+@SuppressWarnings("unused")
 public class TripServiceImpl implements TripServices {
 
     @Autowired
     private TripRespository tripRespository;
+
+    private TripNotificationProducer tripNotificationProducer;
 
     private static final Logger logger = LoggerFactory.getLogger(TripServiceImpl.class);
 
@@ -110,17 +111,30 @@ public class TripServiceImpl implements TripServices {
 
         Trip trip = tripRespository.findById(tripId)
                 .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
+
         List<String> tripRequests = trip.getTripRequests();
         if (tripRequests == null) {
             tripRequests = new ArrayList<>();
         }
         tripRequests.add(requestFrom);
         trip.setTripRequests(tripRequests);
+
+        System.out.println("Sending trip request notification from " + requestFrom + " to " + requestTo + " for trip " + tripId);
+           
+        tripNotificationProducer.sendTripRequestNotification(
+                requestFrom,
+                requestTo,
+                tripId,
+                trip.getTripName()
+                );
+
         return tripRespository.save(trip);
+
+    
     }
 
     @Override
-    public Trip acceptTripRequest(String tripId, String requestFrom) {
+    public Trip acceptTripRequest(String tripId, String requestFrom, String tripOwnerId) {
         Trip trip = tripRespository.findById(tripId)
                 .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
 
@@ -129,13 +143,18 @@ public class TripServiceImpl implements TripServices {
             tripRequests.remove(requestFrom);
         trip.setTripRequests(tripRequests);
 
-        List<String> tripMembers = trip.getTripMembers();
+        Set<String> tripMembers = trip.getTripMembers();
         if (tripMembers == null) {
-            tripMembers = new ArrayList<>();
+            tripMembers = new LinkedHashSet<>();
         }
         if (!tripMembers.contains(requestFrom))
             tripMembers.add(requestFrom);
         trip.setTripMembers(tripMembers);
+
+         tripNotificationProducer.acceptTripRequestNotification(
+                tripOwnerId,
+                requestFrom,
+                tripId,trip.getTripName());
 
         return tripRespository.save(trip);
     }
@@ -167,15 +186,15 @@ public class TripServiceImpl implements TripServices {
         for (Trip trip : upcomingTrips) {
             for (String userId : trip.getTripMembers()) {
 
-                // Creating notification object
-                Notification notification = new Notification();
-                notification.setNotificationFrom("SYSTEM");
-                notification.setNotificationTo(userId);
-                notification.setTripId(trip.getTripId());
-                notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
-                notification.setMessage("Get ready! Your trip starts tomorrow 🎒");
+                // // Creating notification object
+                // Notification notification = new Notification();
+                // notification.setNotificationFrom("SYSTEM");
+                // notification.setNotificationTo(userId);
+                // notification.setTripId(trip.getTripId());
+                // notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
+                // notification.setMessage("Get ready! Your trip starts tomorrow 🎒");
 
-                sendNotification(restTemplate, tripServiceUrl, notification);
+                // sendNotification(restTemplate, tripServiceUrl, notification);
             }
         }
 
@@ -186,33 +205,31 @@ public class TripServiceImpl implements TripServices {
             if (trip.getTripStatus() != TripStatus.COMPLETED) {
                 for (String userId : trip.getTripMembers()) {
 
-                    Notification notification = new Notification();
-                    notification.setNotificationFrom("SYSTEM");
-                    notification.setNotificationTo(userId);
-                    notification.setTripId(trip.getTripId());
-                    notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
-                    notification
-                            .setMessage("Hope your trip went well! Please update trip status and share feedback. 📝");
+                    // Notification notification = new Notification();
+                    // notification.setNotificationFrom("SYSTEM");
+                    // notification.setNotificationTo(userId);
+                    // notification.setTripId(trip.getTripId());
+                    // notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
+                    // notification
+                    //         .setMessage("Hope your trip went well! Please update trip status and share feedback. 📝");
 
-                    sendNotification(restTemplate, tripServiceUrl, notification);
+                    // sendNotification(restTemplate, tripServiceUrl, notification);
                 }
             }
         }
     }
 
-    private void sendNotification(RestTemplate restTemplate, String url, Notification notification) {
-        try {
-            HttpEntity<Notification> entity = new HttpEntity<>(notification);
+    // private void sendNotification(RestTemplate restTemplate, String url, Notification notification) {
+    //     try {
+    //         HttpEntity<Notification> entity = new HttpEntity<>(notification);
 
-            ResponseEntity<?> response = restTemplate.exchange(
-                    url, HttpMethod.POST, entity, new ParameterizedTypeReference<Object>() {
-                    });
-            // Optional logging
-            System.out.println("Notification sent: " + response.getStatusCode());
-        } catch (Exception e) {
-            System.err.println("Failed to send notification: " + e.getMessage());
-            // Optionally log error to a logger
-        }
-    }
+    //         ResponseEntity<?> response = restTemplate.exchange(
+    //                 url, HttpMethod.POST, entity, new ParameterizedTypeReference<Object>() {
+    //                 });
+    //         System.out.println("Notification sent: " + response.getStatusCode());
+    //     } catch (Exception e) {
+    //         System.err.println("Failed to send notification: " + e.getMessage());
+    //     }
+    // }
 
 }

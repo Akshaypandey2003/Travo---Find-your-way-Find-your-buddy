@@ -18,4 +18,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleGenericException(Exception ex) {
         return ResponseEntity.status(500).body("An unexpected error occurred: " + ex.getMessage());
     }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<String> handleBlogNotFoundException(CommentNotFoundException ex) {
+        return ResponseEntity.status(404).body(ex.getMessage());
+    }
+
 }

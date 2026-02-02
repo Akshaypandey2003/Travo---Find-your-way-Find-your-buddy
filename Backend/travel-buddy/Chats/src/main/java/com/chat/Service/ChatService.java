@@ -13,11 +13,11 @@ public interface ChatService {
     public List<Chat> getChat(String userId);
     public Chat getChatByChatId(String chatId);
     
-    public Chat updateChat(String chatId, Chat chat);
+    public Chat updateChat(String adminId, String chatId, Chat chat);
     public Chat updateFavorite(String chatId, String userId);
-    public Chat updateGroupMembers(String chatId, Set<String> members);
+    public Chat updateGroupMembers(String adminId,String chatId, Set<String> members);
     
-    public void deleteChat(String chatId);
+    public void deleteChat(String adminId,String chatId);
     
     // Additional methods as needed
 }

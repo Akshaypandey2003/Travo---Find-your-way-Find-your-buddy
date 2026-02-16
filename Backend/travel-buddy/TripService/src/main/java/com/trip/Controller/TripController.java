@@ -3,7 +3,6 @@ package com.trip.Controller;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,8 +21,12 @@ import com.trip.Services.TripServices;
 @RequestMapping("/trip")
 public class TripController {
     
-    @Autowired
     private TripServices tripService;
+
+    public TripController(TripServices tripService)
+    {
+        this.tripService = tripService;
+    }
 
     @PostMapping("/create-trip")
     public ResponseEntity<Trip> createTrip(@RequestBody Trip trip)
@@ -45,10 +48,10 @@ public class TripController {
         return ResponseEntity.status(201).body(result);
     }
     
-    @PostMapping("/send-trip-request/{tripId}/{requestFrom}/{requestTo}")
-    public ResponseEntity<?> sendTripRequest(@PathVariable String tripId, @PathVariable String requestFrom, @PathVariable String requestTo) {
+    @PostMapping("/send-trip-request/{tripId}/{requestFrom}")
+    public ResponseEntity<?> sendTripRequest(@PathVariable String tripId, @PathVariable String requestFrom) {
         try {
-            Trip savedTrip = tripService.sendTripRequest(tripId, requestFrom,requestTo);
+            Trip savedTrip = tripService.sendTripRequest(tripId, requestFrom);
 
             System.out.println("Trip request sent successfully: " + savedTrip);
            
@@ -64,11 +67,11 @@ public class TripController {
     
     
     @SuppressWarnings("null")
-    @PostMapping("/accept-trip-request/{notificationId}/{tripId}/{requestFrom}/{requestTo}")
-    public ResponseEntity<?> acceptTripRequest(@PathVariable String notificationId,@PathVariable String tripId, @PathVariable String requestFrom, @PathVariable String requestTo) {
+    @PostMapping("/accept-trip-request/{notificationId}/{tripId}/{requestFrom}")
+    public ResponseEntity<?> acceptTripRequest(@PathVariable String notificationId,@PathVariable String tripId, @PathVariable String requestFrom) {
         try {
            
-            Trip savedTrip = tripService.acceptTripRequest(tripId, requestFrom, requestTo);
+            Trip savedTrip = tripService.acceptTripRequest(tripId, requestFrom);
             System.out.println("Trip request accepted successfully: " + savedTrip);
             
             return ResponseEntity.ok(MessageResponse.builder()

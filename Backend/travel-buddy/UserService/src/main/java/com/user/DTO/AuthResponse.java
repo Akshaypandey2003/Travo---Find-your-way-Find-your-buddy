@@ -2,8 +2,6 @@ package com.user.DTO;
 
 import java.util.Collection;
 
-import com.user.Entity.User;
-
 import lombok.*;
 
 @Getter
@@ -14,7 +12,7 @@ import lombok.*;
 @ToString
 public class AuthResponse {
     
-    private User user;
+    private UserResponse user;
     private String accessToken;
     private String refreshToken;
     private long expire_at;

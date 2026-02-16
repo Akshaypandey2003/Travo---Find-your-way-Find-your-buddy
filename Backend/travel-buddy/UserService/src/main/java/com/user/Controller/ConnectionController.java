@@ -2,9 +2,9 @@ package com.user.Controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,49 +12,117 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.user.Entity.Connections;
-import com.user.ServiceImpl.ConnectionService;
+import com.user.DTO.CloseFriendResponse;
+import com.user.DTO.ConnectionResponse;
+import com.user.DTO.PageResponse;
+import com.user.DTO.UserSummary;
+import com.user.Service.ConnectionService;
 
 @RestController
-@RequestMapping("/connection")
-public class ConnectionController 
-{
-     @Autowired
-    private ConnectionService connectionService;
+@RequestMapping("/api/v1/connections")
+public class ConnectionController {
 
-    @PostMapping("/send/{senderId}/{receiverId}")
-    public ResponseEntity<Connections> sendRequest(@PathVariable String senderId, @PathVariable String receiverId)
-    {
-        return new ResponseEntity<>(connectionService.sendFriendRequest(senderId, receiverId),HttpStatus.OK);
-    }
+        private final ConnectionService connectionService;
 
-    @PostMapping("/accept/{notificationId}/{senderId}/{receiverId}")
-    public ResponseEntity<?> acceptRequest(@PathVariable String notificationId, @PathVariable String senderId, @PathVariable String receiverId) {
+        public ConnectionController(
+                        ConnectionService connectionService) {
 
-        connectionService.acceptFriendRequest(senderId, receiverId,notificationId);
-        return ResponseEntity.ok("Friend Request Accepted Successfully!!");
-    }
+                this.connectionService = connectionService;
+        }
 
-    @GetMapping("/received/{userId}")
-    public ResponseEntity<List<Connections>> getReceivedRequests(@PathVariable String userId) {
-        return ResponseEntity.ok(connectionService.getReceivedRequests(userId));
-    }
-    @DeleteMapping("/delete/{connectionId}")
-    public ResponseEntity<?> deleteConnection(@PathVariable String connectionId) {
-        connectionService.rejectFriendRequest(connectionId);
- 
-        return ResponseEntity.ok("Friend Request Rejected Successfully!!");
-    }
+        // Follow
+        @PostMapping("/follow/{userId}")
+        public ResponseEntity<ConnectionResponse> followUser(
+                        @AuthenticationPrincipal String followerId,
+                        @PathVariable String userId) {
 
-    @GetMapping("/sent/{userId}")
-    public ResponseEntity<List<Connections>> getSentRequests(@PathVariable String userId) {
-        return ResponseEntity.ok(connectionService.getSentRequests(userId));
-    }
+                return ResponseEntity.ok(
+                                connectionService.sendFollowRequest(
+                                                followerId,
+                                                userId));
+        }
 
-    @GetMapping("/get-all")
-    public ResponseEntity<List<Connections>> getAllConnectionRequests() {
-        return ResponseEntity.ok(connectionService.getAll());
-    }
+        @PostMapping("/accept/{followerId}")
+        public ResponseEntity<ConnectionResponse> acceptFollowRequest(
+                        @AuthenticationPrincipal String userId,
+                        @PathVariable String followerId) {
 
+                return ResponseEntity.ok(
+                                connectionService.acceptFollowRequest(
+                                                userId,
+                                                followerId));
+        }
 
+        @DeleteMapping("/reject/{followerId}")
+        public ResponseEntity<String> rejectFollowRequest(
+                        @AuthenticationPrincipal String userId,
+                        @PathVariable String followerId) {
+
+                connectionService.rejectFollowRequest(
+                                userId,
+                                followerId);
+
+                return ResponseEntity.ok("Follow request rejected");
+        }
+
+        // Unfollow
+        @DeleteMapping("/unfollow/{userId}")
+        public ResponseEntity<String> unfollowUser(
+                        @AuthenticationPrincipal String followerId,
+                        @PathVariable String userId) {
+
+                connectionService.unfollowUser(
+                                followerId,
+                                userId);
+
+                return ResponseEntity.ok("Unfollowed successfully");
+        }
+
+        // Get Followers
+        @GetMapping("/followers")
+        public ResponseEntity<PageResponse<UserSummary>> getFollowers(@AuthenticationPrincipal String userId,Pageable pageable) {
+
+                return ResponseEntity.ok(
+                                connectionService.getFollowers(userId,pageable));
+        }
+
+        // Get Following
+        @GetMapping("/following")
+        public ResponseEntity<PageResponse<UserSummary>> getFollowing(@AuthenticationPrincipal String userId,Pageable pageable) {
+
+                return ResponseEntity.ok(
+                                connectionService.getFollowing(userId,pageable));
+        }
+
+        @PostMapping("/close-friends/{closeFriendId}")
+        public ResponseEntity<CloseFriendResponse> addCloseFriend(
+                        @AuthenticationPrincipal String userId,
+                        @PathVariable String closeFriendId) {
+
+                return ResponseEntity.ok(
+                                connectionService.addCloseFriend(
+                                                userId,
+                                                closeFriendId));
+        }
+
+        @DeleteMapping("/close-friends/{closeFriendId}")
+        public ResponseEntity<String> removeCloseFriend(
+                        @AuthenticationPrincipal String userId,
+                        @PathVariable String closeFriendId) {
+
+                connectionService.removeCloseFriend(
+                                userId,
+                                closeFriendId);
+
+                return ResponseEntity.ok(
+                                "Removed from close friends");
+        }
+
+        @GetMapping("/close-friends")
+        public ResponseEntity<List<CloseFriendResponse>> getCloseFriends(
+                        @AuthenticationPrincipal String userId) {
+
+                return ResponseEntity.ok(
+                                connectionService.getCloseFriends(userId));
+        }
 }

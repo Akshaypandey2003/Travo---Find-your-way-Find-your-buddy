@@ -1,13 +1,45 @@
 package com.user.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.Update;
 
 import com.user.Entity.User;
 
-public interface UserRepo extends MongoRepository<User,String> {
- 
-    List<User> findByPreferencesInIgnoreCase(List<String> preferences);
-    User findByEmail(String email);
+public interface UserRepo extends MongoRepository<User, String> {
+
+    Page<User> findByPreferencesInIgnoreCase(Pageable page,List<String> preferences);
+
+    Optional<User> findByEmail(String email);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'followersCount': 1 } }")
+    void incrementFollowersCount(String userId);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'followingsCount': 1 } }")
+    void incrementFollowingCount(String userId);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'followersCount': -1 } }")
+    void decrementFollowersCount(String userId);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'followingsCount': -1 } }")
+    void decrementFollowingCount(String userId);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'closeFriendsCount': 1 } }")
+    void incrementCloseFriendsCount(String userId);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'closeFriendsCount': -1 } }")
+    void decrementCloseFriendsCount(String userId);
+
+    List<User> findByUserIdIn(List<String> userIds);
 }

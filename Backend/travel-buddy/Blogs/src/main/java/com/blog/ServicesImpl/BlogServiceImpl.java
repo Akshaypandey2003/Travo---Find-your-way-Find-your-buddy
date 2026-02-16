@@ -8,8 +8,10 @@ import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.blog.Client.UserServiceClient;
+import com.blog.DTO.ApiResponse;
 import com.blog.Entity.Blog;
 import com.blog.Exceptions.BlogNotFoundException;
 import com.blog.Repositories.BlogRepo;
@@ -34,7 +36,8 @@ public class BlogServiceImpl implements BlogService {
 
 
     @Override
-    public Blog createBlog(Blog blog) {
+    @Transactional
+    public ApiResponse<Blog> createBlog(Blog blog) {
          blog.setPostedDate(LocalDateTime.now());
         Blog savedBlog = blogRepo.save(blog);
 
@@ -49,17 +52,19 @@ public class BlogServiceImpl implements BlogService {
 
         }
        
-        return savedBlog;
+        return new ApiResponse<>(true,savedBlog,"Blog created successfully");
     }
 
     @Override
-    public Blog getBlogById(String blogId) {
-        return blogRepo.findById(blogId)
+    public ApiResponse<Blog> getBlogById(String blogId) {
+       Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
+
+        return new ApiResponse<>(true, blog, "Blog fetched successfully");
     }
 
     @Override
-    public Blog updateBlog(String blogId, Blog blog) {
+    public ApiResponse<Blog> updateBlog(String blogId, Blog blog) {
 
     Blog existingBlog = blogRepo.findById(blogId)
             .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
@@ -111,11 +116,13 @@ public class BlogServiceImpl implements BlogService {
     existingBlog.setBlogImages(newImageUrls);
     existingBlog.setCloudinaryImagePublicIds(blog.getCloudinaryImagePublicIds());
 
-    return blogRepo.save(existingBlog);
+    Blog updatedBlog = blogRepo.save(existingBlog);
+
+    return new ApiResponse<>(true,updatedBlog,"Blog Updated Successfylly.");
 }
 
     @Override
-    public void deleteBlog(String blogId) {
+    public ApiResponse<Void> deleteBlog(String blogId) {
         Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
         
@@ -124,65 +131,67 @@ public class BlogServiceImpl implements BlogService {
              try {
                 cloudinaryService.deleteImage(publicId);
             } catch (Exception e) {
-                System.err.println("Failed to delete image from Cloudinary: " + publicId);
                 e.printStackTrace();
             }
         }
 
         blogRepo.delete(blog);
+       return new ApiResponse<>(true, null, "Blog deleted successfully");
     }
 
     @Override
-    public List<Blog> getAllBlogs() {
+    public ApiResponse<List<Blog>> getAllBlogs() {
         List<Blog> blogs = blogRepo.findAll();
         if (blogs != null && !blogs.isEmpty()) {
-            return blogs;
+            return new ApiResponse<>(true,blogs,"Blogs fetched Successfylly.");
         }
         throw new BlogNotFoundException("No blogs found");
     }
 
     @Override
-    public List<Blog> getBlogsByCategory(String category) {
+    public ApiResponse<List<Blog>> getBlogsByCategory(String category) {
 
         List<Blog> blogs = blogRepo.findByBlogCategory(category);
         if (blogs != null && !blogs.isEmpty()) {
-            return blogs;
+           return new ApiResponse<>(true,blogs,"Blogs fetched Successfylly.");
         }
         throw new BlogNotFoundException("No blogs found for category: " + category);
     }
 
     @Override
-    public List<Blog> getBlogsByAuthor(String authorId) {
+    public ApiResponse<List<Blog>> getBlogsByAuthor(String authorId) {
         List<Blog> blogs = blogRepo.findByBlogAuthorId(authorId);
         if (blogs != null && !blogs.isEmpty()) {
-            return blogs;
+           return new ApiResponse<>(true,blogs,"Blogs fetched Successfylly.");
         }
         throw new BlogNotFoundException("No blogs found for author: " + authorId);
 
     }
 
     @Override
-    public List<Blog> getBlogsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+    public ApiResponse<List<Blog>> getBlogsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
 
         List<Blog> blogs = blogRepo.findAll();
         if (blogs != null && !blogs.isEmpty()) {
-            return blogs.stream()
+            List<Blog> fetchedBlogs = blogs.stream()
                     .filter(blog -> blog.getPostedDate().isAfter(startDate) && blog.getPostedDate().isBefore(endDate))
                     .toList();
+             return new ApiResponse<>(true,fetchedBlogs,"Blogs fetched Successfylly.");
         } else {
             throw new BlogNotFoundException("No blogs found for the given date range: " + startDate + " to " + endDate);
         }
     }
 
     @Override
-    public List<Blog> getBlogsByKeyword(String keyword) {
+    public ApiResponse<List<Blog>> getBlogsByKeyword(String keyword) {
 
         List<Blog> blogs = blogRepo.findAll();
         if (blogs != null && !blogs.isEmpty()) {
-            return blogs.stream()
+            List<Blog> fetchedBlogs = blogs.stream()
                     .filter(blog -> blog.getBlogTitle().toLowerCase().contains(keyword.toLowerCase())
                             || blog.getBlogContent().toLowerCase().contains(keyword.toLowerCase()))
                     .toList();
+            return new ApiResponse<>(true,fetchedBlogs,"Blogs fetched Successfylly.");
         } else {
             throw new BlogNotFoundException("No blogs found for the given keyword: " + keyword);
         }
@@ -190,17 +199,17 @@ public class BlogServiceImpl implements BlogService {
     }
 
     @Override
-    public List<Blog> getBlogsByTitle(String title) {
+    public ApiResponse<List<Blog>> getBlogsByTitle(String title) {
         List<Blog> blogs = blogRepo.findByBlogTitle(title);
         if (blogs != null && !blogs.isEmpty()) {
-            return blogs;
+             return new ApiResponse<>(true,blogs,"Blogs fetched Successfylly.");
         } else {
             throw new BlogNotFoundException("No blogs found for the given title: " + title);
         }
     }
 
     @Override
-    public Blog likeBlog(String blogId, String userId) 
+    public ApiResponse<Blog> likeBlog(String blogId, String userId) 
     {
          Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
@@ -218,11 +227,13 @@ public class BlogServiceImpl implements BlogService {
                 blog.getBlogAuthorId(), blog.getBlogId(),
                 blog.getBlogTitle());
         }
-        return blogRepo.save(blog);
+        Blog updatedBlog = blogRepo.save(blog);
+
+        return new ApiResponse<>(true,updatedBlog,"Blog Liked Successfully.");
     }
 
     @Override
-    public Blog updateBlogViews(String blogId, String userId) {
+    public ApiResponse<Blog> updateBlogViews(String blogId, String userId) {
         Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
        Set<String> views = blog.getBlogViews();
@@ -231,6 +242,8 @@ public class BlogServiceImpl implements BlogService {
         }
         views.add(userId);
         blog.setBlogViews(views);
-        return blogRepo.save(blog);
+       Blog updatedBlog =  blogRepo.save(blog);
+
+        return new ApiResponse<>(true,updatedBlog,"Blog views updated Successfully.");
     }
 }

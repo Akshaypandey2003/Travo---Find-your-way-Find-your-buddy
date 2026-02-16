@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,7 +18,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-
+@Builder
 @Document
 public class Comment {
 
@@ -29,9 +30,9 @@ public class Comment {
     private String authorProfilePic;
     private String authorGender;
     private String content;
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean isEdited = false;
+    private boolean isEdited;
     private String parentCommentId;
     private String repliedToUserId;
     private List<String> commentLikes = new ArrayList<>();

@@ -1,11 +1,23 @@
 package com.user.Entity;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import lombok.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.user.Enum.AccountType;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
@@ -13,15 +25,18 @@ import lombok.*;
 @AllArgsConstructor
 @ToString
 @Builder
-
 @Document
 public class User {
     @Id
     private String userId;
     private String name;
+
+    @Indexed(unique = true)
     private String email;
     private String phone;
     private String role;
+
+    @JsonIgnore
     private String password;
     private String profilePic;
     private String cloudinaryImagePublicId;
@@ -30,22 +45,30 @@ public class User {
     private String state;
     private String city;
     private String bio;
+    private AccountType accountType;
+    
 
-    @Builder.Default
-    private ArrayList<String> likes = new ArrayList<>();
 
     @Builder.Default
     private ArrayList<String> preferences = new ArrayList<>();
 
     @Builder.Default
-    private ArrayList<String> following = new ArrayList<>();
+    private int followersCount = 0;
 
     @Builder.Default
-    private ArrayList<String> followers = new ArrayList<>();
+    private int followingsCount = 0;
 
     @Builder.Default
-    private ArrayList<String> trips = new ArrayList<>();
+    private int closeFriendsCount = 0;
 
     @Builder.Default
-    private List<String> closeFriends = new ArrayList<>();
+    private int tripsCount = 0;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
+
+   
 }

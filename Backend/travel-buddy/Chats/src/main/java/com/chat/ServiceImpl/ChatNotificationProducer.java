@@ -1,5 +1,6 @@
 package com.chat.ServiceImpl;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.kafka.core.KafkaTemplate;
@@ -19,9 +20,16 @@ public class ChatNotificationProducer implements NotificationProducer {
 
     public void messageSent(String senderId, String receiverId, String chatId, String chatName) {
 
-        String message = chatName != null && !chatName.isEmpty() ? 
-            "sent you a message in " + chatName : 
-            "sent you a message";
+        String message = (chatName != null && !chatName.isEmpty())
+            ? "sent you a message in " + chatName
+            : "sent you a message";
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("chatId", chatId);
+
+        if (chatName != null) {
+        metadata.put("chatName", chatName);
+    }
 
         NotificationEvent event = new NotificationEvent(
             "MESSAGE_SENT",
@@ -30,7 +38,7 @@ public class ChatNotificationProducer implements NotificationProducer {
             message,
             "CHAT",
             chatId,
-            Map.of("chatId", chatId,"chatName", chatName),
+            metadata,
             System.currentTimeMillis()
         );
 

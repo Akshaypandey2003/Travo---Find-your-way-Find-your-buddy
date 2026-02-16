@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.user.Config.JwtProvider;
 import com.user.Controller.AuthController;
 import com.user.DTO.AuthResponse;
+import com.user.DTO.LoginRequest;
+import com.user.DTO.RegisterRequest;
 import com.user.Entity.User;
 import com.user.Service.UserService;
 import org.junit.jupiter.api.Test;
@@ -41,19 +43,20 @@ class AuthControllerTest {
     @Test
     void registerUser_success() throws Exception {
 
-        User user = new User();
-        user.setEmail("test@gmail.com");
-        user.setPassword("123");
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@email.com");
+        request.setPassword("password");
+        request.setGender("male");
 
         AuthResponse response = new AuthResponse();
         response.setAccessToken("dummy-token");
 
         when(userService.getUserByEmail("test@gmail.com")).thenReturn(null);
-        when(userService.addUser(user)).thenReturn(response);
+        when(userService.addUser(request)).thenReturn(response);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
     }
 
@@ -76,20 +79,21 @@ class AuthControllerTest {
     @Test
     void login_success() throws Exception {
 
-        User user = new User();
-        user.setUserId("1");
-        user.setEmail("test@gmail.com");
-        user.setPassword("123");
+        LoginRequest request =
+                new LoginRequest();
+
+        request.setEmail("akshaypandey2k23@gmail.com");
+        request.setPassword("password");
 
         AuthResponse response = new AuthResponse();
         response.setAccessToken("dummy-token");
 
-        when(userService.generateToken("1", "test@gmail.com", "123"))
+        when(userService.generateToken(request))
                 .thenReturn(response);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
     }
 
@@ -97,17 +101,18 @@ class AuthControllerTest {
     @Test
     void login_userNotFound() throws Exception {
 
-        User user = new User();
-        user.setUserId("1");
-        user.setEmail("test@gmail.com");
-        user.setPassword("123");
+       LoginRequest request =
+                new LoginRequest();
 
-        when(userService.generateToken("1", "test@gmail.com", "123"))
+        request.setEmail("akshaypandey2k23@gmail.com");
+        request.setPassword("password");
+
+        when(userService.generateToken(request))
                 .thenReturn(null);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
     }
 
@@ -115,17 +120,18 @@ class AuthControllerTest {
     @Test
     void login_invalidPassword() throws Exception {
 
-        User user = new User();
-        user.setUserId("1");
-        user.setEmail("test@gmail.com");
-        user.setPassword("wrong");
+       LoginRequest request =
+                new LoginRequest();
 
-        when(userService.generateToken("1", "test@gmail.com", "wrong"))
+        request.setEmail("akshaypandey2k23@gmail.com");
+        request.setPassword("password");
+
+        when(userService.generateToken(request))
                 .thenThrow(new RuntimeException("INVALID_PASSWORD"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
 }

@@ -2,55 +2,58 @@ package com.chat.Controller;
 
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.chat.Entity.Message;
 import com.chat.Service.MessageService;
 
 @RestController
-@RequestMapping("/chat/message")
+@RequestMapping("/api/v1/chats/{chatId}/messages")
 public class MessageController {
 
-    @Autowired
-    private MessageService messageService;
+    private final MessageService messageService;
 
-    @PostMapping("/send")
-    public ResponseEntity<Message> sendMessage(@RequestBody Message message) 
-    {
-        return new ResponseEntity<>(messageService.sendMessage(message), HttpStatus.CREATED);
+    public MessageController(MessageService messageService) {
+        this.messageService = messageService;
     }
 
-    @GetMapping("/get-messages/{chatId}")
-    public ResponseEntity<?> getMessage(@PathVariable String chatId) {
-        return new ResponseEntity<>(messageService.getMessage(chatId), HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<Message> sendMessage(
+            @PathVariable String chatId,
+            @RequestBody Message message) {
+
+        // chatId already exists in message, keeping behavior unchanged
+        Message savedMessage = messageService.sendMessage(message);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedMessage);
     }
 
-    @DeleteMapping("/delete/{messageId}")
-    public ResponseEntity<?> deleteMessage(@PathVariable String messageId) {
+    @GetMapping
+    public ResponseEntity<?> getMessages(@PathVariable String chatId) {
+        return ResponseEntity.ok(messageService.getMessage(chatId));
+    }
 
-        Map<String, String> response = Map.of("message", "Message deleted successfully");
+    @PutMapping("/{messageId}")
+    public ResponseEntity<Message> updateMessage(
+            @PathVariable String messageId,
+            @RequestBody Message message) {
+
+        return ResponseEntity.ok(messageService.updateMessage(messageId, message));
+    }
+
+    @PutMapping("/{messageId}/read")
+    public ResponseEntity<Message> markAsRead(@PathVariable String messageId) {
+        return ResponseEntity.ok(messageService.updateReadStatus(messageId));
+    }
+
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<Map<String, String>> deleteMessage(
+            @PathVariable String messageId) {
+
         messageService.deleteMessage(messageId);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-
-    }
-    @PutMapping("/update/{messageId}")
-    public ResponseEntity<?> updateMessage(@PathVariable String messageId, @RequestBody Message message) {
-        return new ResponseEntity<>( messageService.updateMessage(messageId,message), HttpStatus.OK);
-
-    }
-    @PutMapping("/read/{messageId}")
-    public ResponseEntity<?> updateMessageReadStatus(@PathVariable String messageId) {
-        return new ResponseEntity<>( messageService.updateReadStatus(messageId), HttpStatus.OK);
-
+        return ResponseEntity.ok(
+                Map.of("message", "Message deleted successfully")
+        );
     }
 }

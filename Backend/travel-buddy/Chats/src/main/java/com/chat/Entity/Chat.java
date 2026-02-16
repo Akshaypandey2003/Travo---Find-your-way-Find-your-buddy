@@ -13,11 +13,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Document(collection = "chats")
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Chat {
@@ -27,17 +25,15 @@ public class Chat {
 
     private boolean groupChat;
 
-    @Builder.Default
-    private Set<String> favoriteBy = new HashSet<>(); // userIds who marked the chat as favorite
+    private Set<String> favoriteBy; // userIds who marked the chat as favorite
+    private Set<String> participants; // userIds
+    private Set<String> groupAdmin; // only if isGroupChat == true
+
     private String groupName; // null for 1-to-1 chats, set for group chats
     private String groupDescription;
     private String groupImageUrl; // null for 1-to-1 chats, set for group chats
 
-    @Builder.Default
-    private Set<String> participants = new TreeSet<>(); // userIds
-
-    @Builder.Default
-    private Set<String> groupAdmin = new TreeSet<>(); // only if isGroupChat == true
+    
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -46,4 +42,11 @@ public class Chat {
     private LocalDateTime updatedAt;
 
     private LocalDateTime recentConversationAt;
+
+    public Chat()
+    {
+        this.favoriteBy = new HashSet<>();
+        this.groupAdmin = new TreeSet<>();
+        this.participants = new TreeSet<>();
+    }
 }

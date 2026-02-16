@@ -4,9 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -23,17 +25,20 @@ import com.trip.Repositories.TripRespository;
 import com.trip.Services.TripNotificationProducer;
 import com.trip.Services.TripServices;
 
+import lombok.RequiredArgsConstructor;
 
 @Service
 @SuppressWarnings("unused")
 public class TripServiceImpl implements TripServices {
 
-    @Autowired
+    private static final Logger logger = LoggerFactory.getLogger(TripServiceImpl.class);
     private TripRespository tripRespository;
-
     private TripNotificationProducer tripNotificationProducer;
 
-    private static final Logger logger = LoggerFactory.getLogger(TripServiceImpl.class);
+    public TripServiceImpl(TripRespository tripRespository, TripNotificationProducer tripNotificationProducer) {
+        this.tripRespository = tripRespository;
+        this.tripNotificationProducer = tripNotificationProducer;
+    }
 
     @Override
     public Trip createTrip(Trip trip) {
@@ -53,7 +58,7 @@ public class TripServiceImpl implements TripServices {
 
     @Override
     public Trip updateTrip(Trip trip) {
-        
+
         System.out.println("Inside service layer, Trip ID: " + trip.getTripId());
         Trip existingTrip = tripRespository.findById(trip.getTripId())
                 .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + trip.getTripId()));
@@ -107,56 +112,46 @@ public class TripServiceImpl implements TripServices {
         return trips;
     }
 
-    public Trip sendTripRequest(String tripId, String requestFrom, String requestTo) {
+    public Trip sendTripRequest(String tripId, String requestFrom) {
 
         Trip trip = tripRespository.findById(tripId)
                 .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
 
-        List<String> tripRequests = trip.getTripRequests();
-        if (tripRequests == null) {
-            tripRequests = new ArrayList<>();
-        }
-        tripRequests.add(requestFrom);
-        trip.setTripRequests(tripRequests);
+        trip.getTripRequests().add(requestFrom);
 
-        System.out.println("Sending trip request notification from " + requestFrom + " to " + requestTo + " for trip " + tripId);
-           
+        Trip savedTrip = tripRespository.save(trip);
+
         tripNotificationProducer.sendTripRequestNotification(
                 requestFrom,
-                requestTo,
+                trip.getTripOwnerId(),
                 tripId,
-                trip.getTripName()
-                );
+                savedTrip.getTripName());
 
-        return tripRespository.save(trip);
-
-    
+        return savedTrip;
     }
 
     @Override
-    public Trip acceptTripRequest(String tripId, String requestFrom, String tripOwnerId) {
+    public Trip acceptTripRequest(String tripId, String requestFrom) {
+
         Trip trip = tripRespository.findById(tripId)
                 .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
 
-        List<String> tripRequests = trip.getTripRequests();
-        if (tripRequests.contains(requestFrom))
-            tripRequests.remove(requestFrom);
-        trip.setTripRequests(tripRequests);
+        // Remove from requests
+        trip.getTripRequests().remove(requestFrom);
 
-        Set<String> tripMembers = trip.getTripMembers();
-        if (tripMembers == null) {
-            tripMembers = new LinkedHashSet<>();
-        }
-        if (!tripMembers.contains(requestFrom))
-            tripMembers.add(requestFrom);
-        trip.setTripMembers(tripMembers);
+        // Add to members
+        trip.getTripMembers().add(requestFrom);
 
-         tripNotificationProducer.acceptTripRequestNotification(
-                tripOwnerId,
+        Trip savedTrip = tripRespository.save(trip);
+
+        // Side effect AFTER persistence
+        tripNotificationProducer.acceptTripRequestNotification(
+                trip.getTripOwnerId(),
                 requestFrom,
-                tripId,trip.getTripName());
+                tripId,
+                savedTrip.getTripName());
 
-        return tripRespository.save(trip);
+        return savedTrip;
     }
 
     @Override
@@ -171,6 +166,7 @@ public class TripServiceImpl implements TripServices {
         }
         return tripRespository.save(trip);
     }
+
 
     @Scheduled(cron = "0 0 10 * * ?", zone = "Asia/Kolkata") // Runs daily at 10:00 AM IST
     public void sendTripReminders() {
@@ -211,7 +207,8 @@ public class TripServiceImpl implements TripServices {
                     // notification.setTripId(trip.getTripId());
                     // notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
                     // notification
-                    //         .setMessage("Hope your trip went well! Please update trip status and share feedback. 📝");
+                    // .setMessage("Hope your trip went well! Please update trip status and share
+                    // feedback. 📝");
 
                     // sendNotification(restTemplate, tripServiceUrl, notification);
                 }
@@ -219,17 +216,18 @@ public class TripServiceImpl implements TripServices {
         }
     }
 
-    // private void sendNotification(RestTemplate restTemplate, String url, Notification notification) {
-    //     try {
-    //         HttpEntity<Notification> entity = new HttpEntity<>(notification);
+    // private void sendNotification(RestTemplate restTemplate, String url,
+    // Notification notification) {
+    // try {
+    // HttpEntity<Notification> entity = new HttpEntity<>(notification);
 
-    //         ResponseEntity<?> response = restTemplate.exchange(
-    //                 url, HttpMethod.POST, entity, new ParameterizedTypeReference<Object>() {
-    //                 });
-    //         System.out.println("Notification sent: " + response.getStatusCode());
-    //     } catch (Exception e) {
-    //         System.err.println("Failed to send notification: " + e.getMessage());
-    //     }
+    // ResponseEntity<?> response = restTemplate.exchange(
+    // url, HttpMethod.POST, entity, new ParameterizedTypeReference<Object>() {
+    // });
+    // System.out.println("Notification sent: " + response.getStatusCode());
+    // } catch (Exception e) {
+    // System.err.println("Failed to send notification: " + e.getMessage());
+    // }
     // }
 
 }

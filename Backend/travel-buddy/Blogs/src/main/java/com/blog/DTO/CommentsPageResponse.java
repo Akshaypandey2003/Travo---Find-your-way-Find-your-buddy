@@ -2,7 +2,6 @@ package com.blog.DTO;
 
 import java.util.List;
 
-import com.blog.Entity.Comment;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,8 +12,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class CommentsPageResponse {
-    private List<Comment> comments;
+public class CommentsPageResponse<T> {
+    private List<T> comments;
     private int currentPage;
     private int totalPages;
     private boolean isLastPage;

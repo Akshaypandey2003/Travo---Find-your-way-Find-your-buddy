@@ -3,6 +3,7 @@ package com.trip.Entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +15,6 @@ import lombok.*;
 
 
 @AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
 @ToString
@@ -45,32 +45,30 @@ public class Trip {
     private String tripCategory;
     private Set<String> tripTags;
     private TripType tripType;
-    //when a new member joins the trip, this field will be updated.
-    @Builder.Default
-    private Set<String> tripMembers = new LinkedHashSet<>();
-
-    
+    private Set<String> tripMembers;
     
     private LocalDateTime tripUpdatedAt;
 
-    @Builder.Default
     private TripStatus tripStatus = TripStatus.UPCOMING;
 
-    @Builder.Default
-    private List<String> tripRequests = new ArrayList<>();
-   // To be filled after the completion of trip.
+    private Set<String> tripRequests;
     private double tripBudget;
     
-    @Builder.Default
-    private List<String> tripHighlights  = new ArrayList<>();
+    private List<String> tripHighlights;
 
-    @Builder.Default
-    private List<String> tripImages =new ArrayList<>();
+    private List<String> tripImages;
     
     public enum TripStatus {
         UPCOMING, ONGOING, COMPLETED, CANCELLED
     }
     public enum TripType {
         SOLO, GROUP, FAMILY
+    }
+
+    public Trip() {
+        this.tripRequests = new HashSet<>();
+        this.tripMembers = new LinkedHashSet<>();
+        this.tripHighlights = new ArrayList<>();
+        this.tripImages = new ArrayList<>();
     }
 }

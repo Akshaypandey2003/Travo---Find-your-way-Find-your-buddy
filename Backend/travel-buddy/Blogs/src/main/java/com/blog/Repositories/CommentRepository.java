@@ -19,12 +19,17 @@ public interface CommentRepository extends MongoRepository<Comment, String> {
   List<Comment> findByParentCommentIdOrderByCreatedAtAsc(String parentCommentId);
 
   
-  List<Comment> findByBlogIdAndParentCommentIdAndRepliedToUserIdOrderByCreatedAtDesc(
-      String blogId, String parentCommentId, String repliedToUserId);
+  public List<Comment> findByBlogIdAndParentCommentIdAndRepliedToUserIdOrderByCreatedAtDesc(
+    String blogId, String parentCommentId, String repliedToUserId);
 
   List<Comment> findByBlogIdAndParentCommentIdAndRepliedToUserIdAndAuthorIdOrderByCreatedAtDesc(
       String blogId, String parentCommentId, String repliedToUserId, String authorId);
 
   Page<Comment> findByBlogIdAndParentCommentIdIsNullOrderByCreatedAtDesc(String blogId, Pageable pageable);
+
+  Page<Comment> findByParentCommentIdOrderByCreatedAtAsc(
+        String parentCommentId,
+        Pageable pageable
+);
 
 }

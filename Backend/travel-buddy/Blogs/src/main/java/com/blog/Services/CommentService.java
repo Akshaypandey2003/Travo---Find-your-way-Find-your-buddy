@@ -5,17 +5,21 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.blog.DTO.CommentRequestDTO;
+import com.blog.DTO.CommentResponseDTO;
 import com.blog.Entity.Comment;
 
 
 public interface CommentService {
     
-    public Comment addComment(Comment comment);
-    public Comment updateComment(String commentId,Comment comment);
-     public List<Comment> getAllReplies(String parentId);
-   
-    public Page<Comment> getTopLevelCommentsByBlogId(String blogId,Pageable pageable);
-    public List<Comment> getCommentsByBlogIdAndParentCommentId(String blogId, String parentCommentId);
-    public List<Comment> getCommentsByBlogIdAndParentCommentIdAndRepliedToUserId(String blogId, String parentCommentId, String repliedToUserId);
-    public Comment updateCommentLike(String commentId, String userId);
+    public CommentResponseDTO addComment(CommentRequestDTO request);
+    public CommentResponseDTO updateComment(String commentId, CommentRequestDTO request);
+    public Page<CommentResponseDTO> getTopLevelCommentsByBlogId(String blogId, Pageable pageable);
+    public Page<Comment> getAllReplies(String parentCommentId, Pageable pageable);
+    public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentId(String blogId, String parentCommentId);
+    public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentIdAndReplieDTOUserId(
+            String blogId, String parentCommentId, String replieDTOUserId);
+    public CommentResponseDTO updateCommentLike(String commentId, String userId);
+    public Comment mapToEntity(CommentRequestDTO dto);
+    public CommentResponseDTO mapToDTO(Comment comment);
 }

@@ -1,15 +1,57 @@
 package com.user.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.user.Entity.Connections;
+import com.user.Enum.ConnectionStatus;
+
 import java.util.List;
+import java.util.Optional;
 
+public interface ConnectionRepo extends MongoRepository<Connections, String> {
 
-public interface ConnectionRepo extends MongoRepository<Connections,String> {
+    Optional<Connections> findByFollowerIdAndFollowingId(
+            String followerId,
+            String followingId);
+
+    Page<Connections> findByFollowingIdAndStatus(
+            String followingId,
+            ConnectionStatus status,Pageable pageable);
     
-    List<Connections> findByRequestFromAndStatus(String requetFrom,boolean status);
-    List<Connections> findByRequestToAndStatus(String requestTo, boolean status);
+    Page<Connections> findByFollowerIdAndStatus(
+            String followerId,
+            ConnectionStatus status, Pageable pageable);
 
-    Connections findByRequestFromAndRequestTo(String requestFrom, String requestTo);
+            Page<Connections> findByFollowingIdAndStatus(
+            String followingId,
+            ConnectionStatus status);
+    
+    Page<Connections> findByFollowerIdAndStatus(
+            String followerId,
+            ConnectionStatus status);
+
+    long countByFollowerIdAndStatus(
+            String followerId,
+            com.user.Enum.ConnectionStatus status);
+
+    long countByFollowingIdAndStatus(
+            String followingId,
+            ConnectionStatus status);
+
+    void deleteByFollowerIdOrFollowingId(String followerId, String followingId);
+
+    List<Connections> findByFollowerId(String followerId);
+
+    List<Connections> findByFollowingId(String followingId);
+
+    boolean existsByFollowerIdAndFollowingIdAndStatus(
+            String followerId,
+            String followingId,
+            ConnectionStatus status);
+
+
+    
+
 }

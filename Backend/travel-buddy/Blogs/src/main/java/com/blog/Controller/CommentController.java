@@ -2,88 +2,121 @@ package com.blog.Controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import com.blog.DTO.ApiResponse;
+import com.blog.DTO.CommentRequestDTO;
+import com.blog.DTO.CommentResponseDTO;
 import com.blog.DTO.CommentsPageResponse;
-import com.blog.Entity.Comment;
 import com.blog.Services.CommentService;
 
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-
 @RestController
-@RequestMapping("/comment")
+@RequestMapping("/comments")
 public class CommentController {
 
-    @Autowired
-    private CommentService commentService;
+    private final CommentService commentService;
 
-    @PostMapping("/post")
-    ResponseEntity<Comment> addComment(@RequestBody Comment comment) {
-        Comment savedComment = commentService.addComment(comment);
-        return new ResponseEntity<>(savedComment, HttpStatus.CREATED);
+    public CommentController(CommentService commentService) {
+        this.commentService = commentService;
     }
 
-    @PutMapping("/update-comment/{commentId}")
-    public ResponseEntity<Comment> updateComment(@PathVariable String commentId, @RequestBody Comment comment) {
+    /* ---------------- CREATE ---------------- */
 
-        Comment savedComment = commentService.updateComment(commentId, comment);
-        return new ResponseEntity<>(savedComment, HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<ApiResponse<CommentResponseDTO>> addComment(
+            @RequestBody CommentRequestDTO request) {
+
+        CommentResponseDTO response = commentService.addComment(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, response, "Comment added successfully"));
     }
 
-    @GetMapping("/get-comments/{blogId}")
-    public ResponseEntity<CommentsPageResponse> getComments(@PathVariable String blogId,
+    /* ---------------- UPDATE ---------------- */
+
+    @PutMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<CommentResponseDTO>> updateComment(
+            @PathVariable String commentId,
+            @RequestBody CommentRequestDTO request) {
+
+        CommentResponseDTO response =
+                commentService.updateComment(commentId, request);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response, "Comment updated successfully"));
+    }
+
+    /* ---------------- GET TOP-LEVEL COMMENTS ---------------- */
+
+    @GetMapping("/blog/{blogId}")
+    public ResponseEntity<ApiResponse<CommentsPageResponse<CommentResponseDTO>>> getTopLevelComments(
+            @PathVariable String blogId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CommentResponseDTO> commentsPage =
+                commentService.getTopLevelCommentsByBlogId(blogId, pageable);
+
+        CommentsPageResponse<CommentResponseDTO> response =
+                new CommentsPageResponse<>(
+                        commentsPage.getContent(),
+                        commentsPage.getNumber(),
+                        commentsPage.getTotalPages(),
+                        commentsPage.isLast());
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response, "Comments fetched successfully"));
+    }
+
+    /* ---------------- GET REPLIES (PAGINATED) ---------------- */
+
+    @GetMapping("/{parentCommentId}/replies")
+    public ResponseEntity<ApiResponse<Page<CommentResponseDTO>>> getReplies(
+            @PathVariable String parentCommentId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Comment> commentPage = commentService.getTopLevelCommentsByBlogId(blogId, pageable);
+        Page<CommentResponseDTO> replies =
+                commentService.getAllReplies(parentCommentId, pageable)
+                        .map(comment -> commentService.mapToDTO(comment));
 
-        for (Comment comment : commentPage.getContent()) {
-            comment.setReplies(commentService.getAllReplies(comment.getCommentId()));
-        }
-
-        CommentsPageResponse response = new CommentsPageResponse(
-                commentPage.getContent(),
-                commentPage.getNumber(),
-                commentPage.getTotalPages(),
-                commentPage.isLast());
-                
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, replies, "Replies fetched successfully"));
     }
 
+    /* ---------------- FILTERED REPLIES ---------------- */
 
-    
-    @GetMapping("/get-comments/{blogId}/{parentCommentId}")
-    public ResponseEntity<List<Comment>> getComments(@PathVariable String blogId,
+    @GetMapping("/blog/{blogId}/parent/{parentCommentId}")
+    public ResponseEntity<ApiResponse<List<CommentResponseDTO>>> getRepliesByParent(
+            @PathVariable String blogId,
             @PathVariable String parentCommentId) {
-        List<Comment> comments = commentService.getCommentsByBlogIdAndParentCommentId(blogId, parentCommentId);
-        return new ResponseEntity<>(comments, HttpStatus.OK);
+
+        List<CommentResponseDTO> comments =
+                commentService.getCommentsByBlogIdAndParentCommentId(blogId, parentCommentId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, comments, "Replies fetched successfully"));
     }
 
-    @GetMapping("/get-comments/{blogId}/{parentCommentId}/{repliedToUserId}")
-    public ResponseEntity<List<Comment>> getComments(@PathVariable String blogId, @PathVariable String parentCommentId,
-            @PathVariable String repliedToUserId) {
-        List<Comment> comments = commentService.getCommentsByBlogIdAndParentCommentIdAndRepliedToUserId(blogId,
-                parentCommentId, repliedToUserId);
-        return new ResponseEntity<>(comments, HttpStatus.OK);
-    }
+    /* ---------------- LIKE / UNLIKE ---------------- */
 
-    @PutMapping("/like-comment/{commentId}/{userId}")
-    public ResponseEntity<Comment> likeComment(@PathVariable String commentId, @PathVariable String userId) {
-        Comment comment = commentService.updateCommentLike(commentId, userId);
-        return new ResponseEntity<>(comment, HttpStatus.OK);
+    @PutMapping("/{commentId}/like/{userId}")
+    public ResponseEntity<ApiResponse<CommentResponseDTO>> likeComment(
+            @PathVariable String commentId,
+            @PathVariable String userId) {
+
+        CommentResponseDTO response =
+                commentService.updateCommentLike(commentId, userId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response, "Like status updated"));
     }
 }

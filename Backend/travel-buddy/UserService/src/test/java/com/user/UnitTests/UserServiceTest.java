@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,182 +13,413 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.user.Config.JwtProvider;
 import com.user.DTO.AuthResponse;
+import com.user.DTO.LoginRequest;
+import com.user.DTO.PageResponse;
+import com.user.DTO.RegisterRequest;
+import com.user.DTO.UpdateUserRequest;
+import com.user.DTO.UserResponse;
+import com.user.Entity.CloseFriends;
+import com.user.Entity.Connections;
 import com.user.Entity.User;
+import com.user.Exceptions.InvalidPasswordException;
+import com.user.Exceptions.UserConflictException;
+import com.user.Exceptions.UserNotFoundException;
+import com.user.Helper.UserMapper;
+import com.user.Repository.CloseFriendsRepo;
+import com.user.Repository.ConnectionRepo;
 import com.user.Repository.UserRepo;
 import com.user.ServiceImpl.UserServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("unused")
-class UserServiceTest {
+public class UserServiceTest {
 
     @Mock
     private UserRepo userRepo;
 
     @Mock
+    private ConnectionRepo connectionRepo;
+
+    @Mock
+    private CloseFriendsRepo closeFriendsRepo;
+
+    @Mock
     private JwtProvider jwtProvider;
 
     @Mock
-    private BCryptPasswordEncoder passwordEncoder;   // ✅ correct type
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private UserMapper userMapper;
 
     @InjectMocks
     private UserServiceImpl userService;
 
     private User user;
+    private UserResponse userResponse;
 
     @BeforeEach
     void setup() {
-        user = new User();
-        user.setUserId("1");
-        user.setEmail("test@user.com");
-        user.setName("Akshay");
-        user.setGender("male");
-        user.setPassword("encoded-pass"); // value does not matter now
-        user.setCloseFriends(new ArrayList<>());
-        user.setLikes(new ArrayList<>());
+
+        user = User.builder()
+                .userId("user1")
+                .email("test@email.com")
+                .password("encodedPassword")
+                .name("Akshay")
+                .followersCount(5)
+                .followingsCount(3)
+                .closeFriendsCount(2)
+                .build();
+
+        userResponse = new UserResponse();
+        userResponse.setUserId("user1");
+        userResponse.setName("Akshay");
     }
 
-    // ---------- addUser ----------
-    @Test
-    void shouldAddUserAndGenerateToken() {
-        when(userRepo.save(any(User.class))).thenReturn(user);
-        when(jwtProvider.generateToken(any(), any(), any())).thenReturn("jwt-token");
+    // =====================================================
+    // REGISTER USER SUCCESS
+    // =====================================================
 
-        AuthResponse response = userService.addUser(user);
+    @Test
+    void addUser_Success() {
+
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@email.com");
+        request.setPassword("password");
+        request.setGender("male");
+
+        when(userRepo.findByEmail(request.getEmail()))
+                .thenReturn(Optional.empty());
+
+        when(userMapper.toEntity(request))
+                .thenReturn(user);
+
+        when(passwordEncoder.encode("password"))
+                .thenReturn("encodedPassword");
+
+        when(userRepo.save(any(User.class)))
+                .thenReturn(user);
+
+        when(jwtProvider.generateToken(any(), any(), any()))
+                .thenReturn("jwt-token");
+
+        when(userMapper.toResponse(user))
+                .thenReturn(userResponse);
+
+        AuthResponse response = userService.addUser(request);
 
         assertNotNull(response);
         assertEquals("jwt-token", response.getAccessToken());
+
         verify(userRepo).save(user);
     }
 
-    // ---------- getAllUser ----------
+    // =====================================================
+    // REGISTER USER FAILURE EMAIL EXISTS
+    // =====================================================
+
     @Test
-    void shouldReturnAllUsers() {
+    void addUser_EmailAlreadyExists() {
+
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@email.com");
+
+        when(userRepo.findByEmail(request.getEmail()))
+                .thenReturn(Optional.of(user));
+
+        assertThrows(UserConflictException.class,
+                () -> userService.addUser(request));
+    }
+
+    // =====================================================
+    // GET USER BY ID SUCCESS
+    // =====================================================
+
+    @Test
+    void getUserById_Success() {
+
+        when(userRepo.findById("user1"))
+                .thenReturn(Optional.of(user));
+
+        when(userMapper.toResponse(user))
+                .thenReturn(userResponse);
+
+        UserResponse result = userService.getUserById("user1");
+
+        assertEquals("user1", result.getUserId());
+    }
+
+    // =====================================================
+    // GET USER BY ID FAILURE
+    // =====================================================
+
+    @Test
+    void getUserById_NotFound() {
+
+        when(userRepo.findById("user1"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(UserNotFoundException.class,
+                () -> userService.getUserById("user1"));
+    }
+
+    // =====================================================
+    // GET ALL USERS SUCCESS
+    // =====================================================
+
+    @Test
+    void getAllUsers_Success() {
+
         Pageable pageable = PageRequest.of(0, 10);
-        Page<User> page = new PageImpl<>(List.of(user));
 
-        when(userRepo.findAll(pageable)).thenReturn(page);
+        Page<User> page = new PageImpl<>(
+                List.of(user),
+                pageable,
+                1);
 
-        List<User> users = userService.getAllUser(pageable);
+        when(userRepo.findAll(pageable))
+                .thenReturn(page);
 
-        assertEquals(1, users.size());
+        when(userMapper.toResponse(user))
+                .thenReturn(userResponse);
+
+        PageResponse<UserResponse> result = userService.getAllUsers(pageable);
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        assertEquals("user1",
+                result.getContent().get(0).getUserId());
+
+        assertEquals(0, result.getPage());
+        assertEquals(10, result.getSize());
+        assertEquals(1, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertTrue(result.isLast());
     }
 
-    @Test
-    void shouldThrowExceptionWhenNoUsers() {
-        Pageable pageable = PageRequest.of(0, 10);
-        when(userRepo.findAll(pageable)).thenReturn(Page.empty());
+    // =====================================================
+    // GET USER BY EMAIL SUCCESS
+    // =====================================================
 
-        assertThrows(RuntimeException.class, () -> userService.getAllUser(pageable));
+    @Test
+    void getUserByEmail_Success() {
+
+        when(userRepo.findByEmail(user.getEmail()))
+                .thenReturn(Optional.of(user));
+
+        User result = userService.getUserByEmail(user.getEmail());
+
+        assertEquals("user1", result.getUserId());
     }
 
-    // ---------- getUserById ----------
+    // =====================================================
+    // GET USER BY EMAIL FAILURE
+    // =====================================================
+
     @Test
-    void shouldGetUserById() {
-        when(userRepo.findById("1")).thenReturn(Optional.of(user));
+    void getUserByEmail_NotFound() {
 
-        User found = userService.getUserById("1");
+        when(userRepo.findByEmail(any()))
+                .thenReturn(Optional.empty());
 
-        assertEquals("Akshay", found.getName());
+        assertThrows(UserNotFoundException.class,
+                () -> userService.getUserByEmail("email"));
     }
 
-    @Test
-    void shouldThrowWhenUserNotFound() {
-        when(userRepo.findById("2")).thenReturn(Optional.empty());
+    // =====================================================
+    // UPDATE USER SUCCESS
+    // =====================================================
 
-        assertThrows(RuntimeException.class,
-                () -> userService.getUserById("2"));  // ✅ actual call
+    @Test
+    void updateUser_Success() {
+
+        UpdateUserRequest request = new UpdateUserRequest();
+
+        request.setName("Updated Name");
+
+        when(userRepo.findById("user1"))
+                .thenReturn(Optional.of(user));
+
+        when(userRepo.save(any()))
+                .thenReturn(user);
+
+        when(userMapper.toResponse(user))
+                .thenReturn(userResponse);
+
+        UserResponse result = userService.updateUser("user1", request);
+
+        assertNotNull(result);
+
+        verify(userRepo).save(user);
     }
 
-    // ---------- deleteUser ----------
+    // =====================================================
+    // UPDATE USER FAILURE
+    // =====================================================
+
     @Test
-    void shouldDeleteUser() {
-        when(userRepo.findById("1")).thenReturn(Optional.of(user));
+    void updateUser_NotFound() {
 
-        String result = userService.deleteUser("1");
+        when(userRepo.findById("user1"))
+                .thenReturn(Optional.empty());
 
-        verify(userRepo).delete(user);
-        assertTrue(result.contains("deleted"));
+        assertThrows(UserNotFoundException.class,
+                () -> userService.updateUser(
+                        "user1",
+                        new UpdateUserRequest()));
     }
 
-    // ---------- getUserByPreferences ----------
+    // =====================================================
+    // DELETE USER SUCCESS FULL RELATIONSHIPS
+    // =====================================================
+
     @Test
-    void shouldReturnUsersByPreferences() {
-        when(userRepo.findByPreferencesInIgnoreCase(any()))
-                .thenReturn(List.of(user));
+    void deleteUser_Success_WithRelationships() {
 
-        List<User> result = userService.getUserByPreferences(List.of("travel"));
+        Connections follower = Connections.builder()
+                .followerId("follower1")
+                .followingId("user1")
+                .build();
 
-        assertFalse(result.isEmpty());
+        Connections following = Connections.builder()
+                .followerId("user1")
+                .followingId("following1")
+                .build();
+
+        CloseFriends closeFriend = CloseFriends.builder()
+                .userId("user1")
+                .closeFriendId("cf1")
+                .build();
+
+        CloseFriends addedByOther = CloseFriends.builder()
+                .userId("otherUser")
+                .closeFriendId("user1")
+                .build();
+
+        when(userRepo.existsById("user1"))
+                .thenReturn(true);
+
+        when(connectionRepo.findByFollowingId("user1"))
+                .thenReturn(List.of(follower));
+
+        when(connectionRepo.findByFollowerId("user1"))
+                .thenReturn(List.of(following));
+
+        when(closeFriendsRepo.findByUserId("user1"))
+                .thenReturn(List.of(closeFriend));
+
+        when(closeFriendsRepo.findByCloseFriendId("user1"))
+                .thenReturn(List.of(addedByOther));
+
+        userService.deleteUser("user1");
+
+        verify(userRepo)
+                .decrementFollowingCount("follower1");
+
+        verify(userRepo)
+                .decrementFollowersCount("following1");
+
+        verify(userRepo)
+                .decrementCloseFriendsCount("user1");
+
+        verify(userRepo)
+                .decrementCloseFriendsCount("otherUser");
+
+        verify(userRepo)
+                .deleteById("user1");
     }
 
-    // ---------- updateLikes ----------
+    // =====================================================
+    // DELETE USER FAILURE
+    // =====================================================
+
     @Test
-    void shouldLikeUser() {
-        User sender = new User();
-        sender.setUserId("2");
+    void deleteUser_NotFound() {
 
-        when(userRepo.findById("1")).thenReturn(Optional.of(user));
-        when(userRepo.findById("2")).thenReturn(Optional.of(sender));
+        when(userRepo.existsById("user1"))
+                .thenReturn(false);
 
-        userService.updateLikes("1", "2");
-
-        assertTrue(user.getLikes().contains("2"));
-        verify(userRepo, atLeastOnce()).save(user);
+        assertThrows(UserNotFoundException.class,
+                () -> userService.deleteUser("user1"));
     }
 
-    // ---------- addCloseFriend ----------
+    // =====================================================
+    // LOGIN SUCCESS
+    // =====================================================
+
     @Test
-    void shouldAddCloseFriend() {
-        when(userRepo.findById("1")).thenReturn(Optional.of(user));
+    void generateToken_Success() {
 
-        String msg = userService.addCloseFriend("1", "2");
+        LoginRequest request = new LoginRequest();
 
-        assertTrue(user.getCloseFriends().contains("2"));
-    }
+        request.setEmail(user.getEmail());
+        request.setPassword("password");
 
-    // ---------- removeCloseFriend ----------
-    @Test
-    void shouldRemoveCloseFriend() {
-        user.getCloseFriends().add("2");
-        when(userRepo.findById("1")).thenReturn(Optional.of(user));
+        when(userRepo.findByEmail(user.getEmail()))
+                .thenReturn(Optional.of(user));
 
-        String msg = userService.removeCloseFriend("1", "2");
+        when(passwordEncoder.matches(
+                "password",
+                user.getPassword()))
+                .thenReturn(true);
 
-        assertFalse(user.getCloseFriends().contains("2"));
-    }
-
-    // ---------- generateToken(User) ----------
-    @Test
-    void shouldGenerateTokenFromUser() {
         when(jwtProvider.generateToken(any(), any(), any()))
                 .thenReturn("jwt-token");
 
-        AuthResponse response = userService.generateToken(user);
+        when(userMapper.toResponse(user))
+                .thenReturn(userResponse);
 
-        assertEquals("jwt-token", response.getAccessToken());
+        AuthResponse response = userService.generateToken(request);
+
+        assertEquals("jwt-token",
+                response.getAccessToken());
     }
 
-    // ---------- generateToken(email,password) ----------
+    // =====================================================
+    // LOGIN USER NOT FOUND
+    // =====================================================
+
     @Test
-    void shouldGenerateTokenWithEmailPassword() {
-        when(userRepo.findByEmail(user.getEmail())).thenReturn(user);
+    void generateToken_UserNotFound() {
 
-        // ✅ VERY IMPORTANT
-        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        LoginRequest request = new LoginRequest();
 
-        when(jwtProvider.generateToken(any(), any(), any()))
-                .thenReturn("jwt-token");
+        request.setEmail("wrong@email.com");
 
-        AuthResponse response =
-                userService.generateToken("1", user.getEmail(), "password");
+        when(userRepo.findByEmail(any()))
+                .thenReturn(Optional.empty());
 
-        assertNotNull(response);
-        assertEquals("jwt-token", response.getAccessToken());
+        assertThrows(UserNotFoundException.class,
+                () -> userService.generateToken(request));
+    }
+
+    // =====================================================
+    // LOGIN INVALID PASSWORD
+    // =====================================================
+
+    @Test
+    void generateToken_InvalidPassword() {
+
+        LoginRequest request = new LoginRequest();
+
+        request.setEmail(user.getEmail());
+        request.setPassword("wrong");
+
+        when(userRepo.findByEmail(user.getEmail()))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches(any(), any()))
+                .thenReturn(false);
+
+        assertThrows(InvalidPasswordException.class,
+                () -> userService.generateToken(request));
     }
 }

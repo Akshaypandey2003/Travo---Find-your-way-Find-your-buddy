@@ -1,9 +1,7 @@
 package com.blog.Controller;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.blog.DTO.ApiResponse;
 import com.blog.Entity.Blog;
 import com.blog.Services.BlogService;
 
@@ -28,89 +27,87 @@ public class BlogController {
     private BlogService blogService;
 
     @PostMapping("/create-blog")
-    public ResponseEntity<Blog> postBlog(@RequestBody Blog blog)
+    public ResponseEntity<?> postBlog(@RequestBody Blog blog)
     {
         System.out.println("Received blog data in Blog service is: "+blog);
-       Blog savedBlog = blogService.createBlog(blog);
+       ApiResponse<Blog> savedBlog = blogService.createBlog(blog);
        return ResponseEntity.status(201).body(savedBlog);
     }
 
     @PutMapping("/update-blog/{blogId}")
-    public ResponseEntity<Blog> updateBlog(@PathVariable String blogId , @RequestBody Blog blog)
+    public ResponseEntity<?> updateBlog(@PathVariable String blogId , @RequestBody Blog blog)
     {
         System.out.println("Received blog data in blog service controller (to update)  is: "+blog+" and id is: "+blogId);
-        Blog updatedBlog = blogService.updateBlog(blogId, blog);
+        ApiResponse<Blog> updatedBlog = blogService.updateBlog(blogId, blog);
         return ResponseEntity.status(200).body(updatedBlog);
     }
     @PostMapping("/like-blog/{blogId}/{userId}")
-    ResponseEntity<Object> likeBlog(@PathVariable String blogId, @PathVariable String userId)
+    ResponseEntity<?> likeBlog(@PathVariable String blogId, @PathVariable String userId)
     {
-        return ResponseEntity.ok(blogService.likeBlog(blogId, userId));
+        ApiResponse<Blog> response = blogService.likeBlog(blogId, userId);
+
+        return ResponseEntity.ok(response);
     }
     @DeleteMapping("/delete-blog/{blogId}")
-    public ResponseEntity<Object> deleteBlog(@PathVariable String blogId)
+    public ResponseEntity<?> deleteBlog(@PathVariable String blogId)
     {
-        blogService.deleteBlog(blogId);
-        Map<String,String> result = new HashMap<>();
-        result.put("success","Blog Deleted Successfully");
-        return ResponseEntity.status(200).body(result);
+        ApiResponse<Void> response = blogService.deleteBlog(blogId);
+       
+        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/get-blog/{blogId}")
-    public ResponseEntity<Blog> getBlogByBlogId(@PathVariable String blogId)
+    public ResponseEntity<?> getBlogByBlogId(@PathVariable String blogId)
     {
-        Blog blog = blogService.getBlogById(blogId);
-        return ResponseEntity.status(200).body(blog);
+        ApiResponse<Blog> response = blogService.getBlogById(blogId);
+        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/get-all-blogs")
-    public ResponseEntity<List<Blog>> getAllBlogs(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<?> getAllBlogs(@RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size)
     {
-        List<Blog> blogs = blogService.getAllBlogs();
-        return ResponseEntity.status(200).body(blogs);
+        ApiResponse<List<Blog>> response = blogService.getAllBlogs();
+        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/get-blogs-by-category/{category}")
-    public ResponseEntity<List<Blog>> getBlogsByCategory(@PathVariable String category)
+    public ResponseEntity<?> getBlogsByCategory(@PathVariable String category)
     {
-        List<Blog> blogs = blogService.getBlogsByCategory(category);
-        return ResponseEntity.status(200).body(blogs);
+       ApiResponse<List<Blog>> response = blogService.getBlogsByCategory(category);
+        return ResponseEntity.status(200).body(response);
     }
 
     @GetMapping("/get-blogs-by-author/{authorId}")
-    public ResponseEntity<List<Blog>> getBlogsByAuthor(@PathVariable String authorId)
+    public ResponseEntity<?> getBlogsByAuthor(@PathVariable String authorId)
     {
-        System.out.println("Executing get-blogs-by-author in blog service.");
-        List<Blog> blogs = blogService.getBlogsByAuthor(authorId);
-        return ResponseEntity.status(200).body(blogs);
+        ApiResponse<List<Blog>> response = blogService.getBlogsByAuthor(authorId);
+        return ResponseEntity.status(200).body(response);
     }
 
     @GetMapping("/get-blogs-by-keyword/{keyword}")
-    public ResponseEntity<List<Blog>> getBlogsByKeyword(@PathVariable String keyword)
+    public ResponseEntity<?> getBlogsByKeyword(@PathVariable String keyword)
     {
 
-        List<Blog> blogs = blogService.getBlogsByKeyword(keyword);
-        return ResponseEntity.status(200).body(blogs);
+        ApiResponse<List<Blog>> response = blogService.getBlogsByKeyword(keyword);
+        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/get-blogs-by-title/{title}")
-    public ResponseEntity<List<Blog>> getBlogsByTitle(@PathVariable String title)
+    public ResponseEntity<?> getBlogsByTitle(@PathVariable String title)
     {
-        List<Blog> blogs = blogService.getBlogsByTitle(title);
-        return ResponseEntity.status(200).body(blogs);
+        ApiResponse<List<Blog>> response = blogService.getBlogsByTitle(title);
+        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/get-blogs-by-date-range/{startDate}/{endDate}")
-    public ResponseEntity<List<Blog>> getBlogsByDateRange(@PathVariable String startDate, @PathVariable String endDate)
+    public ResponseEntity<?> getBlogsByDateRange(@PathVariable String startDate, @PathVariable String endDate)
     {
         LocalDateTime startDateTime = LocalDateTime.parse(startDate);
         LocalDateTime endDateTime = LocalDateTime.parse(endDate);
-        List<Blog> blogs = blogService.getBlogsByDateRange(startDateTime, endDateTime);
-        return ResponseEntity.status(200).body(blogs);
+        ApiResponse<List<Blog>> response = blogService.getBlogsByDateRange(startDateTime, endDateTime);
+        return ResponseEntity.status(200).body(response);
     }
     @PostMapping("/update-blog-views/{blogId}/{userId}")
-    public ResponseEntity<Object> updateBlogViews(@PathVariable String blogId, @PathVariable String userId)
+    public ResponseEntity<?> updateBlogViews(@PathVariable String blogId, @PathVariable String userId)
     {
-        blogService.updateBlogViews(blogId, userId);
-        Map<String,String> result = new HashMap<>();
-        result.put("success","Blog Views Updated Successfully");
-        return ResponseEntity.status(200).body(result);
+        ApiResponse<Blog> updatedBlog = blogService.updateBlogViews(blogId, userId);
+        return ResponseEntity.status(200).body(updatedBlog);
     }
 
 }

@@ -4,11 +4,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.blog.DTO.ApiResponse;
+import com.blog.DTO.CommentRequestDTO;
+import com.blog.DTO.CommentResponseDTO;
 import com.blog.Entity.Blog;
 import com.blog.Entity.Comment;
 import com.blog.Exceptions.CommentNotFoundException;
@@ -17,114 +19,187 @@ import com.blog.Services.BlogService;
 import com.blog.Services.CommentService;
 import com.blog.Services.NotificationProducer;
 
-
 @Service
 public class CommentServiceImpl implements CommentService {
-    @Autowired
-    private CommentRepository commentRepo;
-   
-    @Autowired
-    private BlogService blogService;
 
-    @Autowired
-    private NotificationProducer notificationProducer;
+    private final CommentRepository commentRepo;
+    private final BlogService blogService;
+    private final NotificationProducer notificationProducer;
 
-    @Override
-    public Comment addComment(Comment comment) {
-        Comment savedComment = commentRepo.save(comment);
-
-        Blog blog = blogService.getBlogById(savedComment.getBlogId());
-
-        notificationProducer.sendCommentNotification(savedComment.getAuthorId(), 
-        blog.getBlogAuthorId(), savedComment.getBlogId(), blog.getBlogTitle());
-
-        return savedComment;
+    public CommentServiceImpl(
+            CommentRepository commentRepo,
+            BlogService blogService,
+            NotificationProducer notificationProducer) {
+        this.commentRepo = commentRepo;
+        this.blogService = blogService;
+        this.notificationProducer = notificationProducer;
     }
 
     @Override
-    public Comment updateComment(String commentId, Comment comment) {
-        Comment existingComment = commentRepo.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException("Comment not found with id: " + commentId));
+    public CommentResponseDTO addComment(CommentRequestDTO request) {
 
-        if (comment.getContent() != null)
-            existingComment.setContent(comment.getContent());
+        Comment comment = mapToEntity(request);
+        Comment savedComment = commentRepo.save(comment);
+
+        Blog blog = fetchBlog(savedComment.getBlogId());
+
+        notificationProducer.sendCommentNotification(
+                savedComment.getAuthorId(),
+                blog.getBlogAuthorId(),
+                savedComment.getBlogId(),
+                blog.getBlogTitle());
+
+        return mapToDTO(savedComment);
+    }
+
+    @Override
+    public CommentResponseDTO updateComment(String commentId, CommentRequestDTO request) {
+
+        Comment existingComment = getCommentById(commentId);
+
+        if (request.getContent() != null) {
+            existingComment.setContent(request.getContent());
+        }
 
         existingComment.setUpdatedAt(LocalDateTime.now());
         existingComment.setEdited(true);
-        return commentRepo.save(existingComment);
+
+        return mapToDTO(commentRepo.save(existingComment));
     }
 
     @Override
-    public Page<Comment> getTopLevelCommentsByBlogId(String blogId, Pageable pageable) {
+    public Page<CommentResponseDTO> getTopLevelCommentsByBlogId(String blogId, Pageable pageable) {
 
-        Page<Comment> topLevelComments = commentRepo.findByBlogIdAndParentCommentIdIsNullOrderByCreatedAtDesc(blogId,
-                pageable);
-        if (topLevelComments.isEmpty()) {
-            throw new CommentNotFoundException("No top-level comments found for blog id: " + blogId);
+        Page<Comment> comments = commentRepo.findByBlogIdAndParentCommentIdIsNullOrderByCreatedAtDesc(blogId, pageable);
+
+        if (comments.isEmpty()) {
+            throw new CommentNotFoundException(
+                    "No top-level comments found for blog id: " + blogId);
         }
-        return topLevelComments;
 
+        return comments.map(this::mapToDTO);
     }
-
-
-    public List<Comment> getAllReplies(String parentId) {
-        List<Comment> replies = commentRepo.findByParentCommentIdOrderByCreatedAtAsc(parentId);
-        for (Comment reply : replies) {
-            reply.setReplies(getAllReplies(reply.getCommentId())); // you must support this in DTO
-        }
-        return replies;
-    }
-
 
     @Override
-    public List<Comment> getCommentsByBlogIdAndParentCommentId(String blogId, String parentCommentId) 
-    {
+    public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentId(
+            String blogId, String parentCommentId) {
+
         List<Comment> comments = commentRepo.findByBlogIdAndParentCommentIdOrderByCreatedAtDesc(blogId,
                 parentCommentId);
-        if (comments.isEmpty())
+
+        if (comments.isEmpty()) {
             throw new CommentNotFoundException(
                     "No comments found for blog id: " + blogId + " and parent comment id: " + parentCommentId);
-        return comments;
+        }
+
+        return comments.stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
-    public List<Comment> getCommentsByBlogIdAndParentCommentIdAndRepliedToUserId(String blogId, String parentCommentId,
-            String repliedToUserId) {
+    public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentIdAndReplieDTOUserId(
+            String blogId, String parentCommentId, String replieDTOUserId) {
+
         List<Comment> comments = commentRepo.findByBlogIdAndParentCommentIdAndRepliedToUserIdOrderByCreatedAtDesc(
-                blogId, parentCommentId,
-                repliedToUserId);
-        if (comments.isEmpty())
-            throw new CommentNotFoundException("No comments found for blog id: " + blogId + " and parent comment id: "
-                    + parentCommentId + " and replied to user id: " + repliedToUserId);
+                blogId, parentCommentId, replieDTOUserId);
 
-        return comments;
+        if (comments.isEmpty()) {
+            throw new CommentNotFoundException(
+                    "No comments found for blog id: " + blogId +
+                            ", parent comment id: " + parentCommentId +
+                            ", replieDTO user id: " + replieDTOUserId);
+        }
+
+        return comments.stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
-    public Comment updateCommentLike(String commentId, String userId) 
-    {
-        Comment comment = commentRepo.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException("Comment not found with id: " + commentId));
+    public CommentResponseDTO updateCommentLike(String commentId, String userId) {
 
-        Blog blog = blogService.getBlogById(comment.getBlogId());
+        Comment comment = getCommentById(commentId);
+        
 
-        List<String> commentLikes = comment.getCommentLikes();
-        if (commentLikes == null) {
-            commentLikes = new ArrayList<>();
-        }
-        if (commentLikes.contains(userId)) {
-            commentLikes.remove(userId);
-        } else {
-            commentLikes.add(userId);
-           
-            notificationProducer.sendCommentLikeNotification(
-                userId, 
-                comment.getAuthorId(), comment.getBlogId(),
-                blog.getBlogTitle());
+        toggleLike(comment, userId);
 
-        }
-        comment.setCommentLikes(commentLikes);
-        return commentRepo.save(comment);
+        return mapToDTO(commentRepo.save(comment));
     }
 
+    /* ---------------- PRIVATE HELPERS ---------------- */
+
+    private Comment getCommentById(String commentId) {
+        return commentRepo.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("Comment not found with id: " + commentId));
+    }
+
+    private Blog fetchBlog(String blogId) {
+        ApiResponse<Blog> response = blogService.getBlogById(blogId);
+        return response.getData();
+    }
+
+    private void toggleLike(Comment comment, String userId) {
+
+        List<String> likes = comment.getCommentLikes();
+        if (likes == null) {
+            likes = new ArrayList<>();
+        }
+
+        if (likes.contains(userId)) {
+            likes.remove(userId);
+        } else {
+            likes.add(userId);
+            
+            Blog blog = fetchBlog(comment.getBlogId());
+            notificationProducer.sendCommentLikeNotification(
+                    userId,
+                    comment.getAuthorId(),
+                    comment.getBlogId(),
+                    blog.getBlogTitle());
+        }
+
+        comment.setCommentLikes(likes);
+    }
+
+    @Override
+    public Page<Comment> getAllReplies(String parentCommentId, Pageable pageable) {
+
+        Page<Comment> repliesPage = commentRepo.findByParentCommentIdOrderByCreatedAtAsc(parentCommentId, pageable);
+
+        if (repliesPage.isEmpty()) {
+            throw new CommentNotFoundException(
+                    "No replies found for parent comment id: " + parentCommentId);
+        }
+
+        return repliesPage;
+    }
+
+    public Comment mapToEntity(CommentRequestDTO dto) {
+        return Comment.builder()
+                .blogId(dto.getBlogId())
+                .authorId(dto.getAuthorId())
+                .parentCommentId(dto.getParentCommentId())
+                .repliedToUserId(dto.getRepliedToUserId())
+                .content(dto.getContent())
+                .createdAt(LocalDateTime.now())
+                .isEdited(false)
+                .build();
+    }
+
+    public CommentResponseDTO mapToDTO(Comment comment) {
+        return CommentResponseDTO.builder()
+                .commentId(comment.getCommentId())
+                .blogId(comment.getBlogId())
+                .authorId(comment.getAuthorId())
+                .content(comment.getContent())
+                .parentCommentId(comment.getParentCommentId())
+                .repliedToUserId(comment.getRepliedToUserId())
+                .likesCount(
+                        comment.getCommentLikes() == null ? 0 : comment.getCommentLikes().size())
+                .edited(comment.isEdited())
+                .createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt())
+                .build();
+    }
 }

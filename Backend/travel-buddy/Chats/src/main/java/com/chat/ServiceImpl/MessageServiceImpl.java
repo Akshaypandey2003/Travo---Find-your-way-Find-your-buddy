@@ -3,9 +3,10 @@ package com.chat.ServiceImpl;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.chat.Entity.Chat;
 import com.chat.Entity.Message;
@@ -13,104 +14,134 @@ import com.chat.Exceptions.MessageNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
 import com.chat.Service.MessageService;
-import com.events.Entity.NotificationEvent;
 
 @Service
-@SuppressWarnings("unused")
+@Transactional
 public class MessageServiceImpl implements MessageService {
 
-    @Autowired
-    private MessageRepository messageRepo;
+    private static final Logger log = LoggerFactory.getLogger(MessageServiceImpl.class);
 
-    @Autowired
-    private ChatRepo chatRepo;
+    private final MessageRepository messageRepo;
+    private final ChatRepo chatRepo;
+    private final ChatNotificationProducer chatNotificationProducer;
 
-    @Autowired
-    private KafkaTemplate<String, NotificationEvent> kafkaTemplate;
-
-    @Autowired
-    private ChatNotificationProducer chatNotificationProducer;
-
+    public MessageServiceImpl(
+            MessageRepository messageRepo,
+            ChatRepo chatRepo,
+            ChatNotificationProducer chatNotificationProducer) {
+        this.messageRepo = messageRepo;
+        this.chatRepo = chatRepo;
+        this.chatNotificationProducer = chatNotificationProducer;
+    }
 
     @Override
     public Message sendMessage(Message message) {
-        try {
 
-            Chat chat = chatRepo.findById(message.getChatId())
-                    .orElseThrow(() -> new RuntimeException("Chat not found"));
-            chat.setRecentConversationAt(LocalDateTime.now());
+        Chat chat = chatRepo.findById(message.getChatId())
+                .orElseThrow(() ->
+                        new MessageNotFoundException("Chat not found with id: " + message.getChatId())
+                );
 
-            chatRepo.save(chat);
-            
-            Message savedMessage = messageRepo.save(message);
+        // Update recent activity
+        chat.setRecentConversationAt(LocalDateTime.now());
+        chatRepo.save(chat);
 
-            for(String participant: chat.getParticipants()) {
-                if(!participant.equals(savedMessage.getSenderId())) {
+        // Persist message
+        Message savedMessage = messageRepo.save(message);
+
+        // Notify participants (non-blocking)
+        notifyParticipants(chat, savedMessage);
+
+        log.info("Message sent successfully. chatId={}, messageId={}",
+                savedMessage.getChatId(), savedMessage.getMessageId());
+
+        return savedMessage;
+    }
+
+    private void notifyParticipants(Chat chat, Message savedMessage) {
+        for (String participant : chat.getParticipants()) {
+            if (!participant.equals(savedMessage.getSenderId())) {
+                try {
                     chatNotificationProducer.messageSent(
-                        savedMessage.getSenderId(),
-                        participant,
-                        message.getChatId(),
-                        chat.getGroupName()
+                            savedMessage.getSenderId(),
+                            participant,
+                            savedMessage.getChatId(),
+                            chat.getGroupName()
+                    );
+                } catch (Exception ex) {
+                    // Kafka failure should NOT break message sending
+                    log.error(
+                            "Failed to send notification. chatId={}, receiverId={}",
+                            savedMessage.getChatId(),
+                            participant,
+                            ex
                     );
                 }
             }
-
-            return savedMessage;
-        } catch (Exception e) {
-            throw new RuntimeException("Error sending message: " + e.getMessage(), e);
         }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Message> getMessage(String chatId) {
-        try {
-            List<Message> messages = messageRepo.findByChatIdOrderByCreatedAtDesc(chatId);
 
-            if (messages == null || messages.isEmpty()) {
-                throw new MessageNotFoundException("Messages not found for chatId: " + chatId);
-            }
-            return messages;
-        } catch (Exception e) {
-            throw new RuntimeException("Error sending message: " + e.getMessage(), e);
+        List<Message> messages = messageRepo.findByChatIdOrderByCreatedAtDesc(chatId);
+
+        if (messages == null || messages.isEmpty()) {
+            throw new MessageNotFoundException(
+                    "Messages not found for chatId: " + chatId
+            );
         }
+
+        return messages;
     }
 
     @Override
     public void deleteMessage(String messageId) {
-       try {
+        if (!messageRepo.existsById(messageId)) {
+            throw new MessageNotFoundException(
+                    "Message not found with id: " + messageId
+            );
+        }
+
         messageRepo.deleteById(messageId);
-       } catch (Exception e) {
-          throw new RuntimeException("Error sending message: " + e.getMessage(), e);
-       }
+        log.info("Message deleted successfully. messageId={}", messageId);
     }
 
     @Override
-    public Message updateMessage(String messageId, Message message) 
-    {
-        Message existingMessage = messageRepo.findById(messageId)
-                .orElseThrow(() -> new MessageNotFoundException("Message not found with id: " + messageId));
-        
-        if(message.getMessageContent()!=null)
-        existingMessage.setMessageContent(message.getMessageContent());
+    public Message updateMessage(String messageId, Message message) {
 
-        if(message.getMediaUrl()!=null)
-        existingMessage.setMediaUrl(message.getMediaUrl());
-        if(message.getMessageType()!=null)
-        existingMessage.setMediaType(message.getMediaType());
+        Message existingMessage = messageRepo.findById(messageId)
+                .orElseThrow(() ->
+                        new MessageNotFoundException("Message not found with id: " + messageId)
+                );
+
+        if (message.getMessageContent() != null) {
+            existingMessage.setMessageContent(message.getMessageContent());
+        }
+
+        if (message.getMediaUrl() != null) {
+            existingMessage.setMediaUrl(message.getMediaUrl());
+        }
+
+        if (message.getMessageType() != null) {
+            existingMessage.setMediaType(message.getMediaType());
+        }
+
         existingMessage.setRead(message.isRead());
 
         return messageRepo.save(existingMessage);
     }
-    @Override
-    public Message updateReadStatus(String messageId) 
-    {
-        Message existingMessage = messageRepo.findById(messageId)
-                .orElseThrow(() -> new MessageNotFoundException("Message not found with id: " + messageId));
-        
-        
-        existingMessage.setRead(true);
 
+    @Override
+    public Message updateReadStatus(String messageId) {
+
+        Message existingMessage = messageRepo.findById(messageId)
+                .orElseThrow(() ->
+                        new MessageNotFoundException("Message not found with id: " + messageId)
+                );
+
+        existingMessage.setRead(true);
         return messageRepo.save(existingMessage);
     }
-
 }

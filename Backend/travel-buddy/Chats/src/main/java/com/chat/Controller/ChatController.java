@@ -2,58 +2,71 @@ package com.chat.Controller;
 
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.chat.Entity.Chat;
 import com.chat.Service.ChatService;
 
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/api/v1/chats")
 public class ChatController {
-    
-    @Autowired
-    private ChatService chatService;
 
-    @PostMapping("/create")
-    public ResponseEntity<Chat> createChat(@RequestBody Chat chat)
-    {
-      return ResponseEntity.ok(chatService.createChat(chat));
+    private final ChatService chatService;
+
+    public ChatController(ChatService chatService) {
+        this.chatService = chatService;
     }
-    
-    @GetMapping("/get-chat/{userId}")   
-    public ResponseEntity<?> getChat(@PathVariable String userId){
+
+    @PostMapping
+    public ResponseEntity<Chat> createChat(@RequestBody Chat chat) {
+        Chat createdChat = chatService.createChat(chat);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdChat);
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getChatsByUser(@PathVariable String userId) {
         return ResponseEntity.ok(chatService.getChat(userId));
     }
-    @GetMapping("/get-chat-by-chatId/{chatId}")
-    public ResponseEntity<?> getChatByChatId(@PathVariable String chatId){
+
+    @GetMapping("/{chatId}")
+    public ResponseEntity<?> getChatById(@PathVariable String chatId) {
         return ResponseEntity.ok(chatService.getChatByChatId(chatId));
     }
 
-    @PutMapping("/update/{chatId}")
-    public ResponseEntity<Chat> updateChat(@PathVariable String adminId, @PathVariable String chatId, @RequestBody Chat chat){
+    @PutMapping("/{chatId}")
+    public ResponseEntity<Chat> updateChat(
+            @RequestHeader("X-ADMIN-ID") String adminId,
+            @PathVariable String chatId,
+            @RequestBody Chat chat) {
+
         return ResponseEntity.ok(chatService.updateChat(adminId, chatId, chat));
     }
-    @PutMapping("/update-favorite/{chatId}/{userId}")
-    public ResponseEntity<Chat> updateFavorite(@PathVariable String chatId, @PathVariable String userId){
+
+    @PutMapping("/{chatId}/favorite/{userId}")
+    public ResponseEntity<Chat> updateFavorite(
+            @PathVariable String chatId,
+            @PathVariable String userId) {
+
         return ResponseEntity.ok(chatService.updateFavorite(chatId, userId));
     }
-    @PutMapping("/update-group-members/{chatId}")
-    public ResponseEntity<Chat> updateGroupMembers(@PathVariable String adminId,@PathVariable String chatId, @RequestBody Set<String> members ){
+
+    @PutMapping("/{chatId}/members")
+    public ResponseEntity<Chat> updateGroupMembers(
+            @RequestHeader("X-ADMIN-ID") String adminId,
+            @PathVariable String chatId,
+            @RequestBody Set<String> members) {
+
         return ResponseEntity.ok(chatService.updateGroupMembers(adminId, chatId, members));
     }
-    @DeleteMapping("/delete/{chatId}")
-    public ResponseEntity<Void> deleteChat(@PathVariable String adminId,@PathVariable String chatId){
+
+    @DeleteMapping("/{chatId}")
+    public ResponseEntity<Void> deleteChat(
+            @RequestHeader("X-ADMIN-ID") String adminId,
+            @PathVariable String chatId) {
+
         chatService.deleteChat(adminId, chatId);
         return ResponseEntity.noContent().build();
     }
-
 }

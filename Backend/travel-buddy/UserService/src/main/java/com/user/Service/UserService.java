@@ -8,6 +8,7 @@ import com.user.DTO.AuthResponse;
 import com.user.DTO.LoginRequest;
 import com.user.DTO.PageResponse;
 import com.user.DTO.RegisterRequest;
+import com.user.DTO.ResetPasswordRequest;
 import com.user.DTO.UpdateUserRequest;
 import com.user.DTO.UserResponse;
 import com.user.Entity.User;
@@ -26,6 +27,9 @@ public interface UserService
     UserResponse updateUser(String userId, UpdateUserRequest request);
 
     void deleteUser(String userId);
+
+    void forgotPassword(String email);
+    void resetPassword(ResetPasswordRequest request);
 } 
     
    

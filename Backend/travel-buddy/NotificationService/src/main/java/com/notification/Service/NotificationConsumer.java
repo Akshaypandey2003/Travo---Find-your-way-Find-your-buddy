@@ -1,54 +1,36 @@
 package com.notification.Service;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.events.Entity.NotificationEvent;
-import com.notification.Clients.UserServiceClient;
-import com.notification.Controller.NotificationSocketController;
-import com.notification.DTO.NotificationMapper;
-import com.notification.DTO.UserSummary;
-import com.notification.Entity.Notification;
+import com.notification.handler.NotificationHandler;
 
 @Service
-@SuppressWarnings("unused")
 public class NotificationConsumer {
-    
 
-    @Autowired
-    private NotificationService notificationService;
+    private final List<NotificationHandler> handlers;
 
-    @Autowired
-    private UserServiceClient userServiceClient;
-
-
-    private final NotificationSocketController socketController;
-
-    public NotificationConsumer(NotificationSocketController socketController) {
-        this.socketController = socketController;
+    public NotificationConsumer(List<NotificationHandler> handlers) {
+        this.handlers = handlers;
     }
 
     @KafkaListener(topics = "notification-events")
     public void consume(NotificationEvent event) {
 
+        System.out.println("Received event: " + event);
 
-        System.out.println("Received Notification Event: " + event);
-        
-         // ⚠️ fetch SENDER details, not receiver
-        UserSummary sender =
-                userServiceClient.getUserSummaryById(event.getSenderId());
-
-
-        Notification notification =
-                NotificationMapper.toEntity(event, sender, event.getReceiverId());
-
-        notificationService.saveNotification(notification);
-
-        socketController.sendNotification(event.getReceiverId(), notification);
+        handlers.stream()
+                .filter(handler -> handler.supports(event))
+                .findFirst()
+                .ifPresentOrElse(
+                        handler -> handler.handle(event),
+                        () -> System.out.println(
+                                "No handler found for event type: "
+                                        + event.getType()
+                        )
+                );
     }
 }

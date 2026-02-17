@@ -1,0 +1,102 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Welcome to TravelBuddy</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <!-- Content -->
+      <tr>
+        <td style="padding: 30px; color: #333; line-height: 1.6">
+          <h2 style="margin-top: 0">
+            Hey <span th:text="${username}">User</span> 👋
+          </h2>
+
+          <p>
+            <strong>Welcome to TravelBuddy! 🚀</strong>
+          </p>
+
+          <p>
+            You’re now part of a growing community of explorers, storytellers,
+            and adventure seekers who believe that journeys are better when
+            shared.
+          </p>
+
+          <p style="margin-top: 20px">
+            <strong>Here’s what you can start doing right away:</strong>
+          </p>
+
+          <!-- Feature List -->
+          <table
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            style="margin-top: 10px"
+          >
+            <tr>
+              <td style="padding: 5px 0">✈️ Discover amazing destinations</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0">🤝 Connect with travel companions</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0">
+                📝 Share your travel blogs & experiences
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0">
+                💬 Chat and build meaningful friendships
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin-top: 20px">
+            Whether you're planning your next mountain escape, beach retreat, or
+            city exploration — TravelBuddy is here to make it more exciting and
+            social.
+          </p>
+
+          <p style="font-weight: bold; margin-top: 20px">
+            Your next adventure is just one connection away 🌎
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 35px 0">
+            <a
+              th:href="${exploreUrl}"
+              style="
+                background: #0d6efd;
+                color: white;
+                padding: 14px 28px;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
+                display: inline-block;
+              "
+            >
+              Start Exploring 🌍
+            </a>
+          </div>
+
+          <p>
+            Happy Exploring!<br />
+            <strong>The TravelBuddy Team</strong>
+          </p>
+
+          <p style="font-style: italic; color: #555">
+            P.S. The world is too big to travel alone 😉
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

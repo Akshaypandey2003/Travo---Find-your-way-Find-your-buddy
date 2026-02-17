@@ -2,13 +2,17 @@ package com.user.ServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,21 +26,27 @@ import com.user.DTO.LoginRequest;
 import com.user.DTO.MessageResponse;
 import com.user.DTO.PageResponse;
 import com.user.DTO.RegisterRequest;
+import com.user.DTO.ResetPasswordRequest;
 import com.user.DTO.UpdateUserRequest;
 import com.user.DTO.UserResponse;
 import com.user.Entity.CloseFriends;
 import com.user.Entity.Connections;
+import com.user.Entity.PasswordResetToken;
 import com.user.Entity.User;
 import com.user.Enum.AccountType;
 import com.user.Exceptions.InvalidPasswordException;
+import com.user.Exceptions.InvalidResetTokenException;
 import com.user.Exceptions.UserConflictException;
 import com.user.Exceptions.UserNotFoundException;
 import com.user.Helper.AppConstants;
 import com.user.Helper.UserMapper;
 import com.user.Repository.CloseFriendsRepo;
 import com.user.Repository.ConnectionRepo;
+import com.user.Repository.PasswordResetTokenRepo;
 import com.user.Repository.UserRepo;
 import com.user.Service.UserService;
+
+import jakarta.ws.rs.InternalServerErrorException;
 
 @Service
 @SuppressWarnings("unused")
@@ -47,22 +57,30 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;
     private final ConnectionRepo connectionRepo;
     private final CloseFriendsRepo closeFriendsRepo;
+    private final UserEventProducer userEventProducer;
     private final UserMapper userMapper;
+    private final PasswordResetTokenRepo tokenRepo;
+    private final UserNotificationProducer notificationProducer;
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public UserServiceImpl(UserRepo userRepo,
             JwtProvider jwtProvider,
             PasswordEncoder passwordEncoder, UserMapper userMapper, ConnectionRepo connectionRepo,
-            CloseFriendsRepo closeFriendsRepo) {
+            CloseFriendsRepo closeFriendsRepo, UserEventProducer userEventProducer, PasswordResetTokenRepo tokenRepo,
+            UserNotificationProducer notificationProducer) {
         this.userRepo = userRepo;
         this.jwtProvider = jwtProvider;
         this.passwordEncoder = passwordEncoder;
         this.closeFriendsRepo = closeFriendsRepo;
         this.connectionRepo = connectionRepo;
         this.userMapper = userMapper;
+        this.userEventProducer = userEventProducer;
+        this.tokenRepo = tokenRepo;
+        this.notificationProducer = notificationProducer;
     }
 
+    @Transactional
     @Override
     public AuthResponse addUser(RegisterRequest request) {
 
@@ -108,6 +126,12 @@ public class UserServiceImpl implements UserService {
         // Convert to response DTO
         UserResponse userResponse = userMapper.toResponse(savedUser);
 
+        //Service level events
+        userEventProducer.publishUserCreated(savedUser.getUserId(), savedUser.getName(), savedUser.getEmail());
+
+        //User notification
+            notificationProducer.sendWelcomeNotification(savedUser.getUserId(),savedUser.getName(),savedUser.getEmail());
+
         return new AuthResponse(
                 userResponse,
                 token,
@@ -125,7 +149,7 @@ public class UserServiceImpl implements UserService {
 
         Page<User> page = userRepo.findAll(pageable);
 
-         if (page.isEmpty()) {
+        if (page.isEmpty()) {
             throw new UserNotFoundException("No users found with the given preferences.");
         }
 
@@ -169,6 +193,7 @@ public class UserServiceImpl implements UserService {
 
     // Retrieve a user by ID
     @Override
+    @Cacheable(value = "users", key = "#userId")
     public UserResponse getUserById(String userId) {
 
         User user = userRepo.findById(userId)
@@ -180,6 +205,7 @@ public class UserServiceImpl implements UserService {
     // Delete a user by ID
     @Transactional
     @Override
+    @CacheEvict(value = "users", key = "#userId")
     public void deleteUser(String userId) {
 
         if (!userRepo.existsById(userId)) {
@@ -242,19 +268,22 @@ public class UserServiceImpl implements UserService {
          */
         userRepo.deleteById(userId);
 
+        userEventProducer.publishUserDeleted(userId);
+
         logger.info("User deleted successfully: {}", userId);
     }
 
-    
-
     @Override
+     @Cacheable(value = "users", key = "#email")
     public User getUserByEmail(String email) {
         return userRepo.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(
                         "User not found with email: " + email));
     }
 
+    @Transactional
     @Override
+    @CacheEvict(value = "users", key = "#userId")
     public UserResponse updateUser(
             String userId,
             UpdateUserRequest request) {
@@ -262,34 +291,58 @@ public class UserServiceImpl implements UserService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        if (request.getName() != null)
+        Map<String, Object> updatedFields = new HashMap<>();
+
+        if (request.getName() != null) {
             user.setName(request.getName());
+            updatedFields.put("name", request.getName());
+        }
 
-        if (request.getPhone() != null)
+        if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
+            updatedFields.put("phone", request.getPhone());
+        }
 
-        if (request.getBio() != null)
+        if (request.getBio() != null) {
             user.setBio(request.getBio());
+            updatedFields.put("bio", request.getBio());
+        }
 
-        if (request.getCountry() != null)
+        if (request.getCountry() != null) {
             user.setCountry(request.getCountry());
+            updatedFields.put("country", request.getCountry());
+        }
 
-        if (request.getState() != null)
+        if (request.getState() != null) {
             user.setState(request.getState());
+            updatedFields.put("state", request.getState());
+        }
 
-        if (request.getCity() != null)
+        if (request.getCity() != null) {
             user.setCity(request.getCity());
+            updatedFields.put("city", request.getCity());
+        }
 
-        if (request.getProfilePic() != null)
+        if (request.getProfilePic() != null) {
             user.setProfilePic(request.getProfilePic());
+            updatedFields.put("profilePic", request.getProfilePic());
+        }
 
-        if (request.getCloudinaryImagePublicId() != null)
+        if (request.getCloudinaryImagePublicId() != null) {
             user.setCloudinaryImagePublicId(
                     request.getCloudinaryImagePublicId());
+            updatedFields.put("cloudinaryImagePublicId",
+                    request.getCloudinaryImagePublicId());
+        }
 
         User saved = userRepo.save(user);
 
         logger.info("User updated: {}", saved.getUserId());
+
+        // publish event only if something changed
+        if (!updatedFields.isEmpty()) {
+            userEventProducer.publishUserUpdated(userId, updatedFields);
+        }
 
         return userMapper.toResponse(saved);
     }
@@ -326,4 +379,76 @@ public class UserServiceImpl implements UserService {
                 new MessageResponse("User logged in successfully", "success"));
     }
 
+    @Override
+    public void forgotPassword(String email){
+
+        Optional<User> optionalUser = userRepo.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+
+            // DO NOT reveal user doesn't exist
+            logger.warn("Password reset requested for non-existing email: {}", email);
+
+            return;
+        }
+
+        User user = optionalUser.get();
+
+        String token = UUID.randomUUID().toString();
+
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .expiryTime(System.currentTimeMillis() + (15 * 60 * 1000))
+                .used(false)
+                .build();
+
+        tokenRepo.save(resetToken);
+
+        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+
+            notificationProducer.sendPasswordResetNotification(
+                user.getUserId(),
+                user.getEmail(),
+                user.getName(),
+                resetLink);
+        
+    }
+
+    @Transactional
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+
+        PasswordResetToken resetToken = tokenRepo.findByToken(request.getToken())
+                .orElseThrow(() -> new InvalidResetTokenException(
+                        "Invalid or expired token"));
+        if (resetToken.isUsed()) {
+            throw new InvalidResetTokenException("Token already used");
+        }
+
+        if (resetToken.getExpiryTime() < System.currentTimeMillis()) {
+            tokenRepo.delete(resetToken);
+            throw new InvalidResetTokenException("Token expired");
+        }
+
+        User user = userRepo.findById(resetToken.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        userRepo.save(user);
+
+        tokenRepo.delete(resetToken);
+        tokenRepo.deleteByUserId(user.getUserId());
+
+             notificationProducer.sendPasswordResetSuccessNotification(
+            user.getUserId(),
+            user.getName(),
+            user.getEmail()
+    );
+       
+       
+
+        logger.info("Password reset successful for userId={}", user.getUserId());
+    }
 }

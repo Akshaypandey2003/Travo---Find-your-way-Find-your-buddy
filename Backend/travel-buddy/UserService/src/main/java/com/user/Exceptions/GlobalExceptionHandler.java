@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.user.DTO.MessageResponse;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -25,6 +27,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConnectionRequestException.class)
     public ResponseEntity<String> handleConnectionRequestException(ConnectionRequestException ex) {
         return new ResponseEntity<>( ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+     @ExceptionHandler(InvalidResetTokenException.class)
+    public ResponseEntity<MessageResponse> handleInvalidToken(
+            InvalidResetTokenException ex) {
+
+        return ResponseEntity.badRequest()
+                .body(new MessageResponse(ex.getMessage(),"failure"));
     }
 
     @ExceptionHandler(Exception.class)

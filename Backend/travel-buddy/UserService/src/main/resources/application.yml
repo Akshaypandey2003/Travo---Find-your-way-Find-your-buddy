@@ -15,3 +15,26 @@ logging:
     org.springframework.kafka: DEBUG
 
 
+resilience4j:
+
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+
+    instances:
+      notificationServiceCircuitBreaker:
+        baseConfig: default
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 2s
+
+    instances:
+      notificationServiceRetry:
+        baseConfig: default

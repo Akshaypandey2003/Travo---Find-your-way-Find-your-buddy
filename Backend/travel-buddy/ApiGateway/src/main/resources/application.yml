@@ -6,6 +6,11 @@ spring:
     name: api-gateway
   config:
     import: optional:configserver:http://localhost:8086
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
   cloud:
     gateway:
       routes:
@@ -18,16 +23,19 @@ spring:
         uri: lb://HOTEL-SERVICE
         predicates:
         - Path=/hotel/**
+        
 
       - id: REVIEW-SERVICE
         uri: lb://REVIEW-SERVICE
         predicates:
         - Path=/review/**
 
+
       - id: ROOM-SERVICE
         uri: lb://ROOM-SERVICE
         predicates:
         - Path=/rooms/**
+
 
       - id: BOOKING-SERVICE
         uri: lb://BOOKING-SERVICE
@@ -38,47 +46,170 @@ spring:
         uri: lb://user-service
         predicates:
         - Path=/user/**,/connection/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
 
       - id: USER-SERVICE-PUBLIC
         uri: lb://user-service
         predicates:
         - Path=/auth/**,/user/public/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
         
       
       - id: TRIPS-SERVICE
         uri: lb://trip-service
         predicates:
         - Path=/trip/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: tripServiceCircuitBreaker
+                fallbackUri: forward:/fallback/trip-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
 
       - id: FEEDBACK-SERVICE
         uri: lb://feedback-service
         predicates:
         - Path=/feedback/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: feedbackServiceCircuitBreaker
+                fallbackUri: forward:/fallback/feedback-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
 
       - id: CHATS-SERVICE
         uri: lb://chat-service
         predicates:
         - Path=/chat/**,/chat/message/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: chatServiceCircuitBreaker
+                fallbackUri: forward:/fallback/chat-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
 
       - id: BLOGS-SERVICE
         uri: lb://blog-service
         predicates:
         - Path=/blog/**,/comment/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: blogServiceCircuitBreaker
+                fallbackUri: forward:/fallback/blog-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
 
       - id: NOTIFICATION-SERVICE
         uri: lb://notification-service
         predicates:
           - Path=/ws/**,/notification/**
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCircuitBreaker
+                fallbackUri: forward:/fallback/notification-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
       
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+ 
+
+# Resilience4j Circuit Breaker
+resilience4j:
+
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+
+    instances:
+      userServiceCircuitBreaker:
+        baseConfig: default
+      tripServiceCircuitBreaker:
+        baseConfig: default
+      chatServiceCircuitBreaker:
+        baseConfig: default
+      blogServiceCircuitBreaker:
+        baseConfig: default
+      feedbackServiceCircuitBreaker:
+        baseConfig: default
+      notificationServiceCircuitBreaker:
+        baseConfig: default
+
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+
+    instances:
+      userServiceCircuitBreaker:
+        baseConfig: default
+      tripServiceCircuitBreaker:
+        baseConfig: default
+      chatServiceCircuitBreaker:
+        baseConfig: default
+      blogServiceCircuitBreaker:
+        baseConfig: default
+      feedbackServiceCircuitBreaker:
+        baseConfig: default
+      notificationServiceCircuitBreaker:
+        baseConfig: default
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty.http.client: DEBUG
+    "[org.springframework.cloud.gateway]": DEBUG
+    "[reactor.netty.http.client]": DEBUG
 
 
 #JWT Configuration

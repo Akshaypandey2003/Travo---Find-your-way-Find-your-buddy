@@ -1,4 +1,4 @@
-package com.events.Entity;
+package com.events.Notification;
 
 import java.util.Map;
 
@@ -7,6 +7,7 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class NotificationEvent {
     
     private String type;           // COMMENT_ADDED, POST_LIKED

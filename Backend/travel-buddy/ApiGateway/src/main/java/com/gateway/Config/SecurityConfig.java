@@ -19,38 +19,6 @@ import org.springframework.web.cors.CorsConfiguration;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    // private final JwtAuthenticationFilter jwtFilter;
-
-    // public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
-    //     this.jwtFilter = jwtFilter;
-    // }
-
-    // @Bean
-    // SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-    //     return http
-    //             .csrf(csrf -> csrf.disable())
-    //             .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-    //             .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-    //             .securityContextRepository(
-    //                     NoOpServerSecurityContextRepository.getInstance())
-    //             .cors(cors -> cors.configurationSource(request -> {
-    //                 CorsConfiguration config = new CorsConfiguration();
-    //                 config.setAllowedOriginPatterns(Collections.singletonList("*"));
-    //                 config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-    //                 config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
-    //                 config.setAllowedHeaders(Collections.singletonList("*"));
-    //                 config.setAllowCredentials(true);
-    //                 config.setExposedHeaders(Arrays.asList("Authorization"));
-    //                 return config;
-    //             }))
-    //             .authorizeExchange(exchange -> exchange
-    //                     .pathMatchers("/auth/**", "/actuator/**").permitAll()
-    //                     .anyExchange().authenticated())
-    //             .addFilterBefore(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-    //             .build();
-
-    // }
-
      @Bean
     SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,

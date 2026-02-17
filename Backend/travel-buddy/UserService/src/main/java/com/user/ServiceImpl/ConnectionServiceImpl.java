@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,8 @@ import com.user.Repository.CloseFriendsRepo;
 import com.user.Repository.ConnectionRepo;
 import com.user.Repository.UserRepo;
 import com.user.Service.ConnectionService;
+
+import jakarta.ws.rs.InternalServerErrorException;
 
 @Service
 @SuppressWarnings("unused")
@@ -104,6 +107,12 @@ public class ConnectionServiceImpl implements ConnectionService {
                                 .build();
 
                 connectionRepo.save(connection);
+
+                try {
+
+                } catch (Exception e) {
+                        // TODO: handle exception
+                }
 
                 // If public account → immediately follow
                 if (status == ConnectionStatus.FOLLOWING) {

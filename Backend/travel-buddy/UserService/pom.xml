@@ -40,7 +40,7 @@
         <!-- NOTIFICATION EVENTS - IMPORTANT! -->
         <dependency>
             <groupId>com.travelbuddy</groupId>
-            <artifactId>NotificationEvents</artifactId>
+            <artifactId>Shared-Events</artifactId>
             <version>1.0.0</version>
         </dependency>
 

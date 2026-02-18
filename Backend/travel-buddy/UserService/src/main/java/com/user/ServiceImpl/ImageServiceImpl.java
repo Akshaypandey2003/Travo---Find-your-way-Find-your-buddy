@@ -16,14 +16,12 @@ public class ImageServiceImpl implements ImageService{
 
    private Cloudinary cloudinary;
   
-  //here using constructor injection instead of @Autowired(both will work the same)
     public ImageServiceImpl(Cloudinary cloudinary) {
     this.cloudinary = cloudinary;
   }
 
     @Override
     public String uploadImage(MultipartFile img,String fileName) {
-      //Code to upload image on server
 
       try {
         // byte [] data = new byte[img.getInputStream().available()];

@@ -12,46 +12,43 @@ import java.util.Optional;
 
 public interface ConnectionRepo extends MongoRepository<Connections, String> {
 
-    Optional<Connections> findByFollowerIdAndFollowingId(
-            String followerId,
-            String followingId);
+        Optional<Connections> findByFollowerIdAndFollowingId(
+                        String followerId,
+                        String followingId);
 
-    Page<Connections> findByFollowingIdAndStatus(
-            String followingId,
-            ConnectionStatus status,Pageable pageable);
-    
-    Page<Connections> findByFollowerIdAndStatus(
-            String followerId,
-            ConnectionStatus status, Pageable pageable);
+        Page<Connections> findByFollowingIdAndStatus(
+                        String followingId,
+                        ConnectionStatus status, Pageable pageable);
 
-            Page<Connections> findByFollowingIdAndStatus(
-            String followingId,
-            ConnectionStatus status);
-    
-    Page<Connections> findByFollowerIdAndStatus(
-            String followerId,
-            ConnectionStatus status);
+        Page<Connections> findByFollowerIdAndStatus(
+                        String followerId,
+                        ConnectionStatus status, Pageable pageable);
 
-    long countByFollowerIdAndStatus(
-            String followerId,
-            com.user.Enum.ConnectionStatus status);
+        List<Connections> findByFollowingIdAndStatus(
+                        String followingId,
+                        ConnectionStatus status);
 
-    long countByFollowingIdAndStatus(
-            String followingId,
-            ConnectionStatus status);
+        List<Connections> findByFollowerIdAndStatus(
+                        String followerId,
+                        ConnectionStatus status);
 
-    void deleteByFollowerIdOrFollowingId(String followerId, String followingId);
+        long countByFollowerIdAndStatus(
+                        String followerId,
+                        com.user.Enum.ConnectionStatus status);
 
-    List<Connections> findByFollowerId(String followerId);
+        long countByFollowingIdAndStatus(
+                        String followingId,
+                        ConnectionStatus status);
 
-    List<Connections> findByFollowingId(String followingId);
+        void deleteByFollowerIdOrFollowingId(String followerId, String followingId);
 
-    boolean existsByFollowerIdAndFollowingIdAndStatus(
-            String followerId,
-            String followingId,
-            ConnectionStatus status);
+        List<Connections> findByFollowerId(String followerId);
 
+        List<Connections> findByFollowingId(String followingId);
 
-    
+        boolean existsByFollowerIdAndFollowingIdAndStatus(
+                        String followerId,
+                        String followingId,
+                        ConnectionStatus status);
 
 }

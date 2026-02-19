@@ -31,8 +31,8 @@ public class JwtProvider {
 
     public String generateToken(String userId,String email, List<String> roles) {
         return Jwts.builder()
-                .setSubject(email)
-                .claim("userId", userId)
+                .setSubject(userId)
+                .claim("email", email)
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
@@ -74,12 +74,16 @@ public class JwtProvider {
     }
 
     public String extractUserId(String token) {
+        return getUsernameFromToken(token);
+    }
+
+    public String extractEmail(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
-                .get("userId", String.class);
+                .get("email", String.class);
     }
 
     public List<String> getRolesFromToken(String token) {

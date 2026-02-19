@@ -102,7 +102,6 @@ class ConnectionControllerTest {
         // ===============================
         // ACCEPT FOLLOW REQUEST
         // ===============================
-
         @Test
         @DisplayName("accept follow request success")
         void acceptFollowRequest_success() throws Exception {
@@ -122,6 +121,7 @@ class ConnectionControllerTest {
                                 .andExpect(jsonPath("$.status").value("FOLLOWING"));
         }
 
+        
         @Test
         void acceptFollowRequest_failure() throws Exception {
 

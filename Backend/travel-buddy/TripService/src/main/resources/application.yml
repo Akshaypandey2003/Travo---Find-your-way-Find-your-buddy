@@ -8,8 +8,72 @@ spring:
   data:
     mongodb:
       database: Trips
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+  cache:
+    type: redis
+    redis:
+      time-to-live: 15m
+      cache-null-values: false
       
   config:
     import: optional:configserver:http://localhost:8086
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+    instances:
+      tripNotificationCircuitBreaker:
+        baseConfig: default
+      tripDomainEventCircuitBreaker:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      tripNotificationRetry:
+        baseConfig: default
+      tripDomainEventRetry:
+        baseConfig: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches,circuitbreakers,retries
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    redis:
+      enabled: true
+  metrics:
+    enable:
+      cache: true
+
+trip:
+  pagination:
+    max-page-size: 100
+  reminder:
+    batch-size: 200
+    cron: "0 0 10 * * ?"
+    zone: Asia/Kolkata
+  notifications:
+    retry:
+      fixed-delay-ms: 30000
+      batch-size: 50
+      max-attempts: 10
 

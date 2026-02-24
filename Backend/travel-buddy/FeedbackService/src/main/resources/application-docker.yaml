@@ -40,3 +40,40 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+    instances:
+      feedbackNotificationCircuitBreaker:
+        baseConfig: default
+      feedbackEventCircuitBreaker:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      feedbackNotificationRetry:
+        baseConfig: default
+      feedbackEventRetry:
+        baseConfig: default
+
+feedback:
+  companion:
+    max-peer-reviews-per-trip: ${FEEDBACK_MAX_PEER_REVIEWS_PER_TRIP:3}
+  pagination:
+    max-page-size: ${FEEDBACK_MAX_PAGE_SIZE:100}
+  outbox:
+    retry:
+      fixed-delay-ms: ${FEEDBACK_OUTBOX_RETRY_DELAY_MS:30000}
+      batch-size: ${FEEDBACK_OUTBOX_RETRY_BATCH_SIZE:50}
+      max-attempts: ${FEEDBACK_OUTBOX_RETRY_MAX_ATTEMPTS:10}
+

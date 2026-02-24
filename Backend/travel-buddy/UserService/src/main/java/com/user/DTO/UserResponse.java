@@ -31,4 +31,8 @@ public class UserResponse {
 
     private String city;
 
+    private int ratingsReceivedCount;
+
+    private double averageRating;
+
 }

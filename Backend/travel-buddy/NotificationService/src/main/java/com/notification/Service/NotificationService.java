@@ -51,4 +51,15 @@ public class NotificationService {
     public Notification getNotificationById(String id) {
         return notificationRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + id));
     }
+
+    public boolean deleteNotificationIfExists(String id) {
+        if (id == null || id.isBlank()) {
+            return false;
+        }
+        if (notificationRepo.existsById(id)) {
+            notificationRepo.deleteById(id);
+            return true;
+        }
+        return false;
+    }
 }

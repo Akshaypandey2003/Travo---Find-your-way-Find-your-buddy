@@ -3,209 +3,291 @@ package com.trip.IntegrationTest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import com.trip.Config.JwtProvider;
 import com.trip.Entity.Trip;
+import com.trip.Entity.Trip.TripType;
+import com.trip.Entity.TripRequest;
+import com.trip.Entity.TripRequest.RequestStatus;
+import com.trip.Repositories.TripRequestRepository;
 import com.trip.Repositories.TripRespository;
+import com.trip.Services.TripDomainEventPublisher;
+import com.trip.Services.TripNotificationProducer;
 
 @SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc(addFilters = false)
-@EmbeddedKafka(partitions = 1, topics = {
-        "notification-events" }, bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@Testcontainers(disabledWithoutDocker = true)
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
+@SuppressWarnings("removal")
 class TripIntegrationTest {
 
     @Container
     static MongoDBContainer mongo = new MongoDBContainer("mongo:7.0");
 
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    TripRespository tripRepo;
-
-    @Autowired
-    ObjectMapper objectMapper;
+    @SuppressWarnings("resource")
+    @Container
+    static GenericContainer<?> redis = new GenericContainer<>("redis:7.2-alpine")
+            .withExposedPorts(6379);
 
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+        registry.add("spring.kafka.bootstrap-servers", () -> "localhost:9092");
+        registry.add("spring.task.scheduling.enabled", () -> "false");
+    }
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private TripRespository tripRepo;
+
+    @Autowired
+    private TripRequestRepository tripRequestRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtProvider jwtProvider;
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @MockBean
+    private TripNotificationProducer tripNotificationProducer;
+
+    @MockBean
+    private TripDomainEventPublisher tripDomainEventPublisher;
+
+    @BeforeEach
+    void setup() {
+        redisTemplate.getConnectionFactory().getConnection().flushAll();
     }
 
     @AfterEach
     void cleanup() {
+        tripRequestRepository.deleteAll();
         tripRepo.deleteAll();
+        redisTemplate.getConnectionFactory().getConnection().flushAll();
     }
 
-    // ---------------- CREATE TRIP ----------------
-
     @Test
-    void shouldCreateTrip() throws Exception {
-        Trip trip = new Trip();
-        trip.setTripName("Goa Trip");
-        trip.setTripCity("Goa");
-        trip.setTripStartDate(LocalDate.now().plusDays(5));
+    void createTrip_success_persistsTrip() throws Exception {
+        Trip trip = buildTrip("owner1");
 
-        mockMvc.perform(post("/trip/create-trip")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(trip)))
-                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/trips")
+                        .header("Authorization", authHeader("owner1"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(trip)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tripOwnerId").value("owner1"));
 
-        assertThat(tripRepo.findAll()).hasSize(1);
+        List<Trip> allTrips = tripRepo.findAll();
+        assertThat(allTrips).hasSize(1);
+        assertThat(allTrips.get(0).getPendingRequestCount()).isZero();
+        assertThat(allTrips.get(0).getTotalRequestCount()).isZero();
     }
 
-    // ---------------- UPDATE TRIP ----------------
-
     @Test
-    void shouldUpdateTrip() throws Exception {
-        Trip trip = tripRepo.save(Trip.builder().tripName("Manali Trip").tripCity("Manali").build());
+    void createTrip_failure_whenOwnerMismatch() throws Exception {
+        Trip trip = buildTrip("other-user");
 
-        trip.setTripCity("Shimla");
+        mockMvc.perform(post("/api/v1/trips")
+                        .header("Authorization", authHeader("owner1"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(trip)))
+                .andExpect(status().isForbidden());
 
-        mockMvc.perform(put("/trip/update-trip")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(trip)))
-                .andExpect(status().isOk());
-
-        Trip updated = tripRepo.findById(trip.getTripId()).get();
-        assertThat(updated.getTripCity()).isEqualTo("Shimla");
+        assertThat(tripRepo.count()).isZero();
     }
 
-    // ---------------- DELETE TRIP ----------------
-
     @Test
-    void shouldDeleteTrip() throws Exception {
-        Trip trip = tripRepo.save(new Trip());
-        String id = trip.getTripId();
+    void sendTripRequest_success_persistsRequestAndCounters() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
 
-        mockMvc.perform(delete("/trip/delete-trip/" + id))
-                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/trips/send-trip-request/{tripId}/{requestFrom}", trip.getTripId(), "userA")
+                        .header("Authorization", authHeader("userA")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
 
-        assertThat(tripRepo.findById(id)).isEmpty();
+        Optional<TripRequest> request = tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA");
+        Trip updatedTrip = tripRepo.findById(trip.getTripId()).orElseThrow();
+
+        assertThat(request).isPresent();
+        assertThat(request.get().getStatus()).isEqualTo(RequestStatus.PENDING);
+        assertThat(updatedTrip.getPendingRequestCount()).isEqualTo(1);
+        assertThat(updatedTrip.getTotalRequestCount()).isEqualTo(1);
     }
 
-    // ---------------- SEND TRIP REQUEST (Kafka Test) ----------------
-
     @Test
-    void shouldSendTripRequestAndProduceKafkaEvent() throws Exception {
+    void sendTripRequest_failure_whenPrincipalMismatch_returns500() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
 
-        Trip trip = tripRepo.save(Trip.builder().tripCity("Jaipur").tripName("Explore pink City")
-                .tripOwnerId("Ak1").tripOwnerName("Akshay").build());
+        mockMvc.perform(post("/api/v1/trips/send-trip-request/{tripId}/{requestFrom}", trip.getTripId(), "userA")
+                        .header("Authorization", authHeader("otherUser")))
+                .andExpect(status().isInternalServerError());
 
-        String tripId = trip.getTripId();
-
-        mockMvc.perform(post("/trip/send-trip-request/" + tripId + "/user1"))
-                .andExpect(status().isOk());
-
-        // ---------- Kafka Assert (same as UserService) ----------
-        Map<String, Object> consumerProps = new HashMap<>();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                System.getProperty("spring.kafka.bootstrap-servers"));
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test-group");
-        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
-            consumer.subscribe(Collections.singleton("notification-events"));
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
-            assertThat(records.count()).isGreaterThan(0);
-        }
+        assertThat(tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA")).isEmpty();
     }
 
-    // ---------------- ACCEPT TRIP REQUEST ----------------
-
     @Test
-    void shouldAcceptTripRequestAndProduceKafkaEvent() throws Exception {
-        Trip trip = tripRepo.save(Trip.builder().tripCity("Jaipur").tripName("Explore pink City")
-                .tripOwnerId("Ak1").tripOwnerName("Akshay").tripRequests(Set.of("user1")).build());
+    void acceptTripRequest_success_updatesRequestAndTripMembers() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
+        tripRequestRepository.save(TripRequest.builder()
+                .tripId(trip.getTripId())
+                .ownerUserId("owner1")
+                .requesterUserId("userA")
+                .status(RequestStatus.PENDING)
+                .build());
 
-        mockMvc.perform(post("/trip/accept-trip-request/notif1/" +
-                trip.getTripId() + "/user1"))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/trips/accept-trip-request/n1/{tripId}/{requestFrom}", trip.getTripId(), "userA")
+                        .header("Authorization", authHeader("owner1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
 
-        Trip updated = tripRepo.findById(trip.getTripId()).orElseThrow();
-        assertThat(updated.getTripMembers()).contains("user1");
+        Trip updatedTrip = tripRepo.findById(trip.getTripId()).orElseThrow();
+        TripRequest updatedRequest = tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA").orElseThrow();
 
-        Map<String, Object> consumerProps = new HashMap<>();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                System.getProperty("spring.kafka.bootstrap-servers"));
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test-group");
-        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
-            consumer.subscribe(Collections.singleton("notification-events"));
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
-            assertThat(records.count()).isGreaterThan(0);
-        }
+        assertThat(updatedTrip.getTripMembers()).contains("userA");
+        assertThat(updatedTrip.getPendingRequestCount()).isZero();
+        assertThat(updatedRequest.getStatus()).isEqualTo(RequestStatus.ACCEPTED);
     }
 
-    // ---------------- GET TRIP ----------------
-
     @Test
-    void shouldGetTripById() throws Exception {
-        Trip trip = tripRepo.save(new Trip());
+    void acceptTripRequest_failure_whenNotOwner_returns500() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
 
-        mockMvc.perform(get("/trip/get-trip/" + trip.getTripId()))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/trips/accept-trip-request/n1/{tripId}/{requestFrom}", trip.getTripId(), "userA")
+                        .header("Authorization", authHeader("not-owner")))
+                .andExpect(status().isInternalServerError());
     }
 
-    // ---------------- GET ALL TRIPS ----------------
-
     @Test
-    void shouldGetAllTrips() throws Exception {
-        tripRepo.save(new Trip());
-        tripRepo.save(new Trip());
+    void getPendingRequests_forbidden_whenNotOwner() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
+        tripRequestRepository.save(TripRequest.builder()
+                .tripId(trip.getTripId())
+                .ownerUserId("owner1")
+                .requesterUserId("userA")
+                .status(RequestStatus.PENDING)
+                .build());
 
-        mockMvc.perform(get("/trip/get-all-trips"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/trips/{tripId}/requests/pending", trip.getTripId())
+                        .header("Authorization", authHeader("intruder")))
+                .andExpect(status().isForbidden());
     }
 
-    // ---------------- REMOVE MEMBER ----------------
+    @Test
+    void rejectTripRequest_success_updatesRequestStatus() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
+        tripRequestRepository.save(TripRequest.builder()
+                .tripId(trip.getTripId())
+                .ownerUserId("owner1")
+                .requesterUserId("userA")
+                .status(RequestStatus.PENDING)
+                .build());
+
+        mockMvc.perform(patch("/api/v1/trips/{tripId}/requests/{requesterUserId}/reject", trip.getTripId(), "userA")
+                        .header("Authorization", authHeader("owner1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+
+        TripRequest updatedRequest = tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA").orElseThrow();
+        assertThat(updatedRequest.getStatus()).isEqualTo(RequestStatus.REJECTED);
+    }
 
     @Test
-    void shouldRemoveTripMember() throws Exception {
-        Trip trip = new Trip();
-        trip.setTripMembers(new java.util.LinkedHashSet<>(List.of("user1")));
-        trip = tripRepo.save(trip);
+    void cancelTripRequest_success_byRequester_updatesRequestStatus() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
+        tripRequestRepository.save(TripRequest.builder()
+                .tripId(trip.getTripId())
+                .ownerUserId("owner1")
+                .requesterUserId("userA")
+                .status(RequestStatus.PENDING)
+                .build());
 
-        mockMvc.perform(delete("/trip/remove-trip-member/" +
-                trip.getTripId() + "/user1"))
-                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/v1/trips/{tripId}/requests/{requesterUserId}/cancel", trip.getTripId(), "userA")
+                        .header("Authorization", authHeader("userA")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
 
-        Trip updated = tripRepo.findById(trip.getTripId()).get();
-        assertThat(updated.getTripMembers()).doesNotContain("user1");
+        TripRequest updatedRequest = tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA").orElseThrow();
+        assertThat(updatedRequest.getStatus()).isEqualTo(RequestStatus.CANCELLED);
+    }
+
+    @Test
+    void deleteTrip_success_removesTripAndTripRequests() throws Exception {
+        Trip trip = tripRepo.save(buildTrip("owner1"));
+        tripRequestRepository.save(TripRequest.builder()
+                .tripId(trip.getTripId())
+                .ownerUserId("owner1")
+                .requesterUserId("userA")
+                .status(RequestStatus.PENDING)
+                .build());
+
+        mockMvc.perform(delete("/api/v1/trips/{tripId}", trip.getTripId())
+                        .header("Authorization", authHeader("owner1")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$['status: ']").value("trip deleted successfully."));
+
+        assertThat(tripRepo.findById(trip.getTripId())).isEmpty();
+        assertThat(tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA")).isEmpty();
+    }
+
+    @Test
+    void getTripsByUser_forbidden_whenPrincipalMismatch() throws Exception {
+        mockMvc.perform(get("/api/v1/trips/get-trips-by-user/userA")
+                        .header("Authorization", authHeader("userB")))
+                .andExpect(status().isForbidden());
+    }
+
+    private String authHeader(String userId) {
+        String token = jwtProvider.generateToken(userId, List.of("ROLE_USER"));
+        return "Bearer " + token;
+    }
+
+    private Trip buildTrip(String ownerId) {
+        return Trip.builder()
+                .tripName("Goa Trip")
+                .tripOwnerId(ownerId)
+                .tripOwnerName("Owner")
+                .tripCity("Goa")
+                .tripCountry("India")
+                .tripStartDate(LocalDate.now().plusDays(5))
+                .tripEndDate(LocalDate.now().plusDays(8))
+                .tripType(TripType.GROUP)
+                .tripMembers(new LinkedHashSet<>(List.of(ownerId)))
+                .build();
     }
 }

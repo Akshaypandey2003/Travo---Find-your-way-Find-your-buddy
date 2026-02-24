@@ -1,6 +1,6 @@
 package com.blog.DTO;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import lombok.Builder;
 import lombok.Data;
@@ -16,9 +16,8 @@ public class CommentResponseDTO {
     private String parentCommentId;
     private String repliedToUserId;
 
-    private int likesCount;
+    private long likesCount;
     private boolean edited;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
 }

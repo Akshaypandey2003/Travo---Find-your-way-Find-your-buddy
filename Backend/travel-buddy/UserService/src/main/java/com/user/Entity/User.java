@@ -64,6 +64,15 @@ public class User {
     @Builder.Default
     private int tripsCount = 0;
 
+    @Builder.Default
+    private int ratingsReceivedCount = 0;
+
+    @Builder.Default
+    private int ratingsReceivedSum = 0;
+
+    @Builder.Default
+    private double averageRating = 0.0;
+
     @CreatedDate
     private Instant createdAt;
 

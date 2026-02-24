@@ -38,6 +38,13 @@
             <version>1.0.0</version>
         </dependency>
 
+        <!-- SHARED DOMAIN EVENTS -->
+        <dependency>
+            <groupId>com.travelbuddy</groupId>
+            <artifactId>Shared-Events</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- These are inherited from parent, no need to declare:
              - spring-boot-starter-test
              - testcontainers

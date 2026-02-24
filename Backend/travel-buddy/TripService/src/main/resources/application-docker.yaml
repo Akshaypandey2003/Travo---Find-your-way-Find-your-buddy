@@ -10,6 +10,16 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://mongodb:27017/Trips}
       database: Trips
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 15m
+      cache-null-values: false
 
   config:
     import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
@@ -39,4 +49,54 @@ eureka:
       defaultZone: http://service-registry:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+    instances:
+      tripNotificationCircuitBreaker:
+        baseConfig: default
+      tripDomainEventCircuitBreaker:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      tripNotificationRetry:
+        baseConfig: default
+      tripDomainEventRetry:
+        baseConfig: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches,circuitbreakers,retries
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+
+trip:
+  pagination:
+    max-page-size: 100
+  reminder:
+    batch-size: ${TRIP_REMINDER_BATCH_SIZE:200}
+    cron: ${TRIP_REMINDER_CRON:0 0 10 * * ?}
+    zone: ${TRIP_REMINDER_ZONE:Asia/Kolkata}
+  notifications:
+    retry:
+      fixed-delay-ms: ${TRIP_NOTIFICATION_RETRY_DELAY_MS:30000}
+      batch-size: ${TRIP_NOTIFICATION_RETRY_BATCH_SIZE:50}
+      max-attempts: ${TRIP_NOTIFICATION_RETRY_MAX_ATTEMPTS:10}
 

@@ -1,6 +1,5 @@
 package com.trip.InternalController;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,8 +14,11 @@ import com.trip.Services.TripServices;
 @RequestMapping("/trip/internal")
 public class TripInternalController {
     
-    @Autowired
-    private TripServices tripServices;
+    private final TripServices tripServices;
+
+    public TripInternalController(TripServices tripServices) {
+        this.tripServices = tripServices;
+    }
 
     @GetMapping("/summary/{tripId}")
     public ResponseEntity<?> getTripSummaryById(@PathVariable String tripId) {

@@ -1,11 +1,18 @@
 package com.feedback.UnitTests;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,97 +23,240 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feedback.Config.JwtAuthenticationFilter;
 import com.feedback.Config.JwtProvider;
 import com.feedback.Controller.FeedbackController;
-import com.feedback.Entity.FeedBack;
+import com.feedback.DTO.AppFeedbackResponse;
+import com.feedback.DTO.CompanionReviewResponse;
+import com.feedback.DTO.PageResponseDto;
+import com.feedback.DTO.SubmitAppFeedbackRequest;
+import com.feedback.DTO.SubmitCompanionReviewRequest;
+import com.feedback.DTO.SuggestedCompanionResponse;
+import com.feedback.Exceptions.FeedbackAlreadySubmittedException;
 import com.feedback.Service.FeedbackService;
 
 @WebMvcTest(FeedbackController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@SuppressWarnings({"removal","unused"})
+@SuppressWarnings("removal")
 class FeedbackControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private FeedbackService feedbackService;
-
     @Autowired
     private ObjectMapper objectMapper;
 
     @MockBean
+    private FeedbackService feedbackService;
+
+    @MockBean
     private JwtProvider jwtProvider;
 
-    // ---------------- POST /feedback/submit ----------------
+    @MockBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
-    void submitFeedback_shouldReturnCreated() throws Exception {
-        FeedBack feedback = new FeedBack();
-        feedback.setTripId("trip123");
-        feedback.setAuthorId("user1");
-        feedback.setComment("Great trip!");
+    void submitCompanionReview_shouldReturnCreated() throws Exception {
+        SubmitCompanionReviewRequest request = SubmitCompanionReviewRequest.builder()
+                .tripId("trip-1")
+                .reviewerUserId("user-1")
+                .targetUserId("user-2")
+                .rating(5)
+                .review("Great travel buddy")
+                .tags(Set.of("friendly"))
+                .build();
 
-        when(feedbackService.submitFeedback(any(FeedBack.class)))
-                .thenReturn(feedback);
+        CompanionReviewResponse response = CompanionReviewResponse.builder()
+                .reviewId("review-1")
+                .tripId("trip-1")
+                .reviewerUserId("user-1")
+                .targetUserId("user-2")
+                .rating(5)
+                .review("Great travel buddy")
+                .tags(Set.of("friendly"))
+                .createdAt(Instant.now())
+                .build();
 
-        mockMvc.perform(post("/feedback/submit")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(feedback)))
+        when(feedbackService.submitCompanionReview(any(SubmitCompanionReviewRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/feedback/companion-reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.tripId").value("trip123"))
-                .andExpect(jsonPath("$.authorId").value("user1"))
-                .andExpect(jsonPath("$.comment").value("Great trip!"));
+                .andExpect(jsonPath("$.reviewId").value("review-1"))
+                .andExpect(jsonPath("$.tripId").value("trip-1"))
+                .andExpect(jsonPath("$.reviewerUserId").value("user-1"))
+                .andExpect(jsonPath("$.targetUserId").value("user-2"));
 
-        verify(feedbackService, times(1)).submitFeedback(any(FeedBack.class));
+        verify(feedbackService).submitCompanionReview(any(SubmitCompanionReviewRequest.class));
     }
 
-    // ---------------- GET /feedback/get-trip-feedback/{tripId} ----------------
+    @Test
+    void submitCompanionReview_shouldReturnBadRequest_whenValidationFails() throws Exception {
+        SubmitCompanionReviewRequest invalid = SubmitCompanionReviewRequest.builder()
+                .tripId("trip-1")
+                .reviewerUserId("user-1")
+                .targetUserId("user-2")
+                .rating(0)
+                .review("invalid rating")
+                .build();
+
+        mockMvc.perform(post("/api/v1/feedback/companion-reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
 
     @Test
-    void getFeedBack_shouldReturnFeedbackList() throws Exception {
-        FeedBack feedback = new FeedBack();
-        feedback.setTripId("trip123");
-        feedback.setAuthorId("user1");
-        feedback.setComment("Nice trip");
+    void submitCompanionReview_shouldReturnBadRequest_whenServiceThrows() throws Exception {
+        SubmitCompanionReviewRequest request = SubmitCompanionReviewRequest.builder()
+                .tripId("trip-1")
+                .reviewerUserId("user-1")
+                .targetUserId("user-2")
+                .rating(5)
+                .review("duplicate")
+                .build();
 
-        List<FeedBack> feedbackList = List.of(feedback);
+        when(feedbackService.submitCompanionReview(any(SubmitCompanionReviewRequest.class)))
+                .thenThrow(new FeedbackAlreadySubmittedException("Companion review already submitted for this user in this trip."));
 
-        when(feedbackService.getFeedback("trip123"))
-                .thenReturn(feedbackList);
+        mockMvc.perform(post("/api/v1/feedback/companion-reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Companion review already submitted for this user in this trip."));
+    }
 
-        mockMvc.perform(get("/feedback/get-trip-feedback/{tripId}", "trip123"))
+    @Test
+    void getTripCompanionReviews_shouldReturnPage() throws Exception {
+        CompanionReviewResponse item = CompanionReviewResponse.builder()
+                .reviewId("review-1")
+                .tripId("trip-1")
+                .reviewerUserId("user-1")
+                .targetUserId("user-2")
+                .rating(4)
+                .review("Nice")
+                .createdAt(Instant.now())
+                .build();
+
+        PageResponseDto<CompanionReviewResponse> page = PageResponseDto.<CompanionReviewResponse>builder()
+                .items(List.of(item))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .first(true)
+                .last(true)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(feedbackService.getTripCompanionReviews("trip-1", null, 0, 20, "createdAt", "desc"))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/feedback/trips/{tripId}/companion-reviews", "trip-1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].tripId").value("trip123"))
-                .andExpect(jsonPath("$[0].authorId").value("user1"));
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].reviewId").value("review-1"))
+                .andExpect(jsonPath("$.totalElements").value(1));
 
-        verify(feedbackService, times(1)).getFeedback("trip123");
+        verify(feedbackService).getTripCompanionReviews("trip-1", null, 0, 20, "createdAt", "desc");
     }
 
-    // ---------------- GET /feedback/check/{tripId}/{userId} ----------------
-
     @Test
-    void checkIfSubmitted_shouldReturnTrue() throws Exception {
-        when(feedbackService.hasUserAlreadySubmitted("trip123", "user1"))
-                .thenReturn(true);
+    void hasSubmittedCompanionReview_shouldReturnBoolean() throws Exception {
+        when(feedbackService.hasUserAlreadySubmittedCompanionReview("trip-1", "user-1", "user-2")).thenReturn(true);
 
-        mockMvc.perform(get("/feedback/check/{tripId}/{userId}", "trip123", "user1"))
+        mockMvc.perform(get("/api/v1/feedback/companion-reviews/check/{tripId}/{reviewerUserId}/{targetUserId}", "trip-1", "user-1", "user-2"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(feedbackService).hasUserAlreadySubmitted("trip123", "user1");
+        verify(feedbackService).hasUserAlreadySubmittedCompanionReview("trip-1", "user-1", "user-2");
     }
 
     @Test
-    void checkIfSubmitted_shouldReturnFalse() throws Exception {
-        when(feedbackService.hasUserAlreadySubmitted("trip123", "user2"))
-                .thenReturn(false);
+    void getSuggestedCompanionsForReview_shouldReturnSuggestions() throws Exception {
+        SuggestedCompanionResponse response = SuggestedCompanionResponse.builder()
+                .tripId("trip-1")
+                .reviewerUserId("user-1")
+                .maxReviewsAllowed(3)
+                .reviewsSubmitted(1)
+                .reviewsRemaining(2)
+                .suggestedTargetUserIds(List.of("user-3", "user-4"))
+                .build();
 
-        mockMvc.perform(get("/feedback/check/{tripId}/{userId}", "trip123", "user2"))
+        when(feedbackService.getSuggestedCompanionsForReview("trip-1", "user-1", 5)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/feedback/trips/{tripId}/suggested-companions/{reviewerUserId}", "trip-1", "user-1"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("false"));
+                .andExpect(jsonPath("$.suggestedTargetUserIds.length()").value(2))
+                .andExpect(jsonPath("$.suggestedTargetUserIds[0]").value("user-3"));
 
-        verify(feedbackService).hasUserAlreadySubmitted("trip123", "user2");
+        verify(feedbackService).getSuggestedCompanionsForReview("trip-1", "user-1", 5);
+    }
+
+    @Test
+    void submitAppFeedback_shouldReturnCreated() throws Exception {
+        SubmitAppFeedbackRequest request = SubmitAppFeedbackRequest.builder()
+                .userId("user-1")
+                .tripId("trip-1")
+                .rating(5)
+                .comment("Loved it")
+                .featuresLiked(Set.of("chat", "map"))
+                .build();
+
+        AppFeedbackResponse response = AppFeedbackResponse.builder()
+                .feedbackId("app-fb-1")
+                .userId("user-1")
+                .tripId("trip-1")
+                .rating(5)
+                .comment("Loved it")
+                .featuresLiked(Set.of("chat", "map"))
+                .createdAt(Instant.now())
+                .build();
+
+        when(feedbackService.submitAppFeedback(any(SubmitAppFeedbackRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/feedback/app-feedback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.feedbackId").value("app-fb-1"))
+                .andExpect(jsonPath("$.userId").value("user-1"));
+
+        verify(feedbackService).submitAppFeedback(any(SubmitAppFeedbackRequest.class));
+    }
+
+    @Test
+    void getAppFeedbackByUser_shouldReturnPage() throws Exception {
+        AppFeedbackResponse item = AppFeedbackResponse.builder()
+                .feedbackId("fb-1")
+                .userId("user-1")
+                .tripId("trip-1")
+                .rating(4)
+                .comment("Good")
+                .createdAt(Instant.now())
+                .build();
+
+        PageResponseDto<AppFeedbackResponse> page = PageResponseDto.<AppFeedbackResponse>builder()
+                .items(List.of(item))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .first(true)
+                .last(true)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        when(feedbackService.getAppFeedbackByUser("user-1", 0, 20)).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/feedback/app-feedback/users/{userId}", "user-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].feedbackId").value("fb-1"));
+
+        verify(feedbackService).getAppFeedbackByUser(eq("user-1"), eq(0), eq(20));
     }
 }

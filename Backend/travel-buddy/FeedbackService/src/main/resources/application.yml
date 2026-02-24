@@ -12,4 +12,40 @@ spring:
   config:
     import: optional:configserver:http://localhost:8086
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+    instances:
+      feedbackNotificationCircuitBreaker:
+        baseConfig: default
+      feedbackEventCircuitBreaker:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      feedbackNotificationRetry:
+        baseConfig: default
+      feedbackEventRetry:
+        baseConfig: default
+
+feedback:
+  companion:
+    max-peer-reviews-per-trip: 3
+  pagination:
+    max-page-size: 100
+  outbox:
+    retry:
+      fixed-delay-ms: 30000
+      batch-size: 50
+      max-attempts: 10
 

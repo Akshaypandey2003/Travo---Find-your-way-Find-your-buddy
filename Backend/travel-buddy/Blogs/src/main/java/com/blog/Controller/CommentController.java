@@ -16,7 +16,7 @@ import com.blog.DTO.CommentsPageResponse;
 import com.blog.Services.CommentService;
 
 @RestController
-@RequestMapping("/comments")
+@RequestMapping("/api/v1/comments")
 public class CommentController {
 
     private final CommentService commentService;
@@ -39,17 +39,17 @@ public class CommentController {
 
     /* ---------------- UPDATE ---------------- */
 
-    @PutMapping("/{commentId}")
-    public ResponseEntity<ApiResponse<CommentResponseDTO>> updateComment(
-            @PathVariable String commentId,
-            @RequestBody CommentRequestDTO request) {
+//     @PutMapping("/{commentId}")
+//     public ResponseEntity<ApiResponse<CommentResponseDTO>> updateComment(
+//             @PathVariable String commentId,
+//             @RequestBody CommentRequestDTO request) {
 
-        CommentResponseDTO response =
-                commentService.updateComment(commentId, request);
+//         CommentResponseDTO response =
+//                 commentService.updateComment(commentId, request);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, response, "Comment updated successfully"));
-    }
+//         return ResponseEntity.ok(
+//                 new ApiResponse<>(true, response, "Comment updated successfully"));
+//     }
 
     /* ---------------- GET TOP-LEVEL COMMENTS ---------------- */
 
@@ -108,15 +108,15 @@ public class CommentController {
 
     /* ---------------- LIKE / UNLIKE ---------------- */
 
-    @PutMapping("/{commentId}/like/{userId}")
-    public ResponseEntity<ApiResponse<CommentResponseDTO>> likeComment(
-            @PathVariable String commentId,
-            @PathVariable String userId) {
+//     @PutMapping("/{commentId}/like/{userId}")
+//     public ResponseEntity<ApiResponse<CommentResponseDTO>> likeComment(
+//             @PathVariable String commentId,
+//             @PathVariable String userId) {
 
-        CommentResponseDTO response =
-                commentService.updateCommentLike(commentId, userId);
+//         CommentResponseDTO response =
+//                 commentService.updateCommentLike(commentId, userId);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, response, "Like status updated"));
-    }
+//         return ResponseEntity.ok(
+//                 new ApiResponse<>(true, response, "Like status updated"));
+//     }
 }

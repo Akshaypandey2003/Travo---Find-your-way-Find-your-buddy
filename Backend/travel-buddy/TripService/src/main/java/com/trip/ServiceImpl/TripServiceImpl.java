@@ -4,230 +4,501 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.util.StringUtils;
 
+import com.trip.DTO.PageResponseDto;
+import com.trip.DTO.TripDeleteResponseDto;
+import com.trip.DTO.TripListItemDto;
+import com.trip.DTO.TripRequestActionResponseDto;
+import com.trip.DTO.TripRequestDto;
 import com.trip.Entity.Trip;
 import com.trip.Entity.Trip.TripStatus;
+import com.trip.Entity.TripRequest;
+import com.trip.Entity.TripRequest.RequestStatus;
 import com.trip.Exceptions.TripNotFoundException;
+import com.trip.Repositories.TripRequestRepository;
 import com.trip.Repositories.TripRespository;
+import com.trip.Services.TripDomainEventPublisher;
 import com.trip.Services.TripNotificationProducer;
 import com.trip.Services.TripServices;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@SuppressWarnings("unused")
 public class TripServiceImpl implements TripServices {
 
     private static final Logger logger = LoggerFactory.getLogger(TripServiceImpl.class);
-    private TripRespository tripRespository;
-    private TripNotificationProducer tripNotificationProducer;
+    private static final String TRIP_NOT_FOUND = "Trip not found with id: ";
+    private static final String TRIP_DELETED_SUCCESS = "trip deleted successfully.";
+    private static final String CACHE_TRIP_BY_ID = "tripById";
+    private static final String CACHE_TRIP_PAGES = "tripPages";
+    private static final String CACHE_TRIP_USER_PAGES = "tripUserPages";
+    private static final String CACHE_TRIP_CATEGORY_PAGES = "tripCategoryPages";
 
-    public TripServiceImpl(TripRespository tripRespository, TripNotificationProducer tripNotificationProducer) {
+    private final TripRespository tripRespository;
+    private final TripRequestRepository tripRequestRepository;
+    private final TripNotificationProducer tripNotificationProducer;
+    private final TripDomainEventPublisher tripDomainEventPublisher;
+
+    @Value("${trip.reminder.batch-size:200}")
+    private int reminderBatchSize;
+
+    @Value("${trip.pagination.max-page-size:100}")
+    private int maxPageSize;
+
+    public TripServiceImpl(
+            TripRespository tripRespository,
+            TripRequestRepository tripRequestRepository,
+            TripNotificationProducer tripNotificationProducer,
+            TripDomainEventPublisher tripDomainEventPublisher) {
         this.tripRespository = tripRespository;
+        this.tripRequestRepository = tripRequestRepository;
         this.tripNotificationProducer = tripNotificationProducer;
+        this.tripDomainEventPublisher = tripDomainEventPublisher;
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
     public Trip createTrip(Trip trip) {
+        sanitizeTripCollections(trip);
         trip.setTripCreatedAt(LocalDateTime.now());
-        return tripRespository.save(trip);
-    }
-
-    public Map<String, String> deleteTrip(String tripId) {
-        Trip existingTrip = tripRespository.findById(tripId)
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
-
-        tripRespository.delete(existingTrip);
-        Map<String, String> hm = new HashMap<>();
-        hm.put("status: ", "trip deleted successfully.");
-        return hm;
-    }
-
-    @Override
-    public Trip updateTrip(Trip trip) {
-
-        System.out.println("Inside service layer, Trip ID: " + trip.getTripId());
-        Trip existingTrip = tripRespository.findById(trip.getTripId())
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + trip.getTripId()));
-        if (trip.getTripCity() != null)
-            existingTrip.setTripCity(trip.getTripCity());
-        if (trip.getTripCountry() != null)
-            existingTrip.setTripCountry(trip.getTripCountry());
-        if (trip.getTripState() != null)
-            existingTrip.setTripState(trip.getTripState());
-        if (trip.getTripStartDate() != null)
-            existingTrip.setTripStartDate(trip.getTripStartDate());
-        if (trip.getTripEndDate() != null)
-            existingTrip.setTripEndDate(trip.getTripEndDate());
-        if (trip.getTripDuration() != null)
-            existingTrip.setTripDuration(trip.getTripDuration());
-        if (trip.getTripDescription() != null)
-            existingTrip.setTripDescription(trip.getTripDescription());
-
-        existingTrip.setTripUpdatedAt(LocalDateTime.now());
-        return tripRespository.save(existingTrip);
-    }
-
-    @Override
-    public Trip getTripById(String tripId) {
-        return tripRespository.findById(tripId)
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
-    }
-
-    @Override
-    public List<Trip> getAllTrips() {
-        List<Trip> trips = tripRespository.findAll();
-
-        if (trips == null || trips.isEmpty())
-            throw new TripNotFoundException("No trips found in the database.");
-        return trips;
-    }
-
-    @Override
-    public List<Trip> getTripsByUserId(String userId) {
-        List<Trip> trips = tripRespository.findByCreatedBy(userId);
-        if (trips == null || trips.isEmpty())
-            throw new TripNotFoundException("No trips found in the database for given user id: " + userId);
-        return trips;
-    }
-
-    @Override
-    public List<Trip> getTripsByCategory(String category) {
-        List<Trip> trips = tripRespository.findByTripCategory(category);
-        if (trips == null || trips.isEmpty())
-            throw new TripNotFoundException("No trips found in the database for given category");
-        return trips;
-    }
-
-    public Trip sendTripRequest(String tripId, String requestFrom) {
-
-        Trip trip = tripRespository.findById(tripId)
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
-
-        trip.getTripRequests().add(requestFrom);
+        trip.setPendingRequestCount(0);
+        trip.setTotalRequestCount(0);
 
         Trip savedTrip = tripRespository.save(trip);
+        tripNotificationProducer.sendNewTriptNotification(
+                savedTrip.getTripOwnerId(),
+                savedTrip.getTripId(),
+                savedTrip.getTripName());
+                
+        tripDomainEventPublisher.publishTripCreated(savedTrip);
 
+        return savedTrip;
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public TripDeleteResponseDto deleteTrip(String tripId) {
+        Trip existingTrip = getTripOrThrow(tripId);
+        tripRespository.delete(existingTrip);
+        tripRequestRepository.deleteByTripId(tripId);
+        tripDomainEventPublisher.publishTripDeleted(tripId, existingTrip.getTripOwnerId());
+
+        return TripDeleteResponseDto.builder()
+                .status(TRIP_DELETED_SUCCESS)
+                .build();
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#trip.tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public Trip updateTrip(Trip trip) {
+        logger.debug("Updating trip with ID: {}", trip.getTripId());
+        Trip existingTrip = getTripOrThrow(trip.getTripId());
+
+        if (trip.getTripCity() != null) {
+            existingTrip.setTripCity(trip.getTripCity());
+        }
+        if (trip.getTripCountry() != null) {
+            existingTrip.setTripCountry(trip.getTripCountry());
+        }
+        if (trip.getTripState() != null) {
+            existingTrip.setTripState(trip.getTripState());
+        }
+        if (trip.getTripStartDate() != null) {
+            existingTrip.setTripStartDate(trip.getTripStartDate());
+        }
+        if (trip.getTripEndDate() != null) {
+            existingTrip.setTripEndDate(trip.getTripEndDate());
+        }
+        if (trip.getTripDuration() != null) {
+            existingTrip.setTripDuration(trip.getTripDuration());
+        }
+        if (trip.getTripDescription() != null) {
+            existingTrip.setTripDescription(trip.getTripDescription());
+        }
+        if (trip.getTripName() != null) {
+            existingTrip.setTripName(trip.getTripName());
+        }
+        if (trip.getTripCategory() != null) {
+            existingTrip.setTripCategory(trip.getTripCategory());
+        }
+        if (trip.getTripStatus() != null) {
+            existingTrip.setTripStatus(trip.getTripStatus());
+        }
+        if (trip.getTripType() != null) {
+            existingTrip.setTripType(trip.getTripType());
+        }
+
+        existingTrip.setTripUpdatedAt(LocalDateTime.now());
+        sanitizeTripCollections(existingTrip);
+
+        Trip savedTrip = tripRespository.save(existingTrip);
+        Map<String, Object> updatedFields = new HashMap<>();
+        updatedFields.put("tripName", savedTrip.getTripName());
+        updatedFields.put("tripStatus", savedTrip.getTripStatus() == null ? null : savedTrip.getTripStatus().name());
+        updatedFields.put("tripCategory", savedTrip.getTripCategory());
+        updatedFields.put("tripUpdatedAt", savedTrip.getTripUpdatedAt() == null ? null : savedTrip.getTripUpdatedAt().toString());
+        // tripDomainEventPublisher.publishTripUpdated(savedTrip, updatedFields);
+
+        return savedTrip;
+    }
+
+    @Override
+    @Cacheable(value = CACHE_TRIP_BY_ID, key = "#tripId")
+    public Trip getTripById(String tripId) {
+        return getTripOrThrow(tripId);
+    }
+
+    @Override
+    @Cacheable(value = CACHE_TRIP_PAGES, key = "#page + ':' + #size + ':' + #sortBy + ':' + #direction")
+    public PageResponseDto<TripListItemDto> getAllTrips(int page, int size, String sortBy, String direction) {
+        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        Page<Trip> tripPage = tripRespository.findAll(pageable);
+        return toPageResponse(tripPage);
+    }
+
+    @Override
+    @Cacheable(value = CACHE_TRIP_USER_PAGES, key = "#userId + ':' + #page + ':' + #size + ':' + #sortBy + ':' + #direction")
+    public PageResponseDto<TripListItemDto> getTripsByUserId(
+            String userId,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        Page<Trip> tripPage = tripRespository.findByUserId(userId, pageable);
+        return toPageResponse(tripPage);
+    }
+
+    @Override
+    @Cacheable(value = CACHE_TRIP_CATEGORY_PAGES, key = "#category + ':' + #page + ':' + #size + ':' + #sortBy + ':' + #direction")
+    public PageResponseDto<TripListItemDto> getTripsByCategory(
+            String category,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        Page<Trip> tripPage = tripRespository.findByTripCategory(category, pageable);
+        return toPageResponse(tripPage);
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public Trip sendTripRequest(String tripId, String requestFrom) {
+        Trip trip = getTripOrThrow(tripId);
+        if (safeSet(trip.getTripMembers()).contains(requestFrom)) {
+            return trip;
+        }
+
+        TripRequest existing = tripRequestRepository.findByTripIdAndRequesterUserId(tripId, requestFrom).orElse(null);
+        if (existing == null) {
+            TripRequest request = TripRequest.builder()
+                    .tripId(tripId)
+                    .ownerUserId(trip.getTripOwnerId())
+                    .requesterUserId(requestFrom)
+                    .status(RequestStatus.PENDING)
+                    .requestedAt(LocalDateTime.now())
+                    .build();
+            tripRequestRepository.save(request);
+            trip.setTotalRequestCount(trip.getTotalRequestCount() + 1);
+        } else if (existing.getStatus() != RequestStatus.PENDING) {
+            existing.setStatus(RequestStatus.PENDING);
+            existing.setRequestedAt(LocalDateTime.now());
+            existing.setActedAt(null);
+            existing.setActionByUserId(null);
+            tripRequestRepository.save(existing);
+        }
+
+        long pendingCount = tripRequestRepository.countByTripIdAndStatus(tripId, RequestStatus.PENDING);
+        trip.setPendingRequestCount((int) pendingCount);
+
+        Trip savedTrip = tripRespository.save(trip);
         tripNotificationProducer.sendTripRequestNotification(
                 requestFrom,
                 trip.getTripOwnerId(),
                 tripId,
                 savedTrip.getTripName());
+        // tripDomainEventPublisher.publishTripRequestCreated(tripId, trip.getTripOwnerId(), requestFrom);
 
         return savedTrip;
     }
 
     @Override
-    public Trip acceptTripRequest(String tripId, String requestFrom) {
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public Trip acceptTripRequest(String tripId, String requestFrom, String notificationId) {
+        Trip trip = getTripOrThrow(tripId);
+        TripRequest tripRequest = tripRequestRepository.findByTripIdAndRequesterUserId(tripId, requestFrom)
+                .orElseThrow(() -> new TripNotFoundException("Trip request not found for tripId: " + tripId + " userId: " + requestFrom));
 
-        Trip trip = tripRespository.findById(tripId)
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
+        tripRequest.setStatus(RequestStatus.ACCEPTED);
+        tripRequest.setActedAt(LocalDateTime.now());
+        tripRequest.setActionByUserId(trip.getTripOwnerId());
+        tripRequestRepository.save(tripRequest);
 
-        // Remove from requests
-        trip.getTripRequests().remove(requestFrom);
-
-        // Add to members
-        trip.getTripMembers().add(requestFrom);
+        Set<String> members = safeSet(trip.getTripMembers());
+        members.add(requestFrom);
+        trip.setTripMembers(members);
+        trip.setPendingRequestCount((int) tripRequestRepository.countByTripIdAndStatus(tripId, RequestStatus.PENDING));
 
         Trip savedTrip = tripRespository.save(trip);
-
-        // Side effect AFTER persistence
         tripNotificationProducer.acceptTripRequestNotification(
                 trip.getTripOwnerId(),
                 requestFrom,
                 tripId,
                 savedTrip.getTripName());
+        if (notificationId != null && !notificationId.isBlank()) {
+           tripDomainEventPublisher.publishNotificationDeleteEvent(trip.getTripOwnerId(), notificationId);
+        }
+        // tripDomainEventPublisher.publishTripRequestAccepted(tripId, trip.getTripOwnerId(), requestFrom);
 
         return savedTrip;
     }
 
     @Override
-    public Trip removeTripMember(String tripId, String memberId) {
+    public PageResponseDto<TripRequestDto> getPendingTripRequests(
+            String tripId,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+        getTripOrThrow(tripId);
+        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        Page<TripRequest> requestPage = tripRequestRepository.findByTripIdAndStatus(tripId, RequestStatus.PENDING, pageable);
+        List<TripRequestDto> items = requestPage.getContent().stream()
+                .map(TripRequestDto::from)
+                .toList();
 
-        Trip trip = tripRespository.findById(tripId)
-                .orElseThrow(() -> new TripNotFoundException("Trip not found with id: " + tripId));
-
-        if (trip.getTripMembers() != null && trip.getTripMembers().size() > 0) {
-            if (trip.getTripMembers().contains(memberId))
-                trip.getTripMembers().remove(memberId);
-        }
-        return tripRespository.save(trip);
+        return PageResponseDto.<TripRequestDto>builder()
+                .items(items)
+                .page(requestPage.getNumber())
+                .size(requestPage.getSize())
+                .totalElements(requestPage.getTotalElements())
+                .totalPages(requestPage.getTotalPages())
+                .first(requestPage.isFirst())
+                .last(requestPage.isLast())
+                .hasNext(requestPage.hasNext())
+                .hasPrevious(requestPage.hasPrevious())
+                .build();
     }
 
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public TripRequestActionResponseDto rejectTripRequest(String tripId, String requesterUserId, String actionByUserId) {
+        Trip trip = getTripOrThrow(tripId);
+        TripRequest tripRequest = tripRequestRepository.findByTripIdAndRequesterUserId(tripId, requesterUserId)
+                .orElseThrow(() -> new TripNotFoundException("Trip request not found for tripId: " + tripId + " userId: " + requesterUserId));
 
-    @Scheduled(cron = "0 0 10 * * ?", zone = "Asia/Kolkata") // Runs daily at 10:00 AM IST
+        tripRequest.setStatus(RequestStatus.REJECTED);
+        tripRequest.setActedAt(LocalDateTime.now());
+        tripRequest.setActionByUserId(actionByUserId);
+        tripRequestRepository.save(tripRequest);
+
+        int pendingCount = (int) tripRequestRepository.countByTripIdAndStatus(tripId, RequestStatus.PENDING);
+        trip.setPendingRequestCount(pendingCount);
+        tripRespository.save(trip);
+
+        tripDomainEventPublisher.publishTripRequestRejected(tripId, trip.getTripOwnerId(), requesterUserId);
+
+        return TripRequestActionResponseDto.builder()
+                .tripId(tripId)
+                .requesterUserId(requesterUserId)
+                .status(RequestStatus.REJECTED)
+                .pendingRequestCount(pendingCount)
+                .message("Trip request rejected successfully")
+                .build();
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public TripRequestActionResponseDto cancelTripRequest(String tripId, String requesterUserId, String actionByUserId) {
+        Trip trip = getTripOrThrow(tripId);
+        TripRequest tripRequest = tripRequestRepository.findByTripIdAndRequesterUserId(tripId, requesterUserId)
+                .orElseThrow(() -> new TripNotFoundException("Trip request not found for tripId: " + tripId + " userId: " + requesterUserId));
+
+        tripRequest.setStatus(RequestStatus.CANCELLED);
+        tripRequest.setActedAt(LocalDateTime.now());
+        tripRequest.setActionByUserId(actionByUserId);
+        tripRequestRepository.save(tripRequest);
+
+        int pendingCount = (int) tripRequestRepository.countByTripIdAndStatus(tripId, RequestStatus.PENDING);
+        trip.setPendingRequestCount(pendingCount);
+        tripRespository.save(trip);
+
+        tripDomainEventPublisher.publishTripRequestCancelled(tripId, trip.getTripOwnerId(), requesterUserId);
+
+        return TripRequestActionResponseDto.builder()
+                .tripId(tripId)
+                .requesterUserId(requesterUserId)
+                .status(RequestStatus.CANCELLED)
+                .pendingRequestCount(pendingCount)
+                .message("Trip request cancelled successfully")
+                .build();
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
+    public Trip removeTripMember(String tripId, String memberId) {
+        Trip trip = getTripOrThrow(tripId);
+
+        Set<String> members = safeSet(trip.getTripMembers());
+        members.remove(memberId);
+        trip.setTripMembers(members);
+
+        Trip savedTrip = tripRespository.save(trip);
+        Map<String, Object> updatedFields = new HashMap<>();
+        updatedFields.put("memberRemoved", memberId);
+        updatedFields.put("memberCount", members.size());
+        tripDomainEventPublisher.publishTripUpdated(savedTrip, updatedFields);
+        return savedTrip;
+    }
+
+    @Scheduled(cron = "${trip.reminder.cron:0 0 10 * * ?}", zone = "${trip.reminder.zone:Asia/Kolkata}")
     public void sendTripReminders() {
-        logger.info("Scheduler executed at {}", LocalDateTime.now());
+        logger.info("Running trip reminder scheduler at {}", LocalDateTime.now());
         LocalDate today = LocalDate.now();
         LocalDate tomorrow = today.plusDays(1);
-        RestTemplate restTemplate = new RestTemplate();
-        String tripServiceUrl = "http://localhost:8088/auth/user/notification/send-notification";
 
-        // Fetch trips starting tomorrow
-        List<Trip> upcomingTrips = tripRespository.findByTripStartDate(tomorrow);
+        processStartReminderTrips(tomorrow);
+        processEndReminderTrips(today);
+    }
 
-        for (Trip trip : upcomingTrips) {
-            for (String userId : trip.getTripMembers()) {
+    private void processStartReminderTrips(LocalDate startDate) {
+        int page = 0;
+        Page<Trip> trips;
 
-                // // Creating notification object
-                // Notification notification = new Notification();
-                // notification.setNotificationFrom("SYSTEM");
-                // notification.setNotificationTo(userId);
-                // notification.setTripId(trip.getTripId());
-                // notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
-                // notification.setMessage("Get ready! Your trip starts tomorrow 🎒");
+        do {
+            Pageable pageable = PageRequest.of(page, reminderBatchSize, Sort.by(Sort.Direction.ASC, "tripId"));
+            trips = tripRespository.findByTripStartDate(startDate, pageable);
 
-                // sendNotification(restTemplate, tripServiceUrl, notification);
-            }
-        }
-
-        // Fetch trips ending today
-        List<Trip> endingTrips = tripRespository.findByTripEndDate(today);
-
-        for (Trip trip : endingTrips) {
-            if (trip.getTripStatus() != TripStatus.COMPLETED) {
-                for (String userId : trip.getTripMembers()) {
-
-                    // Notification notification = new Notification();
-                    // notification.setNotificationFrom("SYSTEM");
-                    // notification.setNotificationTo(userId);
-                    // notification.setTripId(trip.getTripId());
-                    // notification.setType(Notification.NotificationType.SYSTEM_GENERATED);
-                    // notification
-                    // .setMessage("Hope your trip went well! Please update trip status and share
-                    // feedback. 📝");
-
-                    // sendNotification(restTemplate, tripServiceUrl, notification);
+            for (Trip trip : trips.getContent()) {
+                for (String userId : safeSet(trip.getTripMembers())) {
+                    tripNotificationProducer.sendTripStartReminderNotification(userId, trip.getTripId(), trip.getTripName());
                 }
             }
+            page++;
+        } while (trips.hasNext());
+    }
+
+    private void processEndReminderTrips(LocalDate endDate) {
+        int page = 0;
+        Page<Trip> trips;
+
+        do {
+            Pageable pageable = PageRequest.of(page, reminderBatchSize, Sort.by(Sort.Direction.ASC, "tripId"));
+            trips = tripRespository.findByTripEndDate(endDate, pageable);
+
+            for (Trip trip : trips.getContent()) {
+                if (trip.getTripStatus() != TripStatus.COMPLETED) {
+                    for (String userId : safeSet(trip.getTripMembers())) {
+                        tripNotificationProducer.sendTripEndReminderNotification(userId, trip.getTripId(), trip.getTripName());
+                    }
+                }
+            }
+            page++;
+        } while (trips.hasNext());
+    }
+
+    private Trip getTripOrThrow(String tripId) {
+        return tripRespository.findById(tripId)
+                .orElseThrow(() -> new TripNotFoundException(TRIP_NOT_FOUND + tripId));
+    }
+
+    private Set<String> safeSet(Set<String> values) {
+        return values == null ? new LinkedHashSet<>() : values;
+    }
+
+    private void sanitizeTripCollections(Trip trip) {
+        trip.setTripMembers(safeSet(trip.getTripMembers()));
+        trip.setTripTags(safeSet(trip.getTripTags()));
+
+        if (trip.getTripHighlights() == null) {
+            trip.setTripHighlights(new ArrayList<>());
+        }
+        if (trip.getTripImages() == null) {
+            trip.setTripImages(new ArrayList<>());
         }
     }
 
-    // private void sendNotification(RestTemplate restTemplate, String url,
-    // Notification notification) {
-    // try {
-    // HttpEntity<Notification> entity = new HttpEntity<>(notification);
+    private Pageable buildPageable(int page, int size, String sortBy, String direction) {
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), maxPageSize);
 
-    // ResponseEntity<?> response = restTemplate.exchange(
-    // url, HttpMethod.POST, entity, new ParameterizedTypeReference<Object>() {
-    // });
-    // System.out.println("Notification sent: " + response.getStatusCode());
-    // } catch (Exception e) {
-    // System.err.println("Failed to send notification: " + e.getMessage());
-    // }
-    // }
+        String safeSortBy = StringUtils.hasText(sortBy) ? sortBy : "tripCreatedAt";
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
 
+        return PageRequest.of(pageNumber, pageSize, Sort.by(sortDirection, safeSortBy));
+    }
+
+    private PageResponseDto<TripListItemDto> toPageResponse(Page<Trip> tripPage) {
+        List<TripListItemDto> items = tripPage.getContent().stream()
+                .map(TripListItemDto::from)
+                .toList();
+
+        return PageResponseDto.<TripListItemDto>builder()
+                .items(items)
+                .page(tripPage.getNumber())
+                .size(tripPage.getSize())
+                .totalElements(tripPage.getTotalElements())
+                .totalPages(tripPage.getTotalPages())
+                .first(tripPage.isFirst())
+                .last(tripPage.isLast())
+                .hasNext(tripPage.hasNext())
+                .hasPrevious(tripPage.hasPrevious())
+                .build();
+    }
 }

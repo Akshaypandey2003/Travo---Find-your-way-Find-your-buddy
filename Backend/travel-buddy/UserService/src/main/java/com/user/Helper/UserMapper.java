@@ -30,6 +30,8 @@ public class UserMapper {
                 .country(user.getCountry())
                 .state(user.getState())
                 .city(user.getCity())
+                .ratingsReceivedCount(user.getRatingsReceivedCount())
+                .averageRating(user.getAverageRating())
                 .build();
     }
 
@@ -45,6 +47,8 @@ public class UserMapper {
                 .country(user.getCountry())
                 .state(user.getState())
                 .city(user.getCity())
+                .ratingsReceivedCount(user.getRatingsReceivedCount())
+                .averageRating(user.getAverageRating())
                 .build();
     }
 }

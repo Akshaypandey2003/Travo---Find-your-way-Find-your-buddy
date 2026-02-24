@@ -1,58 +1,58 @@
 package com.blog.Entity;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import lombok.*;
 
-
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Getter
 @Setter
-@ToString
-
-@Document
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Document(collection = "blogs")
 public class Blog {
-    
+
     @Id
-    private String blogId;
-    private String blogTitle;
-    private String blogContent;
-    private String blogAuthorId;
-    private String blogAuthorName;
-    private String blogAuthorProfilePic;
-    private String blogCaption;
+    private String id;
+
+    @Indexed
+    private String authorId;
+
+    private String authorName;
+    private String authorProfilePic;
+
+    private String title;
+    private String content;
+    private String caption;
+    private String category;
 
     @Builder.Default
-    private LocalDateTime postedDate= LocalDateTime.now();
-    private LocalDateTime updatedDate;
+    private List<String> imageUrls = new ArrayList<>();
 
     @Builder.Default
-    private List<String> blogImages=new ArrayList<>();
+    private List<String> cloudinaryPublicIds = new ArrayList<>();
 
     @Builder.Default
-    private List<String> cloudinaryImagePublicIds=new ArrayList<>();
+    private Instant createdAt = Instant.now();
 
-   
-    private String blogCategory;
+    private Instant updatedAt;
+
+    // 🔥 Store only counts — NOT full lists
+    @Builder.Default
+    private long likeCount = 0;
 
     @Builder.Default
-    private List<String> blogComments=new ArrayList<>();
+    private long commentCount = 0;
 
     @Builder.Default
-    private List<String> blogLikes=new ArrayList<>();
+    private long shareCount = 0;
 
     @Builder.Default
-    private List<String> blogShares=new ArrayList<>();
-
-    @Builder.Default
-    private Set<String> blogViews=new HashSet<>();
-
+    private long viewCount = 0;
 }

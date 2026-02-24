@@ -1,14 +1,16 @@
 package com.trip.Services;
 
-import java.util.List;
-import java.util.Map;
-
+import com.trip.DTO.PageResponseDto;
+import com.trip.DTO.TripDeleteResponseDto;
+import com.trip.DTO.TripListItemDto;
+import com.trip.DTO.TripRequestActionResponseDto;
+import com.trip.DTO.TripRequestDto;
 import com.trip.Entity.Trip;
 
 public interface TripServices {
     // Create a new trip
     Trip createTrip(Trip trip);
-    Map<String,String> deleteTrip(String tripId);
+    TripDeleteResponseDto deleteTrip(String tripId);
 
     // Update a trip
     Trip updateTrip(Trip trip);
@@ -17,15 +19,18 @@ public interface TripServices {
     Trip getTripById(String tripId);
 
     // Get all trips
-    List<Trip> getAllTrips();
+    PageResponseDto<TripListItemDto> getAllTrips(int page, int size, String sortBy, String direction);
 
     // Get trips by user ID
-    List<Trip> getTripsByUserId(String userId);
+    PageResponseDto<TripListItemDto> getTripsByUserId(String userId, int page, int size, String sortBy, String direction);
 
-    List<Trip> getTripsByCategory(String category);
+    PageResponseDto<TripListItemDto> getTripsByCategory(String category, int page, int size, String sortBy, String direction);
 
     public Trip sendTripRequest(String tripId, String requestFrom);
-    public Trip acceptTripRequest(String tripId, String requestFrom);
+    public Trip acceptTripRequest(String tripId, String requestFrom, String notificationId);
+    public PageResponseDto<TripRequestDto> getPendingTripRequests(String tripId, int page, int size, String sortBy, String direction);
+    public TripRequestActionResponseDto rejectTripRequest(String tripId, String requesterUserId, String actionByUserId);
+    public TripRequestActionResponseDto cancelTripRequest(String tripId, String requesterUserId, String actionByUserId);
     public Trip removeTripMember(String tripId, String memberId);
 
 }

@@ -1,8 +1,9 @@
 package com.trip.Repositories;
 
 import java.time.LocalDate;
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
@@ -10,12 +11,12 @@ import com.trip.Entity.Trip;
 
 public interface TripRespository extends MongoRepository<Trip,String>{
 
-    List<Trip> findByTripCategory(String category); // Find trips by category
+    Page<Trip> findByTripCategory(String category, Pageable pageable); // Find trips by category
 
     
-    @Query("{ '$or': [ { 'createdBy': ?0 }, { 'tripMembers': ?0 } ] }")
-    List<Trip> findByCreatedBy(String userId); // Find trips by user ID
+    @Query("{ '$or': [ { 'tripOwnerId': ?0 }, { 'tripMembers': ?0 } ] }")
+    Page<Trip> findByUserId(String userId, Pageable pageable); // Find trips by user ID
 
-    List<Trip> findByTripStartDate(LocalDate date);
-    List<Trip> findByTripEndDate(LocalDate date);
+    Page<Trip> findByTripStartDate(LocalDate date, Pageable pageable);
+    Page<Trip> findByTripEndDate(LocalDate date, Pageable pageable);
 } 

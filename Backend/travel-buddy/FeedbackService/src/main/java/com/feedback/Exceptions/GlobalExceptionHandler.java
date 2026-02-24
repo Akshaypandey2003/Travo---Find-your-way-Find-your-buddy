@@ -16,4 +16,16 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ex.getMessage());
     }
+
+    @ExceptionHandler(ReviewLimitExceededException.class)
+    public ResponseEntity<String> handleReviewLimitExceeded(
+            ReviewLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCompanionReviewException.class)
+    public ResponseEntity<String> handleInvalidCompanionReview(
+            InvalidCompanionReviewException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
 }

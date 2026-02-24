@@ -3,5 +3,5 @@ package com.feedback.Service;
 
 public interface NotificationProducer {
     
-    void sendFeedbackNotification(String senderId, String receiverId, String feedbackId, String tripName);
+    void sendCompanionReviewNotification(String senderId, String receiverId, String tripId, String tripName);
 }

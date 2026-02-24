@@ -2,36 +2,90 @@ package com.feedback.ServiceImpl;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.events.Entity.NotificationEvent;
+import com.events.Notification.NotificationEvent;
+import com.feedback.Entity.FailedOutboundEvent;
+import com.feedback.Repository.FailedOutboundEventRepo;
 import com.feedback.Service.NotificationProducer;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @Service
 public class NotificationProducerImpl implements NotificationProducer {
 
-    private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(NotificationProducerImpl.class);
+    private static final String TOPIC = "notification-events";
 
-    public NotificationProducerImpl(KafkaTemplate<String, NotificationEvent> kafkaTemplate) {
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final FailedOutboundEventRepo failedOutboundEventRepo;
+
+    public NotificationProducerImpl(
+            KafkaTemplate<String, Object> kafkaTemplate,
+            FailedOutboundEventRepo failedOutboundEventRepo) {
         this.kafkaTemplate = kafkaTemplate;
+        this.failedOutboundEventRepo = failedOutboundEventRepo;
     }
 
     @Override
-    public void sendFeedbackNotification(String senderId, String receiverId, String tripId,String tripName) {
+    @CircuitBreaker(name = "feedbackNotificationCircuitBreaker", fallbackMethod = "sendCompanionReviewNotificationFallback")
+    @Retry(name = "feedbackNotificationRetry")
+    public void sendCompanionReviewNotification(String senderId, String receiverId, String tripId, String tripName) {
+        NotificationEvent event = new NotificationEvent(
+                "COMPANION_REVIEW_SUBMITTED",
+                senderId,
+                receiverId,
+                "has shared a companion review after trip " + tripName,
+                "FEEDBACK",
+                tripId,
+                Map.of("tripId", tripId, "tripName", tripName),
+                System.currentTimeMillis());
+        publish(receiverId, event);
+    }
+
+    public void sendCompanionReviewNotificationFallback(
+            String senderId,
+            String receiverId,
+            String tripId,
+            String tripName,
+            Exception ex) {
+        logger.error("Failed to send companion-review notification senderId={} receiverId={} tripId={}",
+                senderId, receiverId, tripId, ex);
 
         NotificationEvent event = new NotificationEvent(
-            "FEEDBACK_SUBMITTED",
-            senderId,
-            receiverId,
-            "has submitted feedback for " + tripName ,
-            "FEEDBACK",
-            tripId,
-            Map.of("tripId", tripId, "tripName", tripName),
-            System.currentTimeMillis()
-        );
-
-      kafkaTemplate.send("notification-events", receiverId, event);
+                "COMPANION_REVIEW_SUBMITTED",
+                senderId,
+                receiverId,
+                "has shared a companion review after trip " + tripName,
+                "FEEDBACK",
+                tripId,
+                Map.of("tripId", tripId, "tripName", tripName),
+                System.currentTimeMillis());
+        saveFailed(TOPIC, receiverId, event, ex.getMessage());
     }
-    
+
+    private void publish(String key, Object payload) {
+        try {
+            kafkaTemplate.send(TOPIC, key, payload).get();
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to publish feedback notification", ex);
+        }
+    }
+
+    private void saveFailed(String topic, String key, Object payload, String reason) {
+        FailedOutboundEvent failed = FailedOutboundEvent.builder()
+                .topic(topic)
+                .eventKey(key)
+                .payload(payload)
+                .retryCount(0)
+                .createdAt(System.currentTimeMillis())
+                .lastRetryAt(0L)
+                .failureReason(reason)
+                .build();
+        failedOutboundEventRepo.save(failed);
+    }
 }

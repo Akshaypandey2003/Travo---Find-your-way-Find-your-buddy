@@ -1,7 +1,6 @@
 package com.blog.ServicesImpl;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -20,6 +19,7 @@ import com.blog.Services.CommentService;
 import com.blog.Services.NotificationProducer;
 
 @Service
+@SuppressWarnings("unused")
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepo;
@@ -45,27 +45,13 @@ public class CommentServiceImpl implements CommentService {
 
         notificationProducer.sendCommentNotification(
                 savedComment.getAuthorId(),
-                blog.getBlogAuthorId(),
+                blog.getAuthorId(),
                 savedComment.getBlogId(),
-                blog.getBlogTitle());
+                blog.getTitle());
 
         return mapToDTO(savedComment);
     }
 
-    @Override
-    public CommentResponseDTO updateComment(String commentId, CommentRequestDTO request) {
-
-        Comment existingComment = getCommentById(commentId);
-
-        if (request.getContent() != null) {
-            existingComment.setContent(request.getContent());
-        }
-
-        existingComment.setUpdatedAt(LocalDateTime.now());
-        existingComment.setEdited(true);
-
-        return mapToDTO(commentRepo.save(existingComment));
-    }
 
     @Override
     public Page<CommentResponseDTO> getTopLevelCommentsByBlogId(String blogId, Pageable pageable) {
@@ -116,16 +102,16 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
-    @Override
-    public CommentResponseDTO updateCommentLike(String commentId, String userId) {
+    // @Override
+    // public CommentResponseDTO updateCommentLike(String commentId, String userId) {
 
-        Comment comment = getCommentById(commentId);
+    //     Comment comment = getCommentById(commentId);
         
 
-        toggleLike(comment, userId);
+    //     toggleLike(comment, userId);
 
-        return mapToDTO(commentRepo.save(comment));
-    }
+    //     return mapToDTO(commentRepo.save(comment));
+    // }
 
     /* ---------------- PRIVATE HELPERS ---------------- */
 
@@ -139,28 +125,28 @@ public class CommentServiceImpl implements CommentService {
         return response.getData();
     }
 
-    private void toggleLike(Comment comment, String userId) {
+    // private void toggleLike(Comment comment, String userId) {
 
-        List<String> likes = comment.getCommentLikes();
-        if (likes == null) {
-            likes = new ArrayList<>();
-        }
+    //     List<String> likes = comment.getCommentLikes();
+    //     if (likes == null) {
+    //         likes = new ArrayList<>();
+    //     }
 
-        if (likes.contains(userId)) {
-            likes.remove(userId);
-        } else {
-            likes.add(userId);
+    //     if (likes.contains(userId)) {
+    //         likes.remove(userId);
+    //     } else {
+    //         likes.add(userId);
             
-            Blog blog = fetchBlog(comment.getBlogId());
-            notificationProducer.sendCommentLikeNotification(
-                    userId,
-                    comment.getAuthorId(),
-                    comment.getBlogId(),
-                    blog.getBlogTitle());
-        }
+    //         Blog blog = fetchBlog(comment.getBlogId());
+    //         notificationProducer.sendCommentLikeNotification(
+    //                 userId,
+    //                 comment.getAuthorId(),
+    //                 comment.getBlogId(),
+    //                 blog.getBlogTitle());
+    //     }
 
-        comment.setCommentLikes(likes);
-    }
+    //     comment.setCommentLikes(likes);
+    // }
 
     @Override
     public Page<Comment> getAllReplies(String parentCommentId, Pageable pageable) {
@@ -180,26 +166,20 @@ public class CommentServiceImpl implements CommentService {
                 .blogId(dto.getBlogId())
                 .authorId(dto.getAuthorId())
                 .parentCommentId(dto.getParentCommentId())
-                .repliedToUserId(dto.getRepliedToUserId())
                 .content(dto.getContent())
-                .createdAt(LocalDateTime.now())
-                .isEdited(false)
+                .createdAt(Instant.now())
                 .build();
     }
 
     public CommentResponseDTO mapToDTO(Comment comment) {
         return CommentResponseDTO.builder()
-                .commentId(comment.getCommentId())
+                .commentId(comment.getId())
                 .blogId(comment.getBlogId())
                 .authorId(comment.getAuthorId())
                 .content(comment.getContent())
                 .parentCommentId(comment.getParentCommentId())
-                .repliedToUserId(comment.getRepliedToUserId())
-                .likesCount(
-                        comment.getCommentLikes() == null ? 0 : comment.getCommentLikes().size())
-                .edited(comment.isEdited())
+                .likesCount(comment.getLikeCount())
                 .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
                 .build();
     }
 }

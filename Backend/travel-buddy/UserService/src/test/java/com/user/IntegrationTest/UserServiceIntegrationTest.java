@@ -54,6 +54,7 @@ import com.user.Repository.UserRepo;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @EmbeddedKafka(partitions = 1, topics = { "user-events", "notification-events" })
+@SuppressWarnings("null")
 class UserServiceIntegrationTest {
 
     @Container

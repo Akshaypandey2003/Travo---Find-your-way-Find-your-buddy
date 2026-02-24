@@ -41,5 +41,13 @@ public interface UserRepo extends MongoRepository<User, String> {
     @Update("{ '$inc': { 'closeFriendsCount': -1 } }")
     void decrementCloseFriendsCount(String userId);
 
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$inc': { 'tripsCount': 1 } }")
+    void incrementTripsCount(String userId);
+
+    @Query("{ '_id': ?0, 'tripsCount': { '$gt': 0 } }")
+    @Update("{ '$inc': { 'tripsCount': -1 } }")
+    void decrementTripsCount(String userId);
+
     List<User> findByUserIdIn(List<String> userIds);
 }

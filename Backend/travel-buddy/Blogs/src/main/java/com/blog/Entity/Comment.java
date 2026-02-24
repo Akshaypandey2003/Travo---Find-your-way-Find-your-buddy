@@ -1,42 +1,39 @@
 package com.blog.Entity;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-@Document
+@Document(collection = "comments")
+@CompoundIndex(def = "{'blogId': 1, 'createdAt': -1}")
 public class Comment {
 
     @Id
-    private String commentId;
+    private String id;
+
     private String blogId;
+
     private String authorId;
     private String authorName;
     private String authorProfilePic;
-    private String authorGender;
-    private String content;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private boolean isEdited;
-    private String parentCommentId;
-    private String repliedToUserId;
-    private List<String> commentLikes = new ArrayList<>();
 
-    @Transient
-    private List<Comment> replies = new ArrayList<>();
+    private String content;
+
+    private String parentCommentId; // null if top-level comment
+
+    @Builder.Default
+    private Instant createdAt = Instant.now();
+
+
+    @Builder.Default
+    private long likeCount = 0;
 }

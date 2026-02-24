@@ -33,7 +33,13 @@ public class InAppNotificationHandler implements NotificationHandler {
 
         return "FRIEND_REQUEST_SENT".equals(event.getType())
                 || "FRIEND_REQUEST_ACCEPTED".equals(event.getType())
-                || "TRIP_INVITE".equals(event.getType());
+                || "TRIP_INVITE".equals(event.getType())
+                || "TRIP_CREATED".equals(event.getType())
+                || "TRIP_REQUEST_SENT".equals(event.getType())
+                || "TRIP_REQUEST_ACCEPTED".equals(event.getType())
+                || "TRIP_START_REMINDER".equals(event.getType())
+                || "TRIP_END_REMINDER".equals(event.getType())
+                || "COMPANION_REVIEW_SUBMITTED".equals(event.getType());
     }
 
     @Override

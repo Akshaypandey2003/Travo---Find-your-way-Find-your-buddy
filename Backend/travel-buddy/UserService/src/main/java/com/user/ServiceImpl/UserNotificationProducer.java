@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import com.events.Notification.FailedNotification;
 import com.events.Notification.NotificationEvent;
-import com.user.Entity.FailedNotification;
-import com.user.Repository.FailedNotificationRepo;
+import com.events.Repositories.FailedNotificationRepository;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -18,14 +18,14 @@ import io.github.resilience4j.retry.annotation.Retry;
 public class UserNotificationProducer {
 
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
-    private final FailedNotificationRepo failedNotificationRepo;
+    private final FailedNotificationRepository failedNotificationRepo;
 
     private final Logger logger = LoggerFactory.getLogger(UserNotificationProducer.class);
 
     private final String NOTIFICATION_TOPIC="notification-events";
 
     public UserNotificationProducer(KafkaTemplate<String, NotificationEvent> kafkaTemplate,
-            FailedNotificationRepo failedNotificationRepo) {
+            FailedNotificationRepository failedNotificationRepo) {
         this.kafkaTemplate = kafkaTemplate;
         this.failedNotificationRepo = failedNotificationRepo;
     }

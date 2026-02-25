@@ -65,6 +65,9 @@ public class User {
     private int tripsCount = 0;
 
     @Builder.Default
+    private int blogsCount = 0;
+
+    @Builder.Default
     private int ratingsReceivedCount = 0;
 
     @Builder.Default

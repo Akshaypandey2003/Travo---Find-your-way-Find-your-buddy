@@ -17,8 +17,9 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.user.Entity.FailedNotification;
-import com.user.Repository.FailedNotificationRepo;
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
+
 
 @DataMongoTest
 @Testcontainers
@@ -34,7 +35,7 @@ class FailedNotificationRepositoryTest {
     }
 
     @Autowired
-    FailedNotificationRepo failedNotificationRepo;
+    FailedNotificationRepository failedNotificationRepo;
 
     @BeforeEach
     void setUp() {

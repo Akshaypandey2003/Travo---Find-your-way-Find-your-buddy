@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.blog.DTO.ApiResponse;
@@ -36,20 +37,6 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(true, response, "Comment added successfully"));
     }
-
-    /* ---------------- UPDATE ---------------- */
-
-//     @PutMapping("/{commentId}")
-//     public ResponseEntity<ApiResponse<CommentResponseDTO>> updateComment(
-//             @PathVariable String commentId,
-//             @RequestBody CommentRequestDTO request) {
-
-//         CommentResponseDTO response =
-//                 commentService.updateComment(commentId, request);
-
-//         return ResponseEntity.ok(
-//                 new ApiResponse<>(true, response, "Comment updated successfully"));
-//     }
 
     /* ---------------- GET TOP-LEVEL COMMENTS ---------------- */
 
@@ -108,15 +95,15 @@ public class CommentController {
 
     /* ---------------- LIKE / UNLIKE ---------------- */
 
-//     @PutMapping("/{commentId}/like/{userId}")
-//     public ResponseEntity<ApiResponse<CommentResponseDTO>> likeComment(
-//             @PathVariable String commentId,
-//             @PathVariable String userId) {
+    @PutMapping("/{commentId}/like")
+    public ResponseEntity<ApiResponse<CommentResponseDTO>> likeComment(
+            @PathVariable String commentId,
+            @AuthenticationPrincipal String userId) {
 
-//         CommentResponseDTO response =
-//                 commentService.updateCommentLike(commentId, userId);
+        CommentResponseDTO response =
+                commentService.updateCommentLike(commentId, userId);
 
-//         return ResponseEntity.ok(
-//                 new ApiResponse<>(true, response, "Like status updated"));
-//     }
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, response, "Like status updated"));
+    }
 }

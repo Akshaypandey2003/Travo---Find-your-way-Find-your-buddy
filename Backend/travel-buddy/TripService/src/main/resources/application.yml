@@ -47,23 +47,6 @@ resilience4j:
       tripDomainEventRetry:
         baseConfig: default
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus,caches,circuitbreakers,retries
-  endpoint:
-    health:
-      show-details: when_authorized
-      probes:
-        enabled: true
-  health:
-    redis:
-      enabled: true
-  metrics:
-    enable:
-      cache: true
-
 trip:
   pagination:
     max-page-size: 100

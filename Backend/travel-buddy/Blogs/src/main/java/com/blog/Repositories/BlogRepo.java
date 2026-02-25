@@ -1,14 +1,16 @@
 package com.blog.Repositories;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.blog.Entity.Blog;
-import java.util.List;
 
 
 public interface BlogRepo extends MongoRepository<Blog,String> {
     
-    public List<Blog> findByBlogCategory(String blogCategory);
-    public List<Blog> findByBlogAuthorId(String authorId);
-    public List<Blog> findByBlogTitle(String title);
+    public Page<Blog> findByBlogCategory(String blogCategory,Pageable pageable);
+    public Page<Blog> findByBlogAuthorId(String authorId,Pageable pageable);
+    public Page<Blog> findByBlogTitle(String title,Pageable pageable);
+    public Page<Blog> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String keyword, String contentKeyword, Pageable pageable);
 }

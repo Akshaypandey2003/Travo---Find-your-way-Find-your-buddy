@@ -1,4 +1,4 @@
-package com.trip.Scheduler;
+package com.blog.Scheduler;
 
 import java.util.List;
 
@@ -16,27 +16,27 @@ import com.events.Repositories.FailedNotificationRepository;
 
 
 @Component
-public class TripNotificationRetryScheduler {
+public class NotificationRetryScheduler {
 
-    private static final Logger logger = LoggerFactory.getLogger(TripNotificationRetryScheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(NotificationRetryScheduler.class);
 
     private final FailedNotificationRepository failedNotificationRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Value("${trip.notifications.retry.max-attempts:10}")
+    @Value("${blog.notifications.retry.max-attempts:10}")
     private int maxRetryAttempts;
 
-    @Value("${trip.notifications.retry.batch-size:50}")
+    @Value("${blog.notifications.retry.batch-size:50}")
     private int batchSize;
 
-    public TripNotificationRetryScheduler(
+    public NotificationRetryScheduler(
             FailedNotificationRepository failedNotificationRepository,
             KafkaTemplate<String, Object> kafkaTemplate) {
         this.failedNotificationRepository = failedNotificationRepository;
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @Scheduled(fixedDelayString = "${trip.notifications.retry.fixed-delay-ms:30000}")
+    @Scheduled(fixedDelayString = "${blog.notifications.retry.fixed-delay-ms:30000}")
     public void retryFailedNotifications() {
         Page<FailedNotification> page = failedNotificationRepository.findAllByOrderByCreatedAtAsc(
                 PageRequest.of(0, batchSize));

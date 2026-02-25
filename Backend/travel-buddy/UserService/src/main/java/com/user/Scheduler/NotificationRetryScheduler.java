@@ -4,34 +4,40 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.user.Entity.FailedNotification;
-import com.user.Repository.FailedNotificationRepo;
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
+
+
 
 @Component
 public class NotificationRetryScheduler {
 
-    private final FailedNotificationRepo failedRepo;
+    private final FailedNotificationRepository failedRepo;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Logger logger = LoggerFactory.getLogger(NotificationRetryScheduler.class);
-
+   
+    @Value("${user.notifications.retry.max-attempts:10}")
     private static final int MAX_RETRY = 10;
+
+    @Value("${user.notifications.retry.batch-size:50}")
     private static final int BATCH_SIZE = 50;
 
     public NotificationRetryScheduler(
-            FailedNotificationRepo failedRepo,
+            FailedNotificationRepository failedRepo,
             KafkaTemplate<String, Object> kafkaTemplate) {
 
         this.failedRepo = failedRepo;
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelayString = "${user.notifications.retry.fixed-delay-ms:30000}")
     public void retryFailedNotifications() {
 
         Page<FailedNotification> page = failedRepo.findAllByOrderByCreatedAtAsc(

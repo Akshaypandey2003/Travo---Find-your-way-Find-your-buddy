@@ -15,8 +15,8 @@ import com.events.Trip.TripRequestCancelledEvent;
 import com.events.Trip.TripRequestCreatedEvent;
 import com.events.Trip.TripRequestRejectedEvent;
 import com.events.Trip.TripUpdatedEvent;
-import com.trip.Entity.FailedNotification;
-import com.trip.Repositories.FailedNotificationRepository;
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
 import com.trip.Entity.Trip;
 import com.trip.Services.TripDomainEventPublisher;
 
@@ -146,7 +146,7 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
 
         publish(notificationId, event);
     }
-
+    
     public void tripCreatedFallback(Trip trip, Exception ex) {
         logger.error("Failed to publish TripCreatedEvent for tripId={}", trip.getTripId(), ex);
         TripCreatedEvent event = TripCreatedEvent.builder()

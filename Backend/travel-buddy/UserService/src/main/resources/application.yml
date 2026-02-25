@@ -28,13 +28,22 @@ resilience4j:
     instances:
       notificationServiceCircuitBreaker:
         baseConfig: default
+      
 
   retry:
     configs:
       default:
         maxAttempts: 3
         waitDuration: 2s
-
     instances:
       notificationServiceRetry:
         baseConfig: default
+
+user:
+  pagination:
+    max-page-size: 100
+  notifications:
+    retry:
+      fixed-delay-ms: 30000
+      batch-size: 50
+      max-attempts: 10

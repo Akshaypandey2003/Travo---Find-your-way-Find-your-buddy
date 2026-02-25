@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,27 +24,40 @@ import com.blog.Enum.ResourceType;
 import com.blog.Exceptions.BlogNotFoundException;
 import com.blog.Exceptions.UnauthorizedAccessException;
 import com.blog.Repositories.BlogRepo;
-import com.blog.Repositories.LikeRepo;
+import com.blog.Repositories.CommentRepository;
+import com.blog.Repositories.LikeRepository;
 import com.blog.Services.BlogService;
 import com.blog.Services.CloudinaryService;
+import com.blog.Services.EventPublisher;
 import com.blog.Services.NotificationProducer;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class BlogServiceImpl implements BlogService {
 
-    @Autowired
-    private BlogRepo blogRepo;
-    @Autowired
-    private CloudinaryService cloudinaryService;
-    @Autowired
-    private NotificationProducer notificationProducer;
-    @Autowired
-    private UserServiceClient userServiceClient;
-    @Autowired
-    private LikeRepo likeRepo;
+    private final BlogRepo blogRepo;
+    private final CloudinaryService cloudinaryService;
+    private final NotificationProducer notificationProducer;
+    private final UserServiceClient userServiceClient;
+    private final LikeRepository likeRepo;
+    private final CommentRepository commentRepo;
+    private final EventPublisher eventPublisher;
+
+    public BlogServiceImpl(
+            BlogRepo blogRepo,
+            CloudinaryService cloudinaryService,
+            NotificationProducer notificationProducer,
+            UserServiceClient userServiceClient,
+            LikeRepository likeRepo,
+            CommentRepository commentRepo,
+            EventPublisher eventPublisher) {
+        this.blogRepo = blogRepo;
+        this.cloudinaryService = cloudinaryService;
+        this.notificationProducer = notificationProducer;
+        this.userServiceClient = userServiceClient;
+        this.likeRepo = likeRepo;
+        this.commentRepo = commentRepo;
+        this.eventPublisher = eventPublisher;
+    }
 
     @Override
     @Transactional
@@ -69,6 +85,7 @@ public class BlogServiceImpl implements BlogService {
                     savedBlog.getId(), savedBlog.getTitle());
 
         }
+        eventPublisher.publishBlogCreated(savedBlog);
 
         return new ApiResponse<>(true, savedBlog, "Blog created successfully");
     }
@@ -161,37 +178,47 @@ public class BlogServiceImpl implements BlogService {
                 e.printStackTrace();
             }
         }
-
         likeRepo.deleteByResourceIdAndResourceType(blogId, ResourceType.BLOG);
-
+        commentRepo.deleteByBlogId(blogId);
+        eventPublisher.publishBlogDeleted(blogId, authorId);
         blogRepo.delete(blog);
         return new ApiResponse<>(true, null, "Blog deleted successfully");
     }
 
     @Override
-    public ApiResponse<List<Blog>> getAllBlogs() {
-        List<Blog> blogs = blogRepo.findAll();
-        if (blogs != null && !blogs.isEmpty()) {
-            return new ApiResponse<>(true, blogs, "Blogs fetched Successfylly.");
+    public ApiResponse<Page<Blog>> getAllBlogs(int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Blog> blogPage = blogRepo.findAll(pageable);
+
+        if (blogPage.hasContent()) {
+            return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
         }
+
         throw new BlogNotFoundException("No blogs found");
     }
 
     @Override
-    public ApiResponse<List<Blog>> getBlogsByCategory(String category) {
+    public ApiResponse<Page<Blog>> getBlogsByCategory(String category, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+       
+        Page<Blog> blogPage = blogRepo.findByBlogCategory(category, pageable);
 
-        List<Blog> blogs = blogRepo.findByBlogCategory(category);
-        if (blogs != null && !blogs.isEmpty()) {
-            return new ApiResponse<>(true, blogs, "Blogs fetched Successfylly.");
+        if (blogPage.hasContent()) {
+            return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
         }
         throw new BlogNotFoundException("No blogs found for category: " + category);
     }
 
     @Override
-    public ApiResponse<List<Blog>> getBlogsByAuthor(String authorId) {
-        List<Blog> blogs = blogRepo.findByBlogAuthorId(authorId);
-        if (blogs != null && !blogs.isEmpty()) {
-            return new ApiResponse<>(true, blogs, "Blogs fetched Successfylly.");
+    public ApiResponse<Page<Blog>> getBlogsByAuthor(String authorId,int page, int size) {
+    
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+     
+        Page<Blog> blogPage = blogRepo.findByBlogAuthorId(authorId,pageable);
+         if (blogPage.hasContent()) {
+            return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
         }
         throw new BlogNotFoundException("No blogs found for author: " + authorId);
 
@@ -212,46 +239,42 @@ public class BlogServiceImpl implements BlogService {
     }
 
     @Override
-    public ApiResponse<List<Blog>> getBlogsByKeyword(String keyword) {
+    public ApiResponse<Page<Blog>> getBlogsByKeyword(String keyword, int page, int size) {
 
-        List<Blog> blogs = blogRepo.findAll();
-        if (blogs != null && !blogs.isEmpty()) {
-            List<Blog> fetchedBlogs = blogs.stream()
-                    .filter(blog -> blog.getTitle().toLowerCase().contains(keyword.toLowerCase())
-                            || blog.getContent().toLowerCase().contains(keyword.toLowerCase()))
-                    .toList();
-            return new ApiResponse<>(true, fetchedBlogs, "Blogs fetched Successfylly.");
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Blog> blogPage = blogRepo.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
+
+        if (blogPage.hasContent()) {
+            return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
         } else {
             throw new BlogNotFoundException("No blogs found for the given keyword: " + keyword);
         }
-
     }
 
     @Override
-    public ApiResponse<List<Blog>> getBlogsByTitle(String title) {
-        List<Blog> blogs = blogRepo.findByBlogTitle(title);
-        if (blogs != null && !blogs.isEmpty()) {
-            return new ApiResponse<>(true, blogs, "Blogs fetched Successfylly.");
-        } else {
-            throw new BlogNotFoundException("No blogs found for the given title: " + title);
+    public ApiResponse<Page<Blog>> getBlogsByTitle(String title, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+     
+        Page<Blog> blogPage = blogRepo.findByBlogTitle(title, pageable);
+        if (blogPage.hasContent()) {
+            return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
         }
+       throw new BlogNotFoundException("No blogs found for the given title: " + title);
     }
 
     @Transactional
     @Override
-    public ApiResponse<Blog> likeBlog(String blogId, String userId) 
-    {
-         Blog blog = blogRepo.findById(blogId)
+    public ApiResponse<Blog> likeBlog(String blogId, String userId) {
+        Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
-        
-        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndAuthorId(blogId,ResourceType.BLOG,userId);
 
-        if(like.isPresent())
-        {
+        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndAuthorId(blogId, ResourceType.BLOG, userId);
+
+        if (like.isPresent()) {
             likeRepo.delete(like.get());
-        }
-        else
-        {
+        } else {
             Like newLike = Like.builder()
                     .resourceId(blogId)
                     .resourceType(ResourceType.BLOG)
@@ -260,11 +283,11 @@ public class BlogServiceImpl implements BlogService {
             likeRepo.save(newLike);
         }
 
-         int likeCount = likeRepo.countByResourceIdAndResourceType(blogId, ResourceType.BLOG);
-         blog.setLikeCount(likeCount);
+        int likeCount = likeRepo.countByResourceIdAndResourceType(blogId, ResourceType.BLOG);
+        blog.setLikeCount(likeCount);
         Blog updatedBlog = blogRepo.save(blog);
 
-        return new ApiResponse<>(true,updatedBlog,"Blog Liked Successfully.");
+        return new ApiResponse<>(true, updatedBlog, "Blog Liked Successfully.");
     }
 
     @Override

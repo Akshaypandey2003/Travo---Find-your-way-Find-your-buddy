@@ -38,6 +38,7 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.events.Repositories.FailedNotificationRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.user.Config.JwtProvider;
@@ -45,7 +46,6 @@ import com.user.Entity.User;
 import com.user.Enum.AccountType;
 import com.user.Repository.CloseFriendsRepo;
 import com.user.Repository.ConnectionRepo;
-import com.user.Repository.FailedNotificationRepo;
 import com.user.Repository.PasswordResetTokenRepo;
 import com.user.Repository.UserRepo;
 
@@ -97,7 +97,7 @@ class UserServiceIntegrationTest {
     PasswordResetTokenRepo passwordResetTokenRepo;
 
     @Autowired
-    FailedNotificationRepo failedNotificationRepo;
+    FailedNotificationRepository failedNotificationRepo;
 
     @Autowired
     StringRedisTemplate redisTemplate;

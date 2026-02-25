@@ -19,9 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
+import com.events.Notification.FailedNotification;
 import com.events.Notification.NotificationEvent;
-import com.user.Entity.FailedNotification;
-import com.user.Repository.FailedNotificationRepo;
+import com.events.Repositories.FailedNotificationRepository;
 import com.user.ServiceImpl.UserNotificationProducer;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,7 +31,7 @@ public class UserNotificationProducerTest {
     private KafkaTemplate<String, NotificationEvent> kafkaTemplate;
 
     @Mock
-    private FailedNotificationRepo failedNotificationRepo;
+    private FailedNotificationRepository failedNotificationRepo;
 
     @InjectMocks
     private UserNotificationProducer producer;

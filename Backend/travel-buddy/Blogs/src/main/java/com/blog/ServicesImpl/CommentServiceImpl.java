@@ -1,7 +1,9 @@
 package com.blog.ServicesImpl;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,8 +14,12 @@ import com.blog.DTO.CommentRequestDTO;
 import com.blog.DTO.CommentResponseDTO;
 import com.blog.Entity.Blog;
 import com.blog.Entity.Comment;
+import com.blog.Entity.Like;
+import com.blog.Enum.ResourceType;
+import com.blog.Exceptions.BlogNotFoundException;
 import com.blog.Exceptions.CommentNotFoundException;
 import com.blog.Repositories.CommentRepository;
+import com.blog.Repositories.LikeRepository;
 import com.blog.Services.BlogService;
 import com.blog.Services.CommentService;
 import com.blog.Services.NotificationProducer;
@@ -25,20 +31,41 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepo;
     private final BlogService blogService;
     private final NotificationProducer notificationProducer;
+    private final LikeRepository likeRepo;
+
+    private static final int MAX_DEPTH = 2;
 
     public CommentServiceImpl(
             CommentRepository commentRepo,
             BlogService blogService,
+            LikeRepository likeRepo,
             NotificationProducer notificationProducer) {
         this.commentRepo = commentRepo;
         this.blogService = blogService;
         this.notificationProducer = notificationProducer;
+        this.likeRepo = likeRepo;
     }
 
     @Override
     public CommentResponseDTO addComment(CommentRequestDTO request) {
-
-        Comment comment = mapToEntity(request);
+        
+        int depth = 0;
+        if (request.getParentCommentId() != null) {
+            Comment parentComment = commentRepo.findById(request.getParentCommentId())
+                    .orElseThrow(() -> new CommentNotFoundException("Parent comment not found"));
+            depth = parentComment.getDepth() + 1;
+            if (depth > MAX_DEPTH) {
+                throw new IllegalArgumentException("Maximum reply depth exceeded");
+            }
+        }
+        Comment comment = Comment.builder()
+            .blogId(request.getBlogId())
+            .authorId(request.getAuthorId())
+            .content(request.getContent())
+            .parentCommentId(request.getParentCommentId())
+            .depth(depth)
+            .build();
+            
         Comment savedComment = commentRepo.save(comment);
 
         Blog blog = fetchBlog(savedComment.getBlogId());
@@ -102,16 +129,34 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
-    // @Override
-    // public CommentResponseDTO updateCommentLike(String commentId, String userId) {
+    @Override
+    public CommentResponseDTO updateCommentLike(String commentId, String userId) {
 
-    //     Comment comment = getCommentById(commentId);
+        Comment comment = commentRepo.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("Comment not found with id: " + commentId));
         
+        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndAuthorId(commentId,ResourceType.COMMENT,userId);
 
-    //     toggleLike(comment, userId);
+        if(like.isPresent())
+        {
+            likeRepo.delete(like.get());
+        }
+        else
+        {
+            Like newLike = Like.builder()
+                    .resourceId(commentId)
+                    .resourceType(ResourceType.COMMENT)
+                    .userId(userId)
+                    .build();
+            likeRepo.save(newLike);
+        }
 
-    //     return mapToDTO(commentRepo.save(comment));
-    // }
+         int likeCount = likeRepo.countByResourceIdAndResourceType(commentId, ResourceType.COMMENT);
+         comment.setLikeCount(likeCount);
+        Comment updatedComment = commentRepo.save(comment);
+
+        return mapToDTO(updatedComment);
+    }
 
     /* ---------------- PRIVATE HELPERS ---------------- */
 
@@ -124,29 +169,6 @@ public class CommentServiceImpl implements CommentService {
         ApiResponse<Blog> response = blogService.getBlogById(blogId);
         return response.getData();
     }
-
-    // private void toggleLike(Comment comment, String userId) {
-
-    //     List<String> likes = comment.getCommentLikes();
-    //     if (likes == null) {
-    //         likes = new ArrayList<>();
-    //     }
-
-    //     if (likes.contains(userId)) {
-    //         likes.remove(userId);
-    //     } else {
-    //         likes.add(userId);
-            
-    //         Blog blog = fetchBlog(comment.getBlogId());
-    //         notificationProducer.sendCommentLikeNotification(
-    //                 userId,
-    //                 comment.getAuthorId(),
-    //                 comment.getBlogId(),
-    //                 blog.getBlogTitle());
-    //     }
-
-    //     comment.setCommentLikes(likes);
-    // }
 
     @Override
     public Page<Comment> getAllReplies(String parentCommentId, Pageable pageable) {

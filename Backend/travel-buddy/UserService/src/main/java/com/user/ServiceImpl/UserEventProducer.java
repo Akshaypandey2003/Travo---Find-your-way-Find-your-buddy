@@ -5,11 +5,11 @@ import java.util.Map;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
 import com.events.User.UserCreatedEvent;
 import com.events.User.UserDeletedEvent;
 import com.events.User.UserUpdatedEvent;
-import com.user.Entity.FailedNotification;
-import com.user.Repository.FailedNotificationRepo;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -17,12 +17,12 @@ import io.github.resilience4j.retry.annotation.Retry;
 @Service
 public class UserEventProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final FailedNotificationRepo failedNotificationRepo;
+    private final FailedNotificationRepository failedNotificationRepo;
 
     private static final String USER_EVENTS_TOPIC = "user-events";
 
     public UserEventProducer(KafkaTemplate<String, Object> kafkaTemplate,
-            FailedNotificationRepo failedNotificationRepo) {
+            FailedNotificationRepository failedNotificationRepo) {
         this.kafkaTemplate = kafkaTemplate;
         this.failedNotificationRepo = failedNotificationRepo;
     }

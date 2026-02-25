@@ -8,8 +8,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.events.Entity.NotificationEvent;
-import com.trip.Entity.FailedNotification;
-import com.trip.Repositories.FailedNotificationRepository;
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
 import com.trip.Services.TripNotificationProducer;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -115,8 +115,6 @@ public class TripNotificationProducerImpl implements TripNotificationProducer {
 
         sendEvent(receiverId, event);
     }
-
-    
 
     public void sendNewTriptNotificationFallback(
             String senderId,

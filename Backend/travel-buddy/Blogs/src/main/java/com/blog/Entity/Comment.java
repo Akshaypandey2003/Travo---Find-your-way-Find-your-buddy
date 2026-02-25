@@ -15,6 +15,7 @@ import lombok.*;
 @Builder
 @Document(collection = "comments")
 @CompoundIndex(def = "{'blogId': 1, 'createdAt': -1}")
+@CompoundIndex(def = "{'parentCommentId': 1, 'createdAt': -1}")
 public class Comment {
 
     @Id
@@ -36,4 +37,6 @@ public class Comment {
 
     @Builder.Default
     private long likeCount = 0;
+
+    private int depth;
 }

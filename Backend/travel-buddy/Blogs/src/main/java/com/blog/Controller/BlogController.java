@@ -1,10 +1,10 @@
 package com.blog.Controller;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -59,10 +59,9 @@ public class BlogController {
     // ✅ Like Blog
     @PostMapping("/{blogId}/like")
     public ResponseEntity<ApiResponse<Blog>> likeBlog(
-    @PathVariable String blogId,
-    @AuthenticationPrincipal String userId
-    ) {
-    return ResponseEntity.ok(blogService.likeBlog(blogId,userId));
+            @PathVariable String blogId,
+            @AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(blogService.likeBlog(blogId, userId));
     }
 
     // ✅ Delete Blog
@@ -80,34 +79,49 @@ public class BlogController {
     }
 
     @GetMapping("/get-all")
-    public ResponseEntity<?> getAllBlogs(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<ApiResponse<Page<Blog>>> getAllBlogs(
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        ApiResponse<List<Blog>> response = blogService.getAllBlogs();
-        return ResponseEntity.status(200).body(response);
+
+        ApiResponse<Page<Blog>> response = blogService.getAllBlogs(page, size);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/get-blogs-by-category/{category}")
-    public ResponseEntity<?> getBlogsByCategory(@PathVariable String category) {
-        ApiResponse<List<Blog>> response = blogService.getBlogsByCategory(category);
+    public ResponseEntity<?> getBlogsByCategory(@PathVariable String category,
+         @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        ApiResponse<Page<Blog>> response = blogService.getBlogsByCategory(category, page, size);
         return ResponseEntity.status(200).body(response);
     }
 
     @GetMapping("/author/{authorId}")
-    public ResponseEntity<?> getBlogsByAuthor(@PathVariable String authorId) {
-        ApiResponse<List<Blog>> response = blogService.getBlogsByAuthor(authorId);
+    public ResponseEntity<?> getBlogsByAuthor(@PathVariable String authorId,
+        @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        ApiResponse<Page<Blog>> response = blogService.getBlogsByAuthor(authorId,page,size);
         return ResponseEntity.status(200).body(response);
     }
 
     @GetMapping("/get-blogs-by-keyword/{keyword}")
-    public ResponseEntity<?> getBlogsByKeyword(@PathVariable String keyword) {
+    public ResponseEntity<?> getBlogsByKeyword(@PathVariable String keyword,
+        @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
 
-        ApiResponse<List<Blog>> response = blogService.getBlogsByKeyword(keyword);
+        ApiResponse<Page<Blog>> response = blogService.getBlogsByKeyword(keyword,page,size);
         return ResponseEntity.status(200).body(response);
     }
 
     @GetMapping("/get-blogs-by-title/{title}")
-    public ResponseEntity<?> getBlogsByTitle(@PathVariable String title) {
-        ApiResponse<List<Blog>> response = blogService.getBlogsByTitle(title);
+    public ResponseEntity<?> getBlogsByTitle(@PathVariable String title,
+        @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        ApiResponse<Page<Blog>> response = blogService.getBlogsByTitle(title, page, size);
         return ResponseEntity.status(200).body(response);
     }
 
@@ -122,8 +136,8 @@ public class BlogController {
     @PostMapping("/{blogId}/view")
     public ResponseEntity<?> updateBlogViews(@PathVariable String blogId,
             @AuthenticationPrincipal String userId) {
-    ApiResponse<Blog> updatedBlog = blogService.updateBlogViews(blogId);
-    return ResponseEntity.status(200).body(updatedBlog);
+        ApiResponse<Blog> updatedBlog = blogService.updateBlogViews(blogId);
+        return ResponseEntity.status(200).body(updatedBlog);
     }
 
 }

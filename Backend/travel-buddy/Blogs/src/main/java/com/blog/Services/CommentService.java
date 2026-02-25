@@ -18,7 +18,7 @@ public interface CommentService {
     public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentId(String blogId, String parentCommentId);
     public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentIdAndReplieDTOUserId(
             String blogId, String parentCommentId, String replieDTOUserId);
-    // public CommentResponseDTO updateCommentLike(String commentId, String userId);
+    public CommentResponseDTO updateCommentLike(String commentId, String userId);
     public Comment mapToEntity(CommentRequestDTO dto);
     public CommentResponseDTO mapToDTO(Comment comment);
 }

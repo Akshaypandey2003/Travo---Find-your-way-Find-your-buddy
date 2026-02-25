@@ -1,4 +1,4 @@
-package com.trip.Entity;
+package com.events.Notification;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

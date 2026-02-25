@@ -1,5 +1,7 @@
 package com.feedback.ServiceImpl;
 
+import java.time.Instant;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -7,10 +9,10 @@ import org.springframework.stereotype.Service;
 
 import com.events.Feedback.AppFeedbackSubmittedEvent;
 import com.events.Feedback.CompanionReviewSubmittedEvent;
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
 import com.feedback.Entity.AppFeedback;
 import com.feedback.Entity.CompanionReview;
-import com.feedback.Entity.FailedOutboundEvent;
-import com.feedback.Repository.FailedOutboundEventRepo;
 import com.feedback.Service.FeedbackDomainEventPublisher;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -23,11 +25,11 @@ public class FeedbackDomainEventPublisherImpl implements FeedbackDomainEventPubl
     private static final String TOPIC = "feedback-events";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final FailedOutboundEventRepo failedOutboundEventRepo;
+    private final FailedNotificationRepository failedOutboundEventRepo;
 
     public FeedbackDomainEventPublisherImpl(
             KafkaTemplate<String, Object> kafkaTemplate,
-            FailedOutboundEventRepo failedOutboundEventRepo) {
+            FailedNotificationRepository failedOutboundEventRepo) {
         this.kafkaTemplate = kafkaTemplate;
         this.failedOutboundEventRepo = failedOutboundEventRepo;
     }
@@ -97,13 +99,13 @@ public class FeedbackDomainEventPublisherImpl implements FeedbackDomainEventPubl
     }
 
     private void saveFailed(String topic, String key, Object payload, String reason) {
-        FailedOutboundEvent failed = FailedOutboundEvent.builder()
+        FailedNotification failed = FailedNotification.builder()
                 .topic(topic)
-                .eventKey(key)
-                .payload(payload)
+                .key(key)
+                .event(payload)
                 .retryCount(0)
-                .createdAt(System.currentTimeMillis())
-                .lastRetryAt(0L)
+                .createdAt(Instant.now())
+                .lastRetryAt(null)
                 .failureReason(reason)
                 .build();
         failedOutboundEventRepo.save(failed);

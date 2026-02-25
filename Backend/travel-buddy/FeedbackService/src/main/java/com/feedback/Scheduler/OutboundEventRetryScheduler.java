@@ -1,5 +1,6 @@
 package com.feedback.Scheduler;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -11,15 +12,15 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.feedback.Entity.FailedOutboundEvent;
-import com.feedback.Repository.FailedOutboundEventRepo;
+import com.events.Notification.FailedNotification;
+import com.events.Repositories.FailedNotificationRepository;
 
 @Component
 public class OutboundEventRetryScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(OutboundEventRetryScheduler.class);
 
-    private final FailedOutboundEventRepo failedOutboundEventRepo;
+    private final FailedNotificationRepository failedOutboundEventRepo;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${feedback.outbox.retry.max-attempts:10}")
@@ -29,7 +30,7 @@ public class OutboundEventRetryScheduler {
     private int batchSize;
 
     public OutboundEventRetryScheduler(
-            FailedOutboundEventRepo failedOutboundEventRepo,
+            FailedNotificationRepository failedOutboundEventRepo,
             KafkaTemplate<String, Object> kafkaTemplate) {
         this.failedOutboundEventRepo = failedOutboundEventRepo;
         this.kafkaTemplate = kafkaTemplate;
@@ -37,12 +38,12 @@ public class OutboundEventRetryScheduler {
 
     @Scheduled(fixedDelayString = "${feedback.outbox.retry.fixed-delay-ms:30000}")
     public void retryFailedOutboundEvents() {
-        Page<FailedOutboundEvent> page = failedOutboundEventRepo.findAllByOrderByCreatedAtAsc(PageRequest.of(0, batchSize));
-        List<FailedOutboundEvent> events = page.getContent();
+        Page<FailedNotification> page = failedOutboundEventRepo.findAllByOrderByCreatedAtAsc(PageRequest.of(0, batchSize));
+        List<FailedNotification> events = page.getContent();
 
-        for (FailedOutboundEvent event : events) {
+        for (FailedNotification event : events) {
             try {
-                kafkaTemplate.send(event.getTopic(), event.getEventKey(), event.getPayload()).get();
+                kafkaTemplate.send(event.getTopic(), event.getKey(), event).get();
                 failedOutboundEventRepo.deleteById(event.getId());
                 logger.info("Retried outbound event successfully id={} topic={}", event.getId(), event.getTopic());
             } catch (Exception ex) {
@@ -52,7 +53,7 @@ public class OutboundEventRetryScheduler {
                     logger.error("Dropping outbound event id={} after {} attempts", event.getId(), maxAttempts, ex);
                 } else {
                     event.setRetryCount(retryCount);
-                    event.setLastRetryAt(System.currentTimeMillis());
+                    event.setLastRetryAt(Instant.now());
                     event.setFailureReason(ex.getMessage());
                     failedOutboundEventRepo.save(event);
                     logger.warn("Retry failed for outbound event id={} attempt={}", event.getId(), retryCount);

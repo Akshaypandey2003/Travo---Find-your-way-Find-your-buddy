@@ -3,6 +3,8 @@ package com.events.Notification;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.Instant;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,7 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Document(collection = "trip_failed_notifications")
+@Document(collection = "failed_notifications")
 @Getter
 @Setter
 @Builder
@@ -37,10 +39,10 @@ public class FailedNotification {
     private int retryCount = 0;
 
     @Builder.Default
-    private long createdAt = System.currentTimeMillis();
+    private Instant createdAt = Instant.now();
 
     @Indexed
-    private long lastRetryAt;
+    private Instant lastRetryAt;
 
     private String failureReason;
 }

@@ -1,5 +1,6 @@
 package com.trip.Scheduler;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class TripNotificationRetryScheduler {
                     logger.error("Dropping failed notification id={} after {} retries", failed.getId(), maxRetryAttempts, ex);
                 } else {
                     failed.setRetryCount(retryCount);
-                    failed.setLastRetryAt(System.currentTimeMillis());
+                    failed.setLastRetryAt(Instant.now());
                     failed.setFailureReason(ex.getMessage());
                     failedNotificationRepository.save(failed);
                     logger.warn("Retry failed for notification id={} attempt={}", failed.getId(), retryCount);

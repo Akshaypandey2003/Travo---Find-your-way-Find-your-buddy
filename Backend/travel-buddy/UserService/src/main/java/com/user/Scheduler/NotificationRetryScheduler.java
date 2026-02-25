@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 import com.events.Notification.FailedNotification;
 import com.events.Repositories.FailedNotificationRepository;
 
-
-
 @Component
 public class NotificationRetryScheduler {
 
@@ -24,10 +22,10 @@ public class NotificationRetryScheduler {
     private final Logger logger = LoggerFactory.getLogger(NotificationRetryScheduler.class);
    
     @Value("${user.notifications.retry.max-attempts:10}")
-    private static final int MAX_RETRY = 10;
+    private static int MAX_RETRY;
 
     @Value("${user.notifications.retry.batch-size:50}")
-    private static final int BATCH_SIZE = 50;
+    private static int BATCH_SIZE;
 
     public NotificationRetryScheduler(
             FailedNotificationRepository failedRepo,

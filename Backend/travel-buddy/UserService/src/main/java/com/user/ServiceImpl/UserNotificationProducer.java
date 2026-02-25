@@ -1,5 +1,6 @@
 package com.user.ServiceImpl;
 
+import java.time.Instant;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -296,7 +297,7 @@ public class UserNotificationProducer {
                 .key(key)
                 .event(event)
                 .retryCount(0)
-                .createdAt(System.currentTimeMillis())
+                .createdAt(Instant.now())
                 .build();
 
         failedNotificationRepo.save(failed);

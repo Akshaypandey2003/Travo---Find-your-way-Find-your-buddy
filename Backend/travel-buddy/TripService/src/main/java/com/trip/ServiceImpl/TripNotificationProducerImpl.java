@@ -1,5 +1,6 @@
 package com.trip.ServiceImpl;
 
+import java.time.Instant;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -216,8 +217,8 @@ public class TripNotificationProducerImpl implements TripNotificationProducer {
                 .key(key)
                 .event(event)
                 .retryCount(0)
-                .createdAt(System.currentTimeMillis())
-                .lastRetryAt(0L)
+                .createdAt(Instant.now())
+                .lastRetryAt(null)
                 .failureReason(ex.getMessage())
                 .build();
         failedNotificationRepository.save(failed);

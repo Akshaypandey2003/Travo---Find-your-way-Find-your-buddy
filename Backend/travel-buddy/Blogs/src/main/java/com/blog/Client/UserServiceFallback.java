@@ -9,6 +9,6 @@ public class UserServiceFallback implements UserServiceClient {
 
     @Override
     public List<String> getFriendsByUser(String userId) {
-        return List.of("Could not fetch friends at this time");
+        return List.of();
     }
 }

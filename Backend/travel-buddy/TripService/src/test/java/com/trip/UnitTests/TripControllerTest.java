@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.events.Repositories.FailedNotificationRepository;
 import com.trip.Config.JwtAuthenticationFilter;
 import com.trip.Config.JwtProvider;
 import com.trip.Config.SecurityConfig;
@@ -35,6 +36,8 @@ import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripListItemDto;
 import com.trip.Entity.Trip;
 import com.trip.Entity.Trip.TripType;
+import com.trip.Repositories.TripRequestRepository;
+import com.trip.Repositories.TripRespository;
 import com.trip.Services.TripServices;
 
 @WebMvcTest(controllers = TripController.class)
@@ -51,6 +54,15 @@ class TripControllerTest {
 
     @MockBean
     private JwtProvider jwtProvider;
+
+    @MockBean
+    private TripRespository tripRespository;
+
+    @MockBean
+    private TripRequestRepository tripRequestRepository;
+
+    @MockBean
+    private FailedNotificationRepository failedNotificationRepository;
 
     @Autowired
     private ObjectMapper objectMapper;

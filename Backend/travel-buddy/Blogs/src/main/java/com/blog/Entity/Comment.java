@@ -30,6 +30,7 @@ public class Comment {
     private String content;
 
     private String parentCommentId; // null if top-level comment
+    private String repliedToUserId;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

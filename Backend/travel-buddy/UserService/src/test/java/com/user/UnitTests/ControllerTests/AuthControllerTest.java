@@ -1,6 +1,7 @@
 package com.user.UnitTests.ControllerTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.events.Repositories.FailedNotificationRepository;
 import com.user.Config.JwtProvider;
 import com.user.Controller.AuthController;
 import com.user.DTO.*;
@@ -8,6 +9,11 @@ import com.user.Exceptions.InvalidPasswordException;
 import com.user.Exceptions.InvalidResetTokenException;
 import com.user.Exceptions.UserConflictException;
 import com.user.Exceptions.UserNotFoundException;
+import com.user.Repository.CloseFriendsRepo;
+import com.user.Repository.ConnectionRepo;
+import com.user.Repository.PasswordResetTokenRepo;
+import com.user.Repository.ProcessedFeedbackEventRepo;
+import com.user.Repository.UserRepo;
 import com.user.Service.UserService;
 
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +51,24 @@ class AuthControllerTest {
 
         @MockBean
         private JwtProvider jwtProvider;
+
+        @MockBean
+        private UserRepo userRepo;
+
+        @MockBean
+        private ConnectionRepo connectionRepo;
+
+        @MockBean
+        private CloseFriendsRepo closeFriendsRepo;
+
+        @MockBean
+        private PasswordResetTokenRepo passwordResetTokenRepo;
+
+        @MockBean
+        private ProcessedFeedbackEventRepo processedFeedbackEventRepo;
+
+        @MockBean
+        private FailedNotificationRepository failedNotificationRepository;
 
         @Autowired
         private ObjectMapper objectMapper;

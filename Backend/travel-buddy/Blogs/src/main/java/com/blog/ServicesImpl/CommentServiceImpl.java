@@ -1,7 +1,6 @@
 package com.blog.ServicesImpl;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,8 +15,8 @@ import com.blog.Entity.Blog;
 import com.blog.Entity.Comment;
 import com.blog.Entity.Like;
 import com.blog.Enum.ResourceType;
-import com.blog.Exceptions.BlogNotFoundException;
 import com.blog.Exceptions.CommentNotFoundException;
+import com.blog.Exceptions.InvalidRequestException;
 import com.blog.Repositories.CommentRepository;
 import com.blog.Repositories.LikeRepository;
 import com.blog.Services.BlogService;
@@ -47,7 +46,10 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentResponseDTO addComment(CommentRequestDTO request) {
+    public CommentResponseDTO addComment(CommentRequestDTO request, String authorId) {
+        if (authorId == null || authorId.isBlank()) {
+            throw new InvalidRequestException("Authenticated user is required");
+        }
         
         int depth = 0;
         if (request.getParentCommentId() != null) {
@@ -60,9 +62,10 @@ public class CommentServiceImpl implements CommentService {
         }
         Comment comment = Comment.builder()
             .blogId(request.getBlogId())
-            .authorId(request.getAuthorId())
+            .authorId(authorId)
             .content(request.getContent())
             .parentCommentId(request.getParentCommentId())
+            .repliedToUserId(request.getRepliedToUserId())
             .depth(depth)
             .build();
             
@@ -71,7 +74,7 @@ public class CommentServiceImpl implements CommentService {
         Blog blog = fetchBlog(savedComment.getBlogId());
 
         notificationProducer.sendCommentNotification(
-                savedComment.getAuthorId(),
+                authorId,
                 blog.getAuthorId(),
                 savedComment.getBlogId(),
                 blog.getTitle());
@@ -85,11 +88,6 @@ public class CommentServiceImpl implements CommentService {
 
         Page<Comment> comments = commentRepo.findByBlogIdAndParentCommentIdIsNullOrderByCreatedAtDesc(blogId, pageable);
 
-        if (comments.isEmpty()) {
-            throw new CommentNotFoundException(
-                    "No top-level comments found for blog id: " + blogId);
-        }
-
         return comments.map(this::mapToDTO);
     }
 
@@ -99,11 +97,6 @@ public class CommentServiceImpl implements CommentService {
 
         List<Comment> comments = commentRepo.findByBlogIdAndParentCommentIdOrderByCreatedAtDesc(blogId,
                 parentCommentId);
-
-        if (comments.isEmpty()) {
-            throw new CommentNotFoundException(
-                    "No comments found for blog id: " + blogId + " and parent comment id: " + parentCommentId);
-        }
 
         return comments.stream()
                 .map(this::mapToDTO)
@@ -117,13 +110,6 @@ public class CommentServiceImpl implements CommentService {
         List<Comment> comments = commentRepo.findByBlogIdAndParentCommentIdAndRepliedToUserIdOrderByCreatedAtDesc(
                 blogId, parentCommentId, replieDTOUserId);
 
-        if (comments.isEmpty()) {
-            throw new CommentNotFoundException(
-                    "No comments found for blog id: " + blogId +
-                            ", parent comment id: " + parentCommentId +
-                            ", replieDTO user id: " + replieDTOUserId);
-        }
-
         return comments.stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -135,7 +121,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepo.findById(commentId)
                 .orElseThrow(() -> new CommentNotFoundException("Comment not found with id: " + commentId));
         
-        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndAuthorId(commentId,ResourceType.COMMENT,userId);
+        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndUserId(commentId,ResourceType.COMMENT,userId);
 
         if(like.isPresent())
         {
@@ -160,11 +146,6 @@ public class CommentServiceImpl implements CommentService {
 
     /* ---------------- PRIVATE HELPERS ---------------- */
 
-    private Comment getCommentById(String commentId) {
-        return commentRepo.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException("Comment not found with id: " + commentId));
-    }
-
     private Blog fetchBlog(String blogId) {
         ApiResponse<Blog> response = blogService.getBlogById(blogId);
         return response.getData();
@@ -175,19 +156,14 @@ public class CommentServiceImpl implements CommentService {
 
         Page<Comment> repliesPage = commentRepo.findByParentCommentIdOrderByCreatedAtAsc(parentCommentId, pageable);
 
-        if (repliesPage.isEmpty()) {
-            throw new CommentNotFoundException(
-                    "No replies found for parent comment id: " + parentCommentId);
-        }
-
         return repliesPage;
     }
 
     public Comment mapToEntity(CommentRequestDTO dto) {
         return Comment.builder()
                 .blogId(dto.getBlogId())
-                .authorId(dto.getAuthorId())
                 .parentCommentId(dto.getParentCommentId())
+                .repliedToUserId(dto.getRepliedToUserId())
                 .content(dto.getContent())
                 .createdAt(Instant.now())
                 .build();
@@ -200,6 +176,7 @@ public class CommentServiceImpl implements CommentService {
                 .authorId(comment.getAuthorId())
                 .content(comment.getContent())
                 .parentCommentId(comment.getParentCommentId())
+                .repliedToUserId(comment.getRepliedToUserId())
                 .likesCount(comment.getLikeCount())
                 .createdAt(comment.getCreatedAt())
                 .build();

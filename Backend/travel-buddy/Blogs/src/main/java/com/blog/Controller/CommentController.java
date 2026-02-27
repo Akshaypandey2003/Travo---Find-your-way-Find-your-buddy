@@ -8,16 +8,22 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.blog.DTO.ApiResponse;
 import com.blog.DTO.CommentRequestDTO;
 import com.blog.DTO.CommentResponseDTO;
 import com.blog.DTO.CommentsPageResponse;
+import com.blog.Exceptions.InvalidRequestException;
 import com.blog.Services.CommentService;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 
 @RestController
 @RequestMapping("/api/v1/comments")
+@Validated
 public class CommentController {
 
     private final CommentService commentService;
@@ -30,9 +36,13 @@ public class CommentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CommentResponseDTO>> addComment(
-            @RequestBody CommentRequestDTO request) {
+            @Valid @RequestBody CommentRequestDTO request,
+            @AuthenticationPrincipal String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new InvalidRequestException("Authenticated user is required");
+        }
 
-        CommentResponseDTO response = commentService.addComment(request);
+        CommentResponseDTO response = commentService.addComment(request, userId);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(true, response, "Comment added successfully"));
@@ -43,8 +53,8 @@ public class CommentController {
     @GetMapping("/blog/{blogId}")
     public ResponseEntity<ApiResponse<CommentsPageResponse<CommentResponseDTO>>> getTopLevelComments(
             @PathVariable String blogId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) int size) {
 
         Pageable pageable = PageRequest.of(page, size);
         Page<CommentResponseDTO> commentsPage =
@@ -66,8 +76,8 @@ public class CommentController {
     @GetMapping("/{parentCommentId}/replies")
     public ResponseEntity<ApiResponse<Page<CommentResponseDTO>>> getReplies(
             @PathVariable String parentCommentId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -99,6 +109,9 @@ public class CommentController {
     public ResponseEntity<ApiResponse<CommentResponseDTO>> likeComment(
             @PathVariable String commentId,
             @AuthenticationPrincipal String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new InvalidRequestException("Authenticated user is required");
+        }
 
         CommentResponseDTO response =
                 commentService.updateCommentLike(commentId, userId);

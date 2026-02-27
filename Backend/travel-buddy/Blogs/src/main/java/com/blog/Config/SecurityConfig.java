@@ -1,9 +1,10 @@
 package com.blog.Config;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,6 +22,9 @@ public class SecurityConfig {
 
     @Autowired
     JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${blog.security.cors.allowed-origins:http://localhost:3000}")
+    private List<String> allowedOrigins;
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,12 +46,12 @@ public class SecurityConfig {
         
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(Collections.singletonList("*"));// Allowed origins
+        config.setAllowedOrigins(allowedOrigins);
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP
                                                                                                      // methods
-        config.setAllowedHeaders(Collections.singletonList("*")); // Allowed headers (* represents all headers)
-        config.setAllowCredentials(true); // Allow credentials (cookies, etc.)
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        config.setAllowCredentials(false);
         config.setExposedHeaders(Arrays.asList("Authorization"));
         config.setMaxAge(3600L); // Cache the preflight response for 1 hour
 

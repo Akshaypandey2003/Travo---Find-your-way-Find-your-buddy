@@ -1,220 +1,153 @@
 package com.blog.UnitTests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
-import com.blog.Config.JwtProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import com.blog.Controller.CommentController;
-import com.blog.DTO.*;
+import com.blog.DTO.ApiResponse;
+import com.blog.DTO.CommentRequestDTO;
+import com.blog.DTO.CommentResponseDTO;
 import com.blog.Entity.Comment;
 import com.blog.Exceptions.CommentNotFoundException;
+import com.blog.Exceptions.InvalidRequestException;
 import com.blog.Services.CommentService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.*;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-@WebMvcTest(CommentController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@SuppressWarnings({"removal"})
+@ExtendWith(MockitoExtension.class)
 class CommentControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private CommentService commentService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private CommentController commentController;
 
-    @MockBean
-    private JwtProvider jwtProvider;
-
-    /* ---------------- HELPERS ---------------- */
-
-    private CommentRequestDTO sampleRequest() {
-        return CommentRequestDTO.builder()
-                .blogId("b1")
-                .authorId("u1")
-                .content("Nice blog!")
-                .build();
+    @BeforeEach
+    void setUp() {
+        commentController = new CommentController(commentService);
     }
 
-    private CommentResponseDTO sampleResponse() {
-        return CommentResponseDTO.builder()
+    @Test
+    void addComment_success_returnsCreated() {
+        CommentRequestDTO request = CommentRequestDTO.builder()
+                .blogId("b1")
+                .content("Nice post")
+                .build();
+
+        CommentResponseDTO dto = CommentResponseDTO.builder()
                 .commentId("c1")
                 .blogId("b1")
                 .authorId("u1")
-                .content("Nice blog!")
-                .likesCount(0)
-                .edited(false)
-                .createdAt(LocalDateTime.now())
+                .content("Nice post")
+                .createdAt(Instant.now())
                 .build();
-    }
 
-    /* ---------------- CREATE COMMENT ---------------- */
+        when(commentService.addComment(request, "u1")).thenReturn(dto);
 
-    @Test
-    void shouldAddComment() throws Exception {
+        ResponseEntity<ApiResponse<CommentResponseDTO>> response = commentController.addComment(request, "u1");
 
-        Mockito.when(commentService.addComment(any(CommentRequestDTO.class)))
-                .thenReturn(sampleResponse());
-
-        mockMvc.perform(post("/comments")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(sampleRequest())))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.content").value("Nice blog!"))
-                .andExpect(jsonPath("$.message").value("Comment added successfully"));
-    }
-
-    /* ---------------- UPDATE COMMENT ---------------- */
-
-    @Test
-    void shouldUpdateComment() throws Exception {
-
-        CommentResponseDTO updated = sampleResponse();
-        updated.setContent("Updated content");
-        updated.setEdited(true);
-
-        Mockito.when(commentService.updateComment(eq("c1"), any(CommentRequestDTO.class)))
-                .thenReturn(updated);
-
-        mockMvc.perform(put("/comments/c1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(sampleRequest())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content").value("Updated content"))
-                .andExpect(jsonPath("$.data.edited").value(true));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData().getCommentId()).isEqualTo("c1");
     }
 
     @Test
-    void shouldReturn404WhenUpdatingNonExistingComment() throws Exception {
+    void addComment_throwsInvalidRequest_whenUserMissing() {
+        CommentRequestDTO request = CommentRequestDTO.builder()
+                .blogId("b1")
+                .content("x")
+                .build();
 
-        Mockito.when(commentService.updateComment(eq("invalid"), any()))
-                .thenThrow(new CommentNotFoundException("Comment not found"));
-
-        mockMvc.perform(put("/comments/invalid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(sampleRequest())))
-                .andExpect(status().isNotFound());
-    }
-
-    /* ---------------- GET TOP LEVEL COMMENTS ---------------- */
-
-    @Test
-    void shouldGetTopLevelCommentsWithPagination() throws Exception {
-
-        Page<CommentResponseDTO> page = new PageImpl<>(
-                List.of(sampleResponse()),
-                PageRequest.of(0, 5),
-                1);
-
-        Mockito.when(commentService.getTopLevelCommentsByBlogId(eq("b1"), any(Pageable.class)))
-                .thenReturn(page);
-
-        mockMvc.perform(get("/comments/blog/b1")
-                .param("page", "0")
-                .param("size", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.comments.length()").value(1))
-                .andExpect(jsonPath("$.data.currentPage").value(0))
-                .andExpect(jsonPath("$.data.totalPages").value(1))
-                .andExpect(jsonPath("$.data.lastPage").value(true));
+        assertThatThrownBy(() -> commentController.addComment(request, " "))
+                .isInstanceOf(InvalidRequestException.class);
     }
 
     @Test
-    void shouldReturn404WhenNoTopLevelComments() throws Exception {
+    void getTopLevelComments_success_returnsWrappedPage() {
+        CommentResponseDTO dto = CommentResponseDTO.builder()
+                .commentId("c1")
+                .blogId("b1")
+                .authorId("u1")
+                .content("x")
+                .createdAt(Instant.now())
+                .build();
 
-        Mockito.when(commentService.getTopLevelCommentsByBlogId(eq("b1"), any()))
-                .thenThrow(new CommentNotFoundException("No comments"));
+        Page<CommentResponseDTO> page = new PageImpl<>(List.of(dto), PageRequest.of(0, 5), 1);
+        when(commentService.getTopLevelCommentsByBlogId("b1", PageRequest.of(0, 5))).thenReturn(page);
 
-        mockMvc.perform(get("/comments/blog/b1"))
-                .andExpect(status().isNotFound());
-    }
+        ResponseEntity<ApiResponse<com.blog.DTO.CommentsPageResponse<CommentResponseDTO>>> response =
+                commentController.getTopLevelComments("b1", 0, 5);
 
-    /* ---------------- GET REPLIES (PAGINATED) ---------------- */
-
-    @Test
-    void shouldGetReplies() throws Exception {
-
-        Comment comment = new Comment();
-        Page<Comment> page = new PageImpl<>(List.of(comment));
-
-        Mockito.when(commentService.getAllReplies(eq("p1"), any(Pageable.class)))
-                .thenReturn(page);
-
-        Mockito.when(commentService.mapToDTO(any(Comment.class)))
-                .thenReturn(sampleResponse());
-
-        mockMvc.perform(get("/comments/p1/replies")
-                .param("page", "0")
-                .param("size", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content.length()").value(1));
-    }
-
-    /* ---------------- FILTERED REPLIES ---------------- */
-
-    @Test
-    void shouldGetRepliesByParent() throws Exception {
-
-        Mockito.when(commentService.getCommentsByBlogIdAndParentCommentId("b1", "p1"))
-                .thenReturn(List.of(sampleResponse()));
-
-        mockMvc.perform(get("/comments/blog/b1/parent/p1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(1));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData().getComments()).hasSize(1);
     }
 
     @Test
-    void shouldReturn404WhenNoRepliesByParent() throws Exception {
+    void getReplies_success_returnsMappedPage() {
+        Comment comment = Comment.builder().id("c1").blogId("b1").authorId("u1").content("r").build();
+        CommentResponseDTO dto = CommentResponseDTO.builder()
+                .commentId("c1")
+                .blogId("b1")
+                .authorId("u1")
+                .content("r")
+                .createdAt(Instant.now())
+                .build();
 
-        Mockito.when(commentService.getCommentsByBlogIdAndParentCommentId("b1", "p1"))
-                .thenThrow(new CommentNotFoundException("No replies"));
+        when(commentService.getAllReplies("p1", PageRequest.of(0, 5)))
+                .thenReturn(new PageImpl<>(List.of(comment), PageRequest.of(0, 5), 1));
+        when(commentService.mapToDTO(comment)).thenReturn(dto);
 
-        mockMvc.perform(get("/comments/blog/b1/parent/p1"))
-                .andExpect(status().isNotFound());
-    }
+        ResponseEntity<ApiResponse<Page<CommentResponseDTO>>> response =
+                commentController.getReplies("p1", 0, 5);
 
-    /* ---------------- LIKE / UNLIKE ---------------- */
-
-    @Test
-    void shouldLikeComment() throws Exception {
-
-        CommentResponseDTO liked = sampleResponse();
-        liked.setLikesCount(1);
-
-        Mockito.when(commentService.updateCommentLike("c1", "u9"))
-                .thenReturn(liked);
-
-        mockMvc.perform(put("/comments/c1/like/u9"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.likesCount").value(1))
-                .andExpect(jsonPath("$.message").value("Like status updated"));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData().getContent()).hasSize(1);
     }
 
     @Test
-    void shouldReturn404WhenLikingNonExistingComment() throws Exception {
+    void likeComment_success_andNotFound() {
+        CommentResponseDTO dto = CommentResponseDTO.builder()
+                .commentId("c1")
+                .likesCount(1)
+                .createdAt(Instant.now())
+                .build();
+        when(commentService.updateCommentLike("c1", "u1")).thenReturn(dto);
+        when(commentService.updateCommentLike("missing", "u1"))
+                .thenThrow(new CommentNotFoundException("not found"));
 
-        Mockito.when(commentService.updateCommentLike("invalid", "u9"))
-                .thenThrow(new CommentNotFoundException("Comment not found"));
+        ResponseEntity<ApiResponse<CommentResponseDTO>> success = commentController.likeComment("c1", "u1");
+        assertThat(success.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(success.getBody().getData().getLikesCount()).isEqualTo(1);
 
-        mockMvc.perform(put("/comments/invalid/like/u9"))
-                .andExpect(status().isNotFound());
+        assertThatThrownBy(() -> commentController.likeComment("missing", "u1"))
+                .isInstanceOf(CommentNotFoundException.class);
+    }
+
+    @Test
+    void getRepliesByParent_success() {
+        CommentResponseDTO dto = CommentResponseDTO.builder().commentId("c1").build();
+        when(commentService.getCommentsByBlogIdAndParentCommentId(eq("b1"), eq("p1")))
+                .thenReturn(List.of(dto));
+
+        ResponseEntity<ApiResponse<List<CommentResponseDTO>>> response =
+                commentController.getRepliesByParent("b1", "p1");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData()).hasSize(1);
     }
 }

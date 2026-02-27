@@ -1,12 +1,18 @@
 package com.user.UnitTests.ControllerTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.events.Repositories.FailedNotificationRepository;
 import com.user.Config.JwtProvider;
 import com.user.Controller.UserController;
 import com.user.DTO.PageResponse;
 import com.user.DTO.UpdateUserRequest;
 import com.user.DTO.UserResponse;
 import com.user.Exceptions.UserNotFoundException;
+import com.user.Repository.CloseFriendsRepo;
+import com.user.Repository.ConnectionRepo;
+import com.user.Repository.PasswordResetTokenRepo;
+import com.user.Repository.ProcessedFeedbackEventRepo;
+import com.user.Repository.UserRepo;
 import com.user.Service.UserService;
 
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +56,24 @@ public class UserControllerTest {
     
     @MockBean
     private JwtProvider jwtProvider;
+
+    @MockBean
+    private UserRepo userRepo;
+
+    @MockBean
+    private ConnectionRepo connectionRepo;
+
+    @MockBean
+    private CloseFriendsRepo closeFriendsRepo;
+
+    @MockBean
+    private PasswordResetTokenRepo passwordResetTokenRepo;
+
+    @MockBean
+    private ProcessedFeedbackEventRepo processedFeedbackEventRepo;
+
+    @MockBean
+    private FailedNotificationRepository failedNotificationRepository;
 
     // -----------------------------------------
     // updateUser SUCCESS

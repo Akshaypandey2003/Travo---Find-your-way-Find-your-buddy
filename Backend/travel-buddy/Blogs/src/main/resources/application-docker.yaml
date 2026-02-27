@@ -22,11 +22,6 @@ spring:
        maxAttempts: 6
        multiplier: 1.5
 
-  security:
-   user:
-    name: ${APP_BASIC_AUTH_USER:admin}
-    password: ${APP_BASIC_AUTH_PASSWORD:password}
-
   servlet:
     multipart:
       max-file-size: 10MB
@@ -38,4 +33,9 @@ eureka:
       defaultZone: http://service-registry:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+
+blog:
+  security:
+    cors:
+      allowed-origins: ${BLOG_ALLOWED_ORIGINS:https://travelbuddy.app}
 

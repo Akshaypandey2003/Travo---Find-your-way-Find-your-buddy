@@ -1,193 +1,182 @@
 package com.blog.IntegrationTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
-import java.time.Duration;
-import java.util.*;
+import java.util.List;
 
-import org.apache.kafka.clients.consumer.*;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.blog.Config.JwtProvider;
+import com.blog.Client.UserServiceClient;
+import com.blog.DTO.CommentRequestDTO;
+import com.blog.DTO.CommentResponseDTO;
+import com.blog.DTO.CreateBlogRequest;
+import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
-import com.blog.Entity.Comment;
 import com.blog.Repositories.BlogRepo;
 import com.blog.Repositories.CommentRepository;
+import com.blog.Repositories.LikeRepository;
 import com.blog.Services.CloudinaryService;
-import com.cloudinary.Cloudinary;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.blog.Services.EventPublisher;
+import com.blog.Services.NotificationProducer;
+import com.blog.ServicesImpl.BlogServiceImpl;
+import com.blog.ServicesImpl.CommentServiceImpl;
 
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc(addFilters = false)
-@EmbeddedKafka(partitions = 1, topics = {
-        "notification-events" }, bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-@ActiveProfiles("test")
-@SuppressWarnings({ "unused", "removal" })
+@DataMongoTest
+@Testcontainers(disabledWithoutDocker = true)
 class BlogIntegrationTest {
-
-    @MockBean
-    private Cloudinary cloudinary;
-
-    @MockBean
-    private CloudinaryService cloudinaryService;
 
     @Container
     static MongoDBContainer mongo = new MongoDBContainer("mongo:7.0");
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private BlogRepo blogRepo;
-
-    @Autowired
-    private CommentRepository commentRepo;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private JwtProvider jwtProvider;
-
     @DynamicPropertySource
-    static void mongoProps(DynamicPropertyRegistry registry) {
+    static void registerMongo(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
     }
 
-    // -------------------- BLOG CREATION --------------------
-    @Test
-    void createBlog_shouldPersistAndSendKafkaEvent() throws Exception {
+    @Autowired
+    private BlogRepo blogRepo;
+    @Autowired
+    private CommentRepository commentRepo;
+    @Autowired
+    private LikeRepository likeRepo;
 
-        Blog blog = new Blog();
-        blog.setBlogTitle("Spring Boot Integration Test");
-        blog.setBlogContent("Real DB + Kafka test");
-        blog.setBlogCategory("TECH");
-        blog.setBlogAuthorId("user-1");
+    private BlogServiceImpl blogService;
+    private CommentServiceImpl commentService;
 
-        mockMvc.perform(post("/blog/create-blog")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(blog)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.blogTitle").value("Spring Boot Integration Test"));
+    private CloudinaryService cloudinaryService;
+    private NotificationProducer notificationProducer;
+    private UserServiceClient userServiceClient;
+    private EventPublisher eventPublisher;
 
-        // DB assertion
-        assert blogRepo.findAll().size() == 1;
+    @BeforeEach
+    void setUp() throws Exception {
+        cloudinaryService = Mockito.mock(CloudinaryService.class);
+        notificationProducer = Mockito.mock(NotificationProducer.class);
+        userServiceClient = Mockito.mock(UserServiceClient.class);
+        eventPublisher = Mockito.mock(EventPublisher.class);
 
-        // Kafka assertion
-        assertKafkaEventPublished();
+        doNothing().when(eventPublisher).publishBlogCreated(any(Blog.class));
+        doNothing().when(eventPublisher).publishBlogDeleted(anyString(), anyString());
+        doNothing().when(notificationProducer).postBlogNotification(anyString(), anyString(), anyString(), anyString());
+        doNothing().when(notificationProducer).sendCommentNotification(anyString(), anyString(), anyString(), anyString());
+        doNothing().when(cloudinaryService).deleteImage(anyString());
+        when(userServiceClient.getFriendsByUser(anyString())).thenReturn(List.of("f1", "f2"));
+
+        blogService = new BlogServiceImpl(
+                blogRepo,
+                cloudinaryService,
+                notificationProducer,
+                userServiceClient,
+                likeRepo,
+                commentRepo,
+                eventPublisher,
+                100);
+
+        commentService = new CommentServiceImpl(
+                commentRepo,
+                blogService,
+                likeRepo,
+                notificationProducer);
     }
 
-    // -------------------- LIKE BLOG --------------------
-    @Test
-    void likeBlog_shouldUpdateLikesAndSendEvent() throws Exception {
-
-        Blog blog = new Blog();
-        blog.setBlogTitle("Kafka Blog");
-        blog.setBlogAuthorId("author-1");
-        blog = blogRepo.save(blog);
-
-        mockMvc.perform(post("/blog/like-blog/" + blog.getBlogId() + "/user-2"))
-                .andExpect(status().isOk());
-
-        Blog updated = blogRepo.findById(blog.getBlogId()).get();
-        assert updated.getBlogLikes().contains("user-2");
-
-        assertKafkaEventPublished();
+    @AfterEach
+    void cleanup() {
+        likeRepo.deleteAll();
+        commentRepo.deleteAll();
+        blogRepo.deleteAll();
     }
 
-    // -------------------- ADD COMMENT --------------------
     @Test
-    void addComment_shouldPersistAndSendKafkaEvent() throws Exception {
+    void createAndReadBlog_success() {
+        CreateBlogRequest req = CreateBlogRequest.builder()
+                .title("Integration Title")
+                .content("Integration Content")
+                .category("Tech")
+                .authorName("Author")
+                .build();
 
-        Blog blog = new Blog();
-        blog.setBlogTitle("Comment Blog");
-        blog.setBlogAuthorId("author-1");
-        blog = blogRepo.save(blog);
+        Blog created = blogService.createBlog(req, "author-1").getData();
+        Blog fetched = blogService.getBlogById(created.getId()).getData();
 
-        Comment comment = new Comment();
-        comment.setBlogId(blog.getBlogId());
-        comment.setAuthorId("user-2");
-        comment.setContent("Nice post!");
-
-        mockMvc.perform(post("/comments")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(comment)))
-                .andExpect(status().isCreated());
-
-        assert commentRepo.findAll().size() == 1;
-        assertKafkaEventPublished();
+        assertThat(fetched.getTitle()).isEqualTo("Integration Title");
+        assertThat(fetched.getAuthorId()).isEqualTo("author-1");
     }
 
-    // -------------------- PAGINATED COMMENTS --------------------
     @Test
-    void getComments_shouldReturnPaginatedResponse() throws Exception {
+    void likeBlog_toggle_updatesLikeCount() {
+        Blog blog = blogService.createBlog(CreateBlogRequest.builder()
+                .title("Likeable")
+                .content("x")
+                .category("Tech")
+                .build(), "owner").getData();
 
-        Blog blog = new Blog();
-        blog.setBlogTitle("Pagination Blog");
-        blog.setBlogAuthorId("author-1");
-        blog = blogRepo.save(blog);
+        Blog first = blogService.likeBlog(blog.getId(), "u1").getData();
+        assertThat(first.getLikeCount()).isEqualTo(1);
 
-        Comment comment = new Comment();
-        comment.setBlogId(blog.getBlogId());
-        comment.setAuthorId("user-1");
-        comment.setContent("Top comment");
-        commentRepo.save(comment);
-
-        mockMvc.perform(get("/comments/blog/" + blog.getBlogId())
-                .param("page", "0")
-                .param("size", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.comments.length()").value(1))
-                .andExpect(jsonPath("$.data.lastPage").value(true))
-                .andExpect(jsonPath("$.data.currentPage").value(0))
-                .andExpect(jsonPath("$.data.totalPages").value(1));
+        Blog second = blogService.likeBlog(blog.getId(), "u1").getData();
+        assertThat(second.getLikeCount()).isZero();
     }
 
-    // -------------------- DELETE BLOG --------------------
     @Test
-    void deleteBlog_shouldRemoveFromDB() throws Exception {
+    void addCommentAndQueryTopLevel_success() {
+        Blog blog = blogService.createBlog(CreateBlogRequest.builder()
+                .title("Commentable")
+                .content("x")
+                .category("Tech")
+                .build(), "owner").getData();
 
-        Blog blog = new Blog();
-        blog.setBlogTitle("Delete Me");
-        blog = blogRepo.save(blog);
+        commentService.addComment(CommentRequestDTO.builder()
+                .blogId(blog.getId())
+                .content("first")
+                .build(), "user-2");
 
-        mockMvc.perform(delete("/blog/delete-blog/" + blog.getBlogId()))
-                .andExpect(status().isOk());
+        Page<CommentResponseDTO> page =
+                commentService.getTopLevelCommentsByBlogId(blog.getId(), PageRequest.of(0, 10));
 
-        assertThat(blogRepo.findById(blog.getBlogId())).isEmpty();
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getContent().get(0).getContent()).isEqualTo("first");
     }
 
-    // -------------------- KAFKA ASSERTION HELPER --------------------
-    private void assertKafkaEventPublished() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                System.getProperty("spring.kafka.bootstrap-servers"));
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "blog-test-group");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    @Test
+    void updateAndDeleteBlog_cascadesToCommentsAndLikes() {
+        Blog blog = blogService.createBlog(CreateBlogRequest.builder()
+                .title("ToUpdate")
+                .content("x")
+                .category("Tech")
+                .build(), "owner").getData();
 
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
-            consumer.subscribe(Collections.singleton("notification-events"));
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
-            assert records.count() > 0;
-        }
+        commentService.addComment(CommentRequestDTO.builder()
+                .blogId(blog.getId())
+                .content("c1")
+                .build(), "u2");
+        blogService.likeBlog(blog.getId(), "u2");
+
+        UpdateBlogRequest update = new UpdateBlogRequest();
+        update.setTitle("Updated");
+        blogService.updateBlog(blog.getId(), update, "owner");
+        assertThat(blogService.getBlogById(blog.getId()).getData().getTitle()).isEqualTo("Updated");
+
+        blogService.deleteBlog(blog.getId(), "owner");
+        assertThat(blogRepo.findById(blog.getId())).isEmpty();
+        assertThat(commentRepo.findByBlogIdAndParentCommentIdIsNullOrderByCreatedAtDesc(
+                blog.getId(), PageRequest.of(0, 10)).getTotalElements()).isZero();
+        assertThat(likeRepo.countByResourceIdAndResourceType(
+                blog.getId(), com.blog.Enum.ResourceType.BLOG)).isZero();
     }
 }

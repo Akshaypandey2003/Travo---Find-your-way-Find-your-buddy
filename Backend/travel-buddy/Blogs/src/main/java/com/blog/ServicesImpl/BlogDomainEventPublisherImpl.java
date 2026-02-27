@@ -1,5 +1,7 @@
 package com.blog.ServicesImpl;
 
+import java.time.Instant;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -111,8 +113,8 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
                 .key(key)
                 .event(event)
                 .retryCount(0)
-                .createdAt(System.currentTimeMillis())
-                .lastRetryAt(0L)
+                .createdAt(Instant.now())
+                .lastRetryAt(null)
                 .failureReason(ex.getMessage())
                 .build();
         failedNotificationRepository.save(failed);

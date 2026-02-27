@@ -1,242 +1,204 @@
 package com.blog.UnitTests;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import com.blog.Client.UserServiceClient;
 import com.blog.DTO.ApiResponse;
+import com.blog.DTO.CreateBlogRequest;
+import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
+import com.blog.Entity.Like;
+import com.blog.Enum.ResourceType;
 import com.blog.Exceptions.BlogNotFoundException;
+import com.blog.Exceptions.UnauthorizedAccessException;
 import com.blog.Repositories.BlogRepo;
+import com.blog.Repositories.CommentRepository;
+import com.blog.Repositories.LikeRepository;
 import com.blog.Services.CloudinaryService;
+import com.blog.Services.EventPublisher;
 import com.blog.Services.NotificationProducer;
 import com.blog.ServicesImpl.BlogServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class BlogServiceTest {
 
-    @InjectMocks
-    private BlogServiceImpl blogService;
-
     @Mock
     private BlogRepo blogRepo;
-
     @Mock
     private CloudinaryService cloudinaryService;
-
     @Mock
     private NotificationProducer notificationProducer;
-
     @Mock
     private UserServiceClient userServiceClient;
+    @Mock
+    private LikeRepository likeRepo;
+    @Mock
+    private CommentRepository commentRepo;
+    @Mock
+    private EventPublisher eventPublisher;
 
-    // ---------- CREATE BLOG ----------
+    private BlogServiceImpl blogService;
+
+    @BeforeEach
+    void setUp() {
+        blogService = new BlogServiceImpl(
+                blogRepo,
+                cloudinaryService,
+                notificationProducer,
+                userServiceClient,
+                likeRepo,
+                commentRepo,
+                eventPublisher,
+                50);
+    }
 
     @Test
-    void createBlog_success_shouldNotifyFriends() {
-        Blog blog = Blog.builder()
-                .blogAuthorId("user1")
-                .blogTitle("Test Blog")
+    void createBlog_success_savesNotifiesAndPublishesEvent() {
+        CreateBlogRequest request = CreateBlogRequest.builder()
+                .title("Title")
+                .content("Content")
+                .category("Tech")
+                .authorName("Author")
                 .build();
 
-        when(blogRepo.save(any(Blog.class))).thenReturn(blog);
-        when(userServiceClient.getFriendsByUser("user1"))
-                .thenReturn(List.of("f1", "f2", "f2")); // duplicate
+        Blog persisted = Blog.builder()
+                .id("blog-1")
+                .title("Title")
+                .authorId("author-1")
+                .build();
 
-        ApiResponse<Blog> saved = blogService.createBlog(blog);
+        when(blogRepo.save(any(Blog.class))).thenReturn(persisted);
+        when(userServiceClient.getFriendsByUser("author-1"))
+                .thenReturn(List.of("f1", "f1", "f2"));
 
-        assertThat(saved).isNotNull();
+        ApiResponse<Blog> response = blogService.createBlog(request, "author-1");
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getData().getId()).isEqualTo("blog-1");
         verify(notificationProducer, times(2))
-                .postBlogNotification(eq("user1"), anyString(), any(), eq("Test Blog"));
-    }
-
-    // ---------- GET BLOG BY ID ----------
-
-    @Test
-    void getBlogById_success() {
-        Blog blog = new Blog();
-        when(blogRepo.findById("1")).thenReturn(Optional.of(blog));
-
-        ApiResponse<Blog> result = blogService.getBlogById("1");
-
-        assertThat(result.getData()).isSameAs(blog);
+                .postBlogNotification(eq("author-1"), any(String.class), eq("blog-1"), eq("Title"));
+        verify(eventPublisher).publishBlogCreated(persisted);
     }
 
     @Test
-    void getBlogById_notFound() {
-        when(blogRepo.findById("1")).thenReturn(Optional.empty());
+    void updateBlog_throwsForbidden_whenAuthorMismatch() {
+        Blog existing = Blog.builder().id("b1").authorId("owner").build();
+        when(blogRepo.findById("b1")).thenReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> blogService.getBlogById("1"))
-                .isInstanceOf(BlogNotFoundException.class);
-    }
-
-    // ---------- UPDATE BLOG ----------
-
-    @Test
-    void updateBlog_success_withImageDeletion() throws Exception {
-        Blog existing = Blog.builder()
-                .blogImages(List.of("old1", "old2"))
-                .cloudinaryImagePublicIds(List.of("pid1", "pid2"))
-                .build();
-
-        Blog update = Blog.builder()
-                .blogImages(List.of("old2")) // old1 removed
-                .cloudinaryImagePublicIds(List.of("pid2"))
-                .build();
-
-        when(blogRepo.findById("1")).thenReturn(Optional.of(existing));
-        when(blogRepo.save(any())).thenReturn(existing);
-
-        ApiResponse<Blog> result = blogService.updateBlog("1", update);
-
-        verify(cloudinaryService).deleteImage("pid1");
-        assertThat(result).isNotNull();
+        assertThatThrownBy(() -> blogService.updateBlog("b1", new UpdateBlogRequest(), "other"))
+                .isInstanceOf(UnauthorizedAccessException.class);
     }
 
     @Test
-    void updateBlog_notFound() {
-        when(blogRepo.findById("1")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> blogService.updateBlog("1", new Blog()))
-                .isInstanceOf(BlogNotFoundException.class);
-    }
-
-    // ---------- DELETE BLOG ----------
-
-    @Test
-    void deleteBlog_success_shouldDeleteImages() throws Exception {
+    void deleteBlog_success_deletesResourcesAndEmitsEvent() throws Exception {
         Blog blog = Blog.builder()
-                .cloudinaryImagePublicIds(List.of("pid1", "pid2"))
+                .id("b1")
+                .authorId("owner")
+                .cloudinaryPublicIds(List.of("p1"))
                 .build();
+        when(blogRepo.findById("b1")).thenReturn(Optional.of(blog));
 
-        when(blogRepo.findById("1")).thenReturn(Optional.of(blog));
+        blogService.deleteBlog("b1", "owner");
 
-        blogService.deleteBlog("1");
-
-        verify(cloudinaryService).deleteImage("pid1");
-        verify(cloudinaryService).deleteImage("pid2");
+        verify(cloudinaryService).deleteImage("p1");
+        verify(likeRepo).deleteByResourceIdAndResourceType("b1", ResourceType.BLOG);
+        verify(commentRepo).deleteByBlogId("b1");
+        verify(eventPublisher).publishBlogDeleted("b1", "owner");
         verify(blogRepo).delete(blog);
     }
 
     @Test
-    void deleteBlog_notFound() {
-        when(blogRepo.findById("1")).thenReturn(Optional.empty());
+    void deleteBlog_throwsNotFound_whenMissing() {
+        when(blogRepo.findById("missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> blogService.deleteBlog("1"))
+        assertThatThrownBy(() -> blogService.deleteBlog("missing", "owner"))
                 .isInstanceOf(BlogNotFoundException.class);
     }
 
-    // ---------- GET ALL BLOGS ----------
-
     @Test
-    void getAllBlogs_success() {
-        when(blogRepo.findAll()).thenReturn(List.of(new Blog()));
+    void likeBlog_togglesLikeAndUpdatesCount() {
+        Blog blog = Blog.builder().id("b1").build();
+        Like existingLike = Like.builder().id("l1").build();
 
-        assertThat(blogService.getAllBlogs().getData()).hasSize(1);
+        when(blogRepo.findById("b1")).thenReturn(Optional.of(blog));
+        when(likeRepo.findByResourceIdAndResourceTypeAndUserId("b1", ResourceType.BLOG, "u1"))
+                .thenReturn(Optional.of(existingLike))
+                .thenReturn(Optional.empty());
+        when(likeRepo.countByResourceIdAndResourceType("b1", ResourceType.BLOG))
+                .thenReturn(0)
+                .thenReturn(1);
+        when(blogRepo.save(any(Blog.class))).thenAnswer(i -> i.getArgument(0));
+
+        ApiResponse<Blog> first = blogService.likeBlog("b1", "u1");
+        assertThat(first.getData().getLikeCount()).isZero();
+
+        ApiResponse<Blog> second = blogService.likeBlog("b1", "u1");
+        assertThat(second.getData().getLikeCount()).isEqualTo(1);
+        verify(likeRepo).delete(existingLike);
+        verify(likeRepo).save(any(Like.class));
     }
 
     @Test
-    void getAllBlogs_empty() {
-        when(blogRepo.findAll()).thenReturn(List.of());
+    void getBlogsByDateRange_throwsBadRequest_whenInvalidRange() {
+        Instant now = Instant.now();
 
-        assertThatThrownBy(() -> blogService.getAllBlogs())
-                .isInstanceOf(BlogNotFoundException.class);
+        assertThatThrownBy(() -> blogService.getBlogsByDateRange(now, now.minusSeconds(1)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    // ---------- LIKE BLOG ----------
+    @Test
+    void getAllBlogs_capsPageSizeToConfiguredMaximum() {
+        Page<Blog> page = new PageImpl<>(List.of(Blog.builder().id("b1").build()));
+        when(blogRepo.findAll(any(Pageable.class))).thenReturn(page);
+
+        ApiResponse<Page<Blog>> response = blogService.getAllBlogs(0, 999);
+
+        assertThat(response.isSuccess()).isTrue();
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(blogRepo).findAll(pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(50);
+    }
 
     @Test
-    void likeBlog_addLike_shouldNotify() {
-        Blog blog = Blog.builder()
-                .blogAuthorId("author")
-                .blogLikes(new ArrayList<>())
+    void updateBlog_ignoresNullImageUpdates() throws Exception {
+        Blog existing = Blog.builder()
+                .id("b1")
+                .authorId("owner")
+                .imageUrls(List.of("u1"))
+                .cloudinaryPublicIds(List.of("p1"))
                 .build();
+        when(blogRepo.findById("b1")).thenReturn(Optional.of(existing));
+        when(blogRepo.save(any(Blog.class))).thenAnswer(i -> i.getArgument(0));
 
-        when(blogRepo.findById("1")).thenReturn(Optional.of(blog));
-        when(blogRepo.save(any())).thenReturn(blog);
+        UpdateBlogRequest request = new UpdateBlogRequest();
+        request.setTitle("Updated");
 
-        blogService.likeBlog("1", "user");
+        ApiResponse<Blog> response = blogService.updateBlog("b1", request, "owner");
 
-        assertThat(blog.getBlogLikes()).contains("user");
-        verify(notificationProducer).likeBlogNotification(
-                "user", "author", blog.getBlogId(), blog.getBlogTitle());
+        assertThat(response.getData().getTitle()).isEqualTo("Updated");
+        assertThat(response.getData().getImageUrls()).containsExactly("u1");
+        verify(cloudinaryService, never()).deleteImage(any(String.class));
     }
 
-    @Test
-    void likeBlog_removeLike() {
-        Blog blog = Blog.builder()
-                .blogLikes(new ArrayList<>(List.of("user")))
-                .build();
-
-        when(blogRepo.findById("1")).thenReturn(Optional.of(blog));
-        when(blogRepo.save(any())).thenReturn(blog);
-
-        blogService.likeBlog("1", "user");
-
-        assertThat(blog.getBlogLikes()).doesNotContain("user");
-    }
-
-    // ---------- UPDATE VIEWS ----------
-
-    @Test
-    void updateBlogViews_success() {
-        Blog blog = new Blog();
-
-        when(blogRepo.findById("1")).thenReturn(Optional.of(blog));
-        when(blogRepo.save(any())).thenReturn(blog);
-
-        blogService.updateBlogViews("1", "user");
-
-        assertThat(blog.getBlogViews()).contains("user");
-    }
-
-    // ---------- FILTER METHODS ----------
-
-    @Test
-    void getBlogsByCategory_success() {
-        when(blogRepo.findByBlogCategory("tech"))
-                .thenReturn(List.of(new Blog()));
-
-        assertThat(blogService.getBlogsByCategory("tech").getData()).hasSize(1);
-    }
-
-    @Test
-    void getBlogsByCategory_empty() {
-        when(blogRepo.findByBlogCategory("tech"))
-                .thenReturn(List.of());
-
-        assertThatThrownBy(() -> blogService.getBlogsByCategory("tech"))
-                .isInstanceOf(BlogNotFoundException.class);
-    }
-
-    @Test
-    void getBlogsByAuthor_empty() {
-        when(blogRepo.findByBlogAuthorId("user"))
-                .thenReturn(List.of());
-
-        assertThatThrownBy(() -> blogService.getBlogsByAuthor("user"))
-                .isInstanceOf(BlogNotFoundException.class);
-    }
-
-    @Test
-    void getBlogsByKeyword_success() {
-        Blog blog = Blog.builder()
-                .blogTitle("Spring Boot")
-                .blogContent("Mockito testing")
-                .postedDate(LocalDateTime.now())
-                .build();
-
-        when(blogRepo.findAll()).thenReturn(List.of(blog));
-
-        assertThat(blogService.getBlogsByKeyword("spring").getData()).hasSize(1);
-    }
 }

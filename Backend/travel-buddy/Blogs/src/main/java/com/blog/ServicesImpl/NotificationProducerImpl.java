@@ -1,5 +1,6 @@
 package com.blog.ServicesImpl;
 
+import java.time.Instant;
 import java.util.Map;
 
 import org.springframework.kafka.core.KafkaTemplate;
@@ -163,8 +164,8 @@ public class NotificationProducerImpl implements NotificationProducer {
                 .key(key)
                 .event(event)
                 .retryCount(0)
-                .createdAt(System.currentTimeMillis())
-                .lastRetryAt(0L)
+                .createdAt(Instant.now())
+                .lastRetryAt(null)
                 .failureReason(ex.getMessage())
                 .build();
         failedNotificationRepo.save(failed);

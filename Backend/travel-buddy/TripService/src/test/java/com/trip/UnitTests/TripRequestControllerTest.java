@@ -23,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.events.Repositories.FailedNotificationRepository;
 import com.trip.Config.JwtAuthenticationFilter;
 import com.trip.Config.JwtProvider;
 import com.trip.Config.SecurityConfig;
@@ -33,6 +34,8 @@ import com.trip.DTO.TripRequestDto;
 import com.trip.Entity.Trip;
 import com.trip.Entity.Trip.TripType;
 import com.trip.Entity.TripRequest.RequestStatus;
+import com.trip.Repositories.TripRequestRepository;
+import com.trip.Repositories.TripRespository;
 import com.trip.Services.TripServices;
 
 @WebMvcTest(controllers = TripRequestController.class)
@@ -49,6 +52,15 @@ class TripRequestControllerTest {
 
     @MockBean
     private JwtProvider jwtProvider;
+
+    @MockBean
+    private TripRespository tripRespository;
+
+    @MockBean
+    private TripRequestRepository tripRequestRepository;
+
+    @MockBean
+    private FailedNotificationRepository failedNotificationRepository;
 
     @BeforeEach
     void setupJwt() {

@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.events.Repositories.FailedNotificationRepository;
 import com.feedback.Config.JwtAuthenticationFilter;
 import com.feedback.Config.JwtProvider;
 import com.feedback.Controller.FeedbackController;
@@ -33,6 +34,8 @@ import com.feedback.DTO.SubmitAppFeedbackRequest;
 import com.feedback.DTO.SubmitCompanionReviewRequest;
 import com.feedback.DTO.SuggestedCompanionResponse;
 import com.feedback.Exceptions.FeedbackAlreadySubmittedException;
+import com.feedback.Repository.AppFeedbackRepo;
+import com.feedback.Repository.CompanionReviewRepo;
 import com.feedback.Service.FeedbackService;
 
 @WebMvcTest(FeedbackController.class)
@@ -54,6 +57,15 @@ class FeedbackControllerTest {
 
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockBean
+    private CompanionReviewRepo companionReviewRepo;
+
+    @MockBean
+    private AppFeedbackRepo appFeedbackRepo;
+
+    @MockBean
+    private FailedNotificationRepository failedNotificationRepository;
 
     @Test
     void submitCompanionReview_shouldReturnCreated() throws Exception {

@@ -41,6 +41,9 @@ resilience4j:
 blog:
   pagination:
     max-page-size: 100
+  security:
+    cors:
+      allowed-origins: ${BLOG_ALLOWED_ORIGINS:http://localhost:3000}
   notifications:
     retry:
       fixed-delay-ms: 30000

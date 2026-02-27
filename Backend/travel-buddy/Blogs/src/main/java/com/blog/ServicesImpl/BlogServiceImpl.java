@@ -2,11 +2,15 @@ package com.blog.ServicesImpl;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +37,7 @@ import com.blog.Services.NotificationProducer;
 
 @Service
 public class BlogServiceImpl implements BlogService {
+    private static final Logger logger = LoggerFactory.getLogger(BlogServiceImpl.class);
 
     private final BlogRepo blogRepo;
     private final CloudinaryService cloudinaryService;
@@ -41,6 +46,7 @@ public class BlogServiceImpl implements BlogService {
     private final LikeRepository likeRepo;
     private final CommentRepository commentRepo;
     private final EventPublisher eventPublisher;
+    private final int maxPageSize;
 
     public BlogServiceImpl(
             BlogRepo blogRepo,
@@ -49,7 +55,8 @@ public class BlogServiceImpl implements BlogService {
             UserServiceClient userServiceClient,
             LikeRepository likeRepo,
             CommentRepository commentRepo,
-            EventPublisher eventPublisher) {
+            EventPublisher eventPublisher,
+            @Value("${blog.pagination.max-page-size:100}") int maxPageSize) {
         this.blogRepo = blogRepo;
         this.cloudinaryService = cloudinaryService;
         this.notificationProducer = notificationProducer;
@@ -57,31 +64,35 @@ public class BlogServiceImpl implements BlogService {
         this.likeRepo = likeRepo;
         this.commentRepo = commentRepo;
         this.eventPublisher = eventPublisher;
+        this.maxPageSize = maxPageSize;
     }
 
     @Override
     @Transactional
-    public ApiResponse<Blog> createBlog(CreateBlogRequest blog) {
+    public ApiResponse<Blog> createBlog(CreateBlogRequest blog, String authorId) {
         Blog newBlog = Blog.builder()
                 .title(blog.getTitle())
                 .content(blog.getContent())
+                .caption(blog.getCaption())
                 .category(blog.getCategory())
-                .authorId(blog.getAuthorId())
+                .authorId(authorId)
                 .authorName(blog.getAuthorName())
                 .authorProfilePic(blog.getAuthorProfilePic())
-                .imageUrls(blog.getImageUrls())
-                .cloudinaryPublicIds(blog.getCloudinaryPublicIds())
+                .imageUrls(blog.getImageUrls() == null ? Collections.emptyList() : blog.getImageUrls())
+                .cloudinaryPublicIds(blog.getCloudinaryPublicIds() == null
+                        ? Collections.emptyList()
+                        : blog.getCloudinaryPublicIds())
                 .createdAt(Instant.now())
                 .build();
 
         Blog savedBlog = blogRepo.save(newBlog);
 
-        List<String> friends = userServiceClient.getFriendsByUser(newBlog.getAuthorId());
+        List<String> friends = userServiceClient.getFriendsByUser(authorId);
         Set<String> friendSet = new HashSet<>(friends);
 
         for (String friend : friendSet) {
             notificationProducer.postBlogNotification(
-                    savedBlog.getAuthorId(), friend,
+                    authorId, friend,
                     savedBlog.getId(), savedBlog.getTitle());
 
         }
@@ -118,6 +129,9 @@ public class BlogServiceImpl implements BlogService {
         if (updateReq.getCategory() != null)
             existingBlog.setCategory(updateReq.getCategory());
 
+        if (updateReq.getCaption() != null)
+            existingBlog.setCaption(updateReq.getCaption());
+
         existingBlog.setUpdatedAt(Instant.now());
 
         // Handle blog images
@@ -145,15 +159,17 @@ public class BlogServiceImpl implements BlogService {
                 try {
                     cloudinaryService.deleteImage(publicId);
                 } catch (Exception e) {
-                    System.err.println("Failed to delete image from Cloudinary: " + publicId);
-                    e.printStackTrace();
+                    logger.warn("Failed to delete image from Cloudinary: {}", publicId, e);
                 }
             }
         }
 
-        // Set updated image URLs and public IDs
-        existingBlog.setImageUrls(newImageUrls);
-        existingBlog.setCloudinaryPublicIds(updateReq.getCloudinaryPublicIds());
+        if (newImageUrls != null) {
+            existingBlog.setImageUrls(newImageUrls);
+        }
+        if (updateReq.getCloudinaryPublicIds() != null) {
+            existingBlog.setCloudinaryPublicIds(updateReq.getCloudinaryPublicIds());
+        }
 
         Blog updatedBlog = blogRepo.save(existingBlog);
 
@@ -171,11 +187,13 @@ public class BlogServiceImpl implements BlogService {
             throw new UnauthorizedAccessException("User is not authorized to delete this blog.");
         }
 
-        for (String publicId : blog.getCloudinaryPublicIds()) {
+        List<String> cloudinaryPublicIds =
+                blog.getCloudinaryPublicIds() == null ? Collections.emptyList() : blog.getCloudinaryPublicIds();
+        for (String publicId : cloudinaryPublicIds) {
             try {
                 cloudinaryService.deleteImage(publicId);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warn("Failed to delete Cloudinary image while deleting blog: {}", publicId, e);
             }
         }
         likeRepo.deleteByResourceIdAndResourceType(blogId, ResourceType.BLOG);
@@ -188,80 +206,56 @@ public class BlogServiceImpl implements BlogService {
     @Override
     public ApiResponse<Page<Blog>> getAllBlogs(int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Page<Blog> blogPage = blogRepo.findAll(pageable);
-
-        if (blogPage.hasContent()) {
-            return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
-        }
-
-        throw new BlogNotFoundException("No blogs found");
+        return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
     }
 
     @Override
     public ApiResponse<Page<Blog>> getBlogsByCategory(String category, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
        
-        Page<Blog> blogPage = blogRepo.findByBlogCategory(category, pageable);
-
-        if (blogPage.hasContent()) {
-            return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
-        }
-        throw new BlogNotFoundException("No blogs found for category: " + category);
+        Page<Blog> blogPage = blogRepo.findByCategoryIgnoreCase(category, pageable);
+        return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
     }
 
     @Override
     public ApiResponse<Page<Blog>> getBlogsByAuthor(String authorId,int page, int size) {
     
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
      
-        Page<Blog> blogPage = blogRepo.findByBlogAuthorId(authorId,pageable);
-         if (blogPage.hasContent()) {
-            return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
-        }
-        throw new BlogNotFoundException("No blogs found for author: " + authorId);
+        Page<Blog> blogPage = blogRepo.findByAuthorId(authorId,pageable);
+        return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
 
     }
 
     @Override
     public ApiResponse<List<Blog>> getBlogsByDateRange(Instant startDate, Instant endDate) {
-
-        List<Blog> blogs = blogRepo.findAll();
-        if (blogs != null && !blogs.isEmpty()) {
-            List<Blog> fetchedBlogs = blogs.stream()
-                    .filter(blog -> blog.getCreatedAt().isAfter(startDate) && blog.getCreatedAt().isBefore(endDate))
-                    .toList();
-            return new ApiResponse<>(true, fetchedBlogs, "Blogs fetched Successfylly.");
-        } else {
-            throw new BlogNotFoundException("No blogs found for the given date range: " + startDate + " to " + endDate);
+        if (startDate == null || endDate == null || endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("Invalid date range");
         }
+        List<Blog> fetchedBlogs = blogRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(startDate, endDate);
+        return new ApiResponse<>(true, fetchedBlogs, "Blogs fetched successfully.");
     }
 
     @Override
     public ApiResponse<Page<Blog>> getBlogsByKeyword(String keyword, int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Page<Blog> blogPage = blogRepo.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
 
-        if (blogPage.hasContent()) {
-            return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
-        } else {
-            throw new BlogNotFoundException("No blogs found for the given keyword: " + keyword);
-        }
+        return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
     }
 
     @Override
     public ApiResponse<Page<Blog>> getBlogsByTitle(String title, int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
      
-        Page<Blog> blogPage = blogRepo.findByBlogTitle(title, pageable);
-        if (blogPage.hasContent()) {
-            return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
-        }
-       throw new BlogNotFoundException("No blogs found for the given title: " + title);
+        Page<Blog> blogPage = blogRepo.findByTitleIgnoreCase(title, pageable);
+        return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
     }
 
     @Transactional
@@ -270,7 +264,7 @@ public class BlogServiceImpl implements BlogService {
         Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
 
-        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndAuthorId(blogId, ResourceType.BLOG, userId);
+        Optional<Like> like = likeRepo.findByResourceIdAndResourceTypeAndUserId(blogId, ResourceType.BLOG, userId);
 
         if (like.isPresent()) {
             likeRepo.delete(like.get());
@@ -298,5 +292,12 @@ public class BlogServiceImpl implements BlogService {
         Blog updatedBlog = blogRepo.save(blog);
 
         return new ApiResponse<>(true, updatedBlog, "Blog views updated Successfully.");
+    }
+
+    private int normalizePageSize(int size) {
+        if (size <= 0) {
+            return 10;
+        }
+        return Math.min(size, maxPageSize);
     }
 }

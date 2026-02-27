@@ -33,13 +33,6 @@
 		</dependency>
 
 
-      	<!--  NotificationEvent -->
-	  	<dependency>
-      	   <groupId>com.travelbuddy</groupId>
-      	   <artifactId>NotificationEvents</artifactId>
-      	   <version>1.0.0</version>
-      	</dependency>
-
 		<dependency>
       	   <groupId>com.travelbuddy</groupId>
       	   <artifactId>Shared-Events</artifactId>

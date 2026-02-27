@@ -1,7 +1,6 @@
 package com.blog.Services;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -13,7 +12,7 @@ import com.blog.Entity.Blog;
 
 public interface BlogService {
     
-    public ApiResponse<Blog> createBlog(CreateBlogRequest blo);
+    public ApiResponse<Blog> createBlog(CreateBlogRequest blo, String authorId);
     public ApiResponse<Blog> getBlogById(String blogId);
     public ApiResponse<Blog> updateBlog(String blogId, UpdateBlogRequest blog, String authorId);
     public ApiResponse<Void> deleteBlog(String blogId, String authorId);

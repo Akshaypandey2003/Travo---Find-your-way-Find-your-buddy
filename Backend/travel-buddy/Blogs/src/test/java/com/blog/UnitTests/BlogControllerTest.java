@@ -1,235 +1,122 @@
 package com.blog.UnitTests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 
-import com.blog.Config.JwtProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import com.blog.Controller.BlogController;
 import com.blog.DTO.ApiResponse;
+import com.blog.DTO.CreateBlogRequest;
+import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
 import com.blog.Exceptions.BlogNotFoundException;
+import com.blog.Exceptions.InvalidRequestException;
 import com.blog.Services.BlogService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-@WebMvcTest(BlogController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@SuppressWarnings({ "removal" })
+@ExtendWith(MockitoExtension.class)
 class BlogControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Mock
+    private BlogService blogService;
 
-        @MockBean
-        private BlogService blogService;
+    private BlogController blogController;
 
-        @Autowired
-        private ObjectMapper objectMapper;
+    @BeforeEach
+    void setUp() {
+        blogController = new BlogController(blogService);
+    }
 
-        @MockBean
-        private JwtProvider jwtProvider;
+    @Test
+    void createBlog_success_returnsCreated() {
+        CreateBlogRequest request = CreateBlogRequest.builder()
+                .title("Title")
+                .content("Content")
+                .category("Tech")
+                .build();
 
-        private ApiResponse<Blog> blogResponse() {
-                Blog blog = new Blog();
-                blog.setBlogId("blog123");
-                blog.setBlogTitle("Spring Boot Testing");
-                blog.setBlogContent("Testing controllers properly");
-                blog.setBlogCategory("TECH");
-                blog.setBlogAuthorId("user1");
-                blog.setPostedDate(LocalDateTime.now());
-                blog.setBlogLikes(List.of("user2"));
-                blog.setBlogViews(Set.of("user3"));
-                return new ApiResponse<>(true, blog, "success");
-        }
-        /* ---------------- CREATE BLOG ---------------- */
+        Blog blog = Blog.builder().id("b1").title("Title").authorId("u1").build();
+        when(blogService.createBlog(any(CreateBlogRequest.class), eq("u1")))
+                .thenReturn(new ApiResponse<>(true, blog, "created"));
 
-        @Test
-        void shouldCreateBlog() throws Exception {
-                ApiResponse<Blog> response = blogResponse();
+        ResponseEntity<ApiResponse<Blog>> response = blogController.createBlog(request, "u1");
 
-                Mockito.when(blogService.createBlog(any(Blog.class))).thenReturn(response);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData().getId()).isEqualTo("b1");
+    }
 
-                Blog blog = response.getData();
+    @Test
+    void createBlog_throwsInvalidRequest_whenUserMissing() {
+        CreateBlogRequest request = CreateBlogRequest.builder()
+                .title("Title")
+                .content("Content")
+                .category("Tech")
+                .build();
 
-                mockMvc.perform(post("/blog/create-blog")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(blog)))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.data.blogId").value("blog123"))
-                                .andExpect(jsonPath("$.data.blogTitle").value("Spring Boot Testing"));
-        }
+        assertThatThrownBy(() -> blogController.createBlog(request, " "))
+                .isInstanceOf(InvalidRequestException.class);
+    }
 
-        /* ---------------- UPDATE BLOG ---------------- */
+    @Test
+    void updateBlog_success_returnsOk() {
+        UpdateBlogRequest request = new UpdateBlogRequest();
+        request.setTitle("Updated");
 
-        @Test
-        void shouldUpdateBlog() throws Exception {
-                ApiResponse<Blog> updatedBlog = blogResponse();
-                updatedBlog.getData().setBlogTitle("Updated Title");
+        Blog updated = Blog.builder().id("b1").title("Updated").build();
+        when(blogService.updateBlog("b1", request, "u1"))
+                .thenReturn(new ApiResponse<>(true, updated, "updated"));
 
-                Mockito.when(blogService.updateBlog(eq("blog123"), any(Blog.class)))
-                                .thenReturn(updatedBlog);
+        ResponseEntity<ApiResponse<Blog>> response = blogController.updateBlog("b1", request, "u1");
 
-                mockMvc.perform(put("/blog/update-blog/blog123")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(updatedBlog)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.data.blogTitle").value("Updated Title"));
-        }
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData().getTitle()).isEqualTo("Updated");
+    }
 
-        /* ---------------- LIKE BLOG ---------------- */
+    @Test
+    void getBlog_propagatesServiceException_whenNotFound() {
+        when(blogService.getBlogById("missing")).thenThrow(new BlogNotFoundException("missing"));
 
-        @Test
-        void shouldLikeBlog() throws Exception {
-                ApiResponse<Blog> blog = blogResponse();
+        assertThatThrownBy(() -> blogController.getBlog("missing"))
+                .isInstanceOf(BlogNotFoundException.class);
+    }
 
-                Mockito.when(blogService.likeBlog("blog123", "user5"))
-                                .thenReturn(blog);
+    @Test
+    void getAllBlogs_success_returnsPage() {
+        Page<Blog> page = new PageImpl<>(List.of(Blog.builder().id("b1").title("t").build()));
+        when(blogService.getAllBlogs(0, 10)).thenReturn(new ApiResponse<>(true, page, "ok"));
 
-                mockMvc.perform(post("/blog/like-blog/blog123/user5"))
-                                .andExpect(status().isOk());
-        }
+        ResponseEntity<ApiResponse<Page<Blog>>> response = blogController.getAllBlogs(0, 10);
 
-        /* ---------------- DELETE BLOG ---------------- */
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData().getTotalElements()).isEqualTo(1);
+    }
 
-        @Test
-        void shouldDeleteBlog() throws Exception {
+    @Test
+    void getBlogsByDateRange_success_parsesAndDelegates() {
+        Instant start = Instant.parse("2025-01-01T00:00:00Z");
+        Instant end = Instant.parse("2025-01-31T00:00:00Z");
+        when(blogService.getBlogsByDateRange(start, end))
+                .thenReturn(new ApiResponse<>(true, List.of(), "ok"));
 
-                ApiResponse<Void> response = new ApiResponse<>(true, null, "Blog Deleted Successfully");
+        ResponseEntity<?> response = blogController.getBlogsByDateRange(
+                "2025-01-01T00:00:00Z",
+                "2025-01-31T00:00:00Z");
 
-                Mockito.when(blogService.deleteBlog("blog123"))
-                                .thenReturn(response);
-
-                mockMvc.perform(delete("/blog/delete-blog/blog123"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.message").value("Blog Deleted Successfully"));
-        }
-
-        /* ---------------- GET BLOG BY ID ---------------- */
-
-        @Test
-        void shouldGetBlogById() throws Exception {
-
-                Mockito.when(blogService.getBlogById("blog123"))
-                                .thenReturn(blogResponse());
-
-                mockMvc.perform(get("/blog/get-blog/blog123"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.data.blogId").value("blog123"));
-        }
-
-        @Test
-        void shouldReturn404WhenBlogNotFound() throws Exception {
-                Mockito.when(blogService.getBlogById("invalid"))
-                                .thenThrow(new BlogNotFoundException("Blog not found"));
-
-                mockMvc.perform(get("/blog/get-blog/invalid"))
-                                .andExpect(status().isNotFound());
-        }
-
-        /* ---------------- GET ALL BLOGS ---------------- */
-
-        @Test
-        void shouldGetAllBlogs() throws Exception {
-                ApiResponse<List<Blog>> response = new ApiResponse<>(true, List.of(blogResponse().getData()),
-                                "success");
-
-                Mockito.when(blogService.getAllBlogs())
-                                .thenReturn(response);
-
-                mockMvc.perform(get("/blog/get-all-blogs"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.data.length()").value(1));
-        }
-
-        /* ---------------- GET BLOGS BY CATEGORY ---------------- */
-
-        @Test
-        void shouldGetBlogsByCategory() throws Exception {
-
-                ApiResponse<List<Blog>> response = new ApiResponse<>(true, List.of(blogResponse().getData()),
-                                "success");
-
-                Mockito.when(blogService.getBlogsByCategory("TECH"))
-                                .thenReturn(response);
-
-                mockMvc.perform(get("/blog/get-blogs-by-category/TECH"))
-                                .andExpect(status().isOk());
-        }
-
-        /* ---------------- GET BLOGS BY AUTHOR ---------------- */
-
-        @Test
-        void shouldGetBlogsByAuthor() throws Exception {
-
-                ApiResponse<List<Blog>> response = new ApiResponse<>(true, List.of(blogResponse().getData()),
-                                "success");
-
-                Mockito.when(blogService.getBlogsByAuthor("user1"))
-                                .thenReturn(response);
-
-                mockMvc.perform(get("/blog/get-blogs-by-author/user1"))
-                                .andExpect(status().isOk());
-        }
-
-        /* ---------------- GET BLOGS BY KEYWORD ---------------- */
-
-        @Test
-        void shouldGetBlogsByKeyword() throws Exception {
-
-                ApiResponse<List<Blog>> response = new ApiResponse<>(true, List.of(blogResponse().getData()),
-                                "success");
-
-                Mockito.when(blogService.getBlogsByKeyword("Spring"))
-                                .thenReturn(response);
-
-                mockMvc.perform(get("/blog/get-blogs-by-keyword/Spring"))
-                                .andExpect(status().isOk());
-        }
-
-        /* ---------------- GET BLOGS BY TITLE ---------------- */
-
-        @Test
-        void shouldGetBlogsByTitle() throws Exception {
-
-                ApiResponse<List<Blog>> response = new ApiResponse<>(true, List.of(blogResponse().getData()),
-                                "success");
-
-                Mockito.when(blogService.getBlogsByTitle("Spring Boot Testing"))
-                                .thenReturn(response);
-
-                mockMvc.perform(get("/blog/get-blogs-by-title/Spring Boot Testing"))
-                                .andExpect(status().isOk());
-        }
-
-        /* ---------------- UPDATE BLOG VIEWS ---------------- */
-
-        @Test
-        void shouldUpdateBlogViews() throws Exception {
-
-                Mockito.when(blogService.updateBlogViews("blog123", "user9"))
-                                .thenReturn(blogResponse());
-
-                mockMvc.perform(post("/blog/update-blog-views/blog123/user9"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.success").value(true))
-                                .andExpect(jsonPath("$.message")
-                                                .value("success"))
-                                .andExpect(jsonPath("$.data.blogId").value("blog123"));
-        }
-
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
 }

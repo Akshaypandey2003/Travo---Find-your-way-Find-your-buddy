@@ -12,7 +12,7 @@ import com.blog.Entity.Comment;
 
 public interface CommentService {
     
-    public CommentResponseDTO addComment(CommentRequestDTO request);
+    public CommentResponseDTO addComment(CommentRequestDTO request, String authorId);
     public Page<CommentResponseDTO> getTopLevelCommentsByBlogId(String blogId, Pageable pageable);
     public Page<Comment> getAllReplies(String parentCommentId, Pageable pageable);
     public List<CommentResponseDTO> getCommentsByBlogIdAndParentCommentId(String blogId, String parentCommentId);

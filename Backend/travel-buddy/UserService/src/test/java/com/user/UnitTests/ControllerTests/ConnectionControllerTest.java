@@ -29,6 +29,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.events.Repositories.FailedNotificationRepository;
 import com.user.Config.JwtProvider;
 import com.user.Controller.ConnectionController;
 import com.user.DTO.CloseFriendResponse;
@@ -36,6 +37,11 @@ import com.user.DTO.ConnectionResponse;
 import com.user.DTO.PageResponse;
 import com.user.DTO.UserSummary;
 import com.user.Enum.ConnectionStatus;
+import com.user.Repository.CloseFriendsRepo;
+import com.user.Repository.ConnectionRepo;
+import com.user.Repository.PasswordResetTokenRepo;
+import com.user.Repository.ProcessedFeedbackEventRepo;
+import com.user.Repository.UserRepo;
 import com.user.Service.ConnectionService;
 
 @WebMvcTest(ConnectionController.class)
@@ -51,6 +57,24 @@ class ConnectionControllerTest {
 
         @MockBean
         private JwtProvider jwtProvider;
+
+        @MockBean
+        private UserRepo userRepo;
+
+        @MockBean
+        private ConnectionRepo connectionRepo;
+
+        @MockBean
+        private CloseFriendsRepo closeFriendsRepo;
+
+        @MockBean
+        private PasswordResetTokenRepo passwordResetTokenRepo;
+
+        @MockBean
+        private ProcessedFeedbackEventRepo processedFeedbackEventRepo;
+
+        @MockBean
+        private FailedNotificationRepository failedNotificationRepository;
 
         @Autowired
         private ObjectMapper objectMapper;

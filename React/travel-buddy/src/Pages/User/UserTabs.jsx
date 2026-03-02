@@ -1,15 +1,12 @@
 /* eslint-disable no-unused-vars */
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ReactCardSlider from "react-card-slider-component";
 import { shallowEqual, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import CustomerCard from "../PageComponents/CustomerCard";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useUserData from "../../CustomHooks/useUserData";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBlog, faMapMarked, faMapMarkedAlt, faPenFancy, faPooStorm, faSignsPost, faVrCardboard, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faBlog, faMapMarked, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import TripAccordian from "../PageComponents/TripComponents/TripAccordian";
 import CreateBlogForm from "../PageComponents/BlogComponents/CreateBlogForm";

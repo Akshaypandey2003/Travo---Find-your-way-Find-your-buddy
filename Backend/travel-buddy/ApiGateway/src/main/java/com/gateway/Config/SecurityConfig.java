@@ -2,7 +2,9 @@ package com.gateway.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -18,6 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
+
+    @Value("${gateway.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    private List<String> allowedOrigins;
 
      @Bean
     SecurityWebFilterChain securityWebFilterChain(
@@ -40,16 +45,15 @@ public class SecurityConfig {
                 )
                   .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOriginPatterns(Collections.singletonList("*"));
-                    config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+                    config.setAllowedOrigins(allowedOrigins);
                     config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(Collections.singletonList("*"));
-                    config.setAllowCredentials(true);
+                    config.setAllowCredentials(false);
                     config.setExposedHeaders(Arrays.asList("Authorization"));
                     return config;
                 }))
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/auth/**", "/actuator/**").permitAll()
+                        .pathMatchers("/auth/**", "/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)

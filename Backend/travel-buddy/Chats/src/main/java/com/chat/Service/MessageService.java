@@ -6,15 +6,12 @@ import com.chat.Entity.Message;
 
 public interface MessageService {
     
-    // Define methods for message operations, e.g., sendMessage, getMessage, deleteMessage
-    public Message sendMessage(Message message);
+    Message sendMessage(String chatId, Message message);
     
-    public List<Message> getMessage(String chatId);
+    List<Message> getMessagesByChatId(String chatId);
     
-    public void deleteMessage(String messageId);
+    void deleteMessage(String messageId);
 
-    public Message updateMessage(String messageId, Message message);
-    public Message updateReadStatus(String messageId);
-    
-    // Additional methods as needed
+    Message updateMessage(String messageId, Message message);
+    Message updateReadStatus(String messageId);
 }

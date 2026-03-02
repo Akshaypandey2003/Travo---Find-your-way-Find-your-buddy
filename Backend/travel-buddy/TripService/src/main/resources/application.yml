@@ -50,6 +50,9 @@ resilience4j:
 trip:
   pagination:
     max-page-size: 100
+  security:
+    cors:
+      allowed-origins: ${TRIP_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
   reminder:
     batch-size: 200
     cron: "0 0 10 * * ?"
@@ -60,3 +63,12 @@ trip:
       batch-size: 50
       max-attempts: 10
 
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

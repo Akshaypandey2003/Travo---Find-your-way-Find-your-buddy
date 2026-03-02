@@ -1,11 +1,16 @@
 package com.chat.ServiceImpl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,31 +18,43 @@ import com.chat.Entity.Chat;
 import com.chat.Exceptions.ChatNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
+import com.chat.Service.ChatDomainEventProducer;
 import com.chat.Service.ChatService;
+import com.chat.Service.NotificationProducer;
 
 @Service
 @Transactional
 public class ChatServiceImpl implements ChatService {
 
     private static final Logger log = LoggerFactory.getLogger(ChatServiceImpl.class);
+    private static final String CACHE_CHAT_BY_ID = "chatById";
+    private static final String CACHE_CHATS_BY_USER_ID = "chatsByUserId";
+    private static final String CACHE_MESSAGES_BY_CHAT_ID = "messagesByChatId";
 
     private final ChatRepo chatRepo;
     private final MessageRepository messageRepo;
-    private final ChatNotificationProducer notificationProducer;
+    private final NotificationProducer notificationProducer;
+    private final ChatDomainEventProducer chatDomainEventProducer;
 
     public ChatServiceImpl(
             ChatRepo chatRepo,
             MessageRepository messageRepo,
-            ChatNotificationProducer notificationProducer) {
+            NotificationProducer notificationProducer,
+            ChatDomainEventProducer chatDomainEventProducer) {
         this.chatRepo = chatRepo;
         this.messageRepo = messageRepo;
         this.notificationProducer = notificationProducer;
+        this.chatDomainEventProducer = chatDomainEventProducer;
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_CHATS_BY_USER_ID, allEntries = true)
+    })
     public Chat createChat(Chat chat) {
 
         Chat savedChat = chatRepo.save(chat);
+        chatDomainEventProducer.publishChatCreated(savedChat);
 
         if (savedChat.isGroupChat()) {
             notifyGroupCreated(savedChat);
@@ -48,7 +65,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void notifyGroupCreated(Chat chat) {
-        String adminId = ((TreeSet<String>) chat.getGroupAdmin()).first();
+        String adminId = resolveActor(chat.getGroupAdmin());
 
         for (String participant : chat.getParticipants()) {
             try {
@@ -69,9 +86,17 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    private String resolveActor(Set<String> admins) {
+        if (admins == null || admins.isEmpty()) {
+            return "SYSTEM";
+        }
+        return admins.iterator().next();
+    }
+
     @Override
     @Transactional(readOnly = true)
-    public List<Chat> getChat(String userId) {
+    @Cacheable(value = CACHE_CHATS_BY_USER_ID, key = "#userId")
+    public List<Chat> getChatsByUserId(String userId) {
 
         List<Chat> chats = chatRepo.findByParticipantsContaining(userId);
 
@@ -84,7 +109,8 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional(readOnly = true)
-    public Chat getChatByChatId(String chatId) {
+    @Cacheable(value = CACHE_CHAT_BY_ID, key = "#chatId")
+    public Chat getChatById(String chatId) {
 
         return chatRepo.findById(chatId)
                 .orElseThrow(() ->
@@ -93,6 +119,10 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_CHAT_BY_ID, key = "#chatId"),
+            @CacheEvict(value = CACHE_CHATS_BY_USER_ID, allEntries = true)
+    })
     public Chat updateChat(String adminId, String chatId, Chat chat) {
 
         Chat existingChat = chatRepo.findById(chatId)
@@ -116,11 +146,19 @@ public class ChatServiceImpl implements ChatService {
             existingChat.setParticipants(chat.getParticipants());
         }
 
+        Map<String, Object> updatedFields = new HashMap<>();
+        updatedFields.put("groupName", existingChat.getGroupName());
+        updatedFields.put("groupDescription", existingChat.getGroupDescription());
+        updatedFields.put("groupImageUrl", existingChat.getGroupImageUrl());
+        updatedFields.put("participants", existingChat.getParticipants());
+
         if (existingChat.isGroupChat()) {
             notifyGroupUpdated(adminId, existingChat);
         }
 
-        return chatRepo.save(existingChat);
+        Chat savedChat = chatRepo.save(existingChat);
+        chatDomainEventProducer.publishChatUpdated(savedChat, updatedFields);
+        return savedChat;
     }
 
     private void notifyGroupUpdated(String adminId, Chat chat) {
@@ -143,6 +181,11 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_CHAT_BY_ID, key = "#chatId"),
+            @CacheEvict(value = CACHE_CHATS_BY_USER_ID, allEntries = true)
+    })
     public Chat updateFavorite(String chatId, String userId) {
 
         Chat chat = chatRepo.findById(chatId)
@@ -150,7 +193,7 @@ public class ChatServiceImpl implements ChatService {
                         new ChatNotFoundException("Chat not found with id: " + chatId)
                 );
 
-        Set<String> favoriteBy = chat.getFavoriteBy();
+        Set<String> favoriteBy = chat.getFavoriteBy() == null ? new HashSet<>() : chat.getFavoriteBy();
 
         if (favoriteBy.contains(userId)) {
             favoriteBy.remove(userId);
@@ -159,9 +202,16 @@ public class ChatServiceImpl implements ChatService {
         }
 
         chat.setFavoriteBy(favoriteBy);
-        return chatRepo.save(chat);
+        Chat updatedChat = chatRepo.save(chat);
+        chatDomainEventProducer.publishChatUpdated(updatedChat, Map.of("favoriteBy", updatedChat.getFavoriteBy()));
+        return updatedChat;
     }
 
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_CHAT_BY_ID, key = "#chatId"),
+            @CacheEvict(value = CACHE_CHATS_BY_USER_ID, allEntries = true)
+    })
     public Chat updateGroupMembers(String adminId, String chatId, Set<String> members) {
 
         Chat chat = chatRepo.findById(chatId)
@@ -169,7 +219,7 @@ public class ChatServiceImpl implements ChatService {
                         new ChatNotFoundException("Chat not found with id: " + chatId)
                 );
 
-        Set<String> existingMembers = chat.getParticipants();
+        Set<String> existingMembers = chat.getParticipants() == null ? new HashSet<>() : chat.getParticipants();
 
         for (String member : members) {
             try {
@@ -201,10 +251,17 @@ public class ChatServiceImpl implements ChatService {
         }
 
         chat.setParticipants(existingMembers);
-        return chatRepo.save(chat);
+        Chat updatedChat = chatRepo.save(chat);
+        chatDomainEventProducer.publishChatUpdated(updatedChat, Map.of("participants", updatedChat.getParticipants()));
+        return updatedChat;
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_CHAT_BY_ID, key = "#chatId"),
+            @CacheEvict(value = CACHE_CHATS_BY_USER_ID, allEntries = true),
+            @CacheEvict(value = CACHE_MESSAGES_BY_CHAT_ID, key = "#chatId")
+    })
     public void deleteChat(String adminId, String chatId) {
 
         Chat existingChat = chatRepo.findById(chatId)
@@ -232,6 +289,7 @@ public class ChatServiceImpl implements ChatService {
 
         messageRepo.deleteByChatId(chatId);
         chatRepo.deleteById(chatId);
+        chatDomainEventProducer.publishChatDeleted(existingChat);
 
         log.info("Chat deleted successfully. chatId={}", chatId);
     }

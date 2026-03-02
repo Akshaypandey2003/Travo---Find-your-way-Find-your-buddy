@@ -1,6 +1,7 @@
 package com.chat.Controller;
 
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +25,13 @@ public class MessageController {
             @PathVariable String chatId,
             @RequestBody Message message) {
 
-        // chatId already exists in message, keeping behavior unchanged
-        Message savedMessage = messageService.sendMessage(message);
+        Message savedMessage = messageService.sendMessage(chatId, message);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedMessage);
     }
 
     @GetMapping
-    public ResponseEntity<?> getMessages(@PathVariable String chatId) {
-        return ResponseEntity.ok(messageService.getMessage(chatId));
+    public ResponseEntity<List<Message>> getMessages(@PathVariable String chatId) {
+        return ResponseEntity.ok(messageService.getMessagesByChatId(chatId));
     }
 
     @PutMapping("/{messageId}")

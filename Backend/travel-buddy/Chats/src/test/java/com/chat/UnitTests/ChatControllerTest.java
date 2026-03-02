@@ -2,6 +2,7 @@ package com.chat.UnitTests;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -87,21 +88,21 @@ class ChatControllerTest {
 
     @Test
     void getChatByUser_success() throws Exception {
-        when(chatService.getChat("user1"))
+        when(chatService.getChatsByUserId(nullable(String.class)))
                 .thenReturn(List.of(getSampleChat()));
 
         mockMvc.perform(
-                get("/api/v1/chats/user/user1")
+                get("/api/v1/chats/user")
         ).andExpect(status().isOk());
     }
 
     @Test
     void getChatByUser_failure() throws Exception {
-        when(chatService.getChat("user1"))
+        when(chatService.getChatsByUserId(nullable(String.class)))
                 .thenThrow(new RuntimeException());
 
         mockMvc.perform(
-                get("/api/v1/chats/user/user1")
+                get("/api/v1/chats/user")
         ).andExpect(status().isInternalServerError());
     }
 
@@ -109,7 +110,7 @@ class ChatControllerTest {
 
     @Test
     void getChatById_success() throws Exception {
-        when(chatService.getChatByChatId("chat123"))
+        when(chatService.getChatById("chat123"))
                 .thenReturn(getSampleChat());
 
         mockMvc.perform(
@@ -119,7 +120,7 @@ class ChatControllerTest {
 
     @Test
     void getChatById_failure() throws Exception {
-        when(chatService.getChatByChatId("chat123"))
+        when(chatService.getChatById("chat123"))
                 .thenThrow(new RuntimeException());
 
         mockMvc.perform(
@@ -144,7 +145,7 @@ class ChatControllerTest {
 
     @Test
     void updateChat_failure() throws Exception {
-        when(chatService.updateChat(anyString(), anyString(), any(Chat.class)))
+        when(chatService.updateChat(nullable(String.class), anyString(), any(Chat.class)))
                 .thenThrow(new RuntimeException());
 
         mockMvc.perform(
@@ -159,21 +160,21 @@ class ChatControllerTest {
 
     @Test
     void updateFavorite_success() throws Exception {
-        when(chatService.updateFavorite("chat123", "user1"))
+        when(chatService.updateFavorite(anyString(), nullable(String.class)))
                 .thenReturn(getSampleChat());
 
         mockMvc.perform(
-                put("/api/v1/chats/chat123/favorite/user1")
+                put("/api/v1/chats/chat123/favorite")
         ).andExpect(status().isOk());
     }
 
     @Test
     void updateFavorite_failure() throws Exception {
-        when(chatService.updateFavorite(anyString(), anyString()))
+        when(chatService.updateFavorite(anyString(), nullable(String.class)))
                 .thenThrow(new RuntimeException());
 
         mockMvc.perform(
-                put("/api/v1/chats/chat123/favorite/user1")
+                put("/api/v1/chats/chat123/favorite")
         ).andExpect(status().isInternalServerError());
     }
 
@@ -194,7 +195,7 @@ class ChatControllerTest {
 
     @Test
     void updateGroupMembers_failure() throws Exception {
-        when(chatService.updateGroupMembers(anyString(), anyString(), any()))
+        when(chatService.updateGroupMembers(nullable(String.class), anyString(), any()))
                 .thenThrow(new RuntimeException());
 
         mockMvc.perform(
@@ -220,7 +221,7 @@ class ChatControllerTest {
     @Test
     void deleteChat_failure() throws Exception {
         doThrow(new RuntimeException())
-                .when(chatService).deleteChat(anyString(), anyString());
+                .when(chatService).deleteChat(nullable(String.class), anyString());
 
         mockMvc.perform(
                 delete("/api/v1/chats/chat123")

@@ -27,7 +27,7 @@ eureka:
 
 okta:
   oauth2:
-    issuer: ${OKTA_ISSUER:https://dev-95846997.okta.com/oauth2/default}
-    audience: ${OKTA_AUDIENCE:api://default}
-    client-id: ${OKTA_CLIENT_ID:0oanj7msm6GM08sZ25d7}
-    client-secret: ${OKTA_CLIENT_SECRET:0Sag_S9QQwPeMrdWR72MDHqi6YKFV-bkPEuDvJN_mZm5xBQJTr9qifk8UWX7xvv1}
+    issuer: ${OKTA_ISSUER}
+    audience: ${OKTA_AUDIENCE}
+    client-id: ${OKTA_CLIENT_ID}
+    client-secret: ${OKTA_CLIENT_SECRET}

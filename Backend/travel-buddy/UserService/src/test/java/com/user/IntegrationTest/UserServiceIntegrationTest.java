@@ -20,6 +20,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,6 +51,7 @@ import com.user.Repository.PasswordResetTokenRepo;
 import com.user.Repository.UserRepo;
 
 @SpringBootTest
+@EnabledIfSystemProperty(named = "runDockerTests", matches = "true")
 @Testcontainers
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

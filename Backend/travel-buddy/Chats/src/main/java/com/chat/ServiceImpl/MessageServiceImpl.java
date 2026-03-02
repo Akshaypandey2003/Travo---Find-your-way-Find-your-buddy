@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,29 +16,43 @@ import com.chat.Entity.Message;
 import com.chat.Exceptions.MessageNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
+import com.chat.Service.ChatDomainEventProducer;
 import com.chat.Service.MessageService;
+import com.chat.Service.NotificationProducer;
 
 @Service
 @Transactional
 public class MessageServiceImpl implements MessageService {
 
     private static final Logger log = LoggerFactory.getLogger(MessageServiceImpl.class);
+    private static final String CACHE_MESSAGES_BY_CHAT_ID = "messagesByChatId";
 
     private final MessageRepository messageRepo;
     private final ChatRepo chatRepo;
-    private final ChatNotificationProducer chatNotificationProducer;
+    private final NotificationProducer chatNotificationProducer;
+    private final ChatDomainEventProducer chatDomainEventProducer;
+    private final CacheManager cacheManager;
 
     public MessageServiceImpl(
             MessageRepository messageRepo,
             ChatRepo chatRepo,
-            ChatNotificationProducer chatNotificationProducer) {
+            NotificationProducer chatNotificationProducer,
+            ChatDomainEventProducer chatDomainEventProducer,
+            CacheManager cacheManager) {
         this.messageRepo = messageRepo;
         this.chatRepo = chatRepo;
         this.chatNotificationProducer = chatNotificationProducer;
+        this.chatDomainEventProducer = chatDomainEventProducer;
+        this.cacheManager = cacheManager;
     }
 
     @Override
-    public Message sendMessage(Message message) {
+    public Message sendMessage(String chatId, Message message) {
+        if (message.getChatId() == null || message.getChatId().isBlank()) {
+            message.setChatId(chatId);
+        } else if (!chatId.equals(message.getChatId())) {
+            throw new IllegalArgumentException("Path chatId and payload chatId must match");
+        }
 
         Chat chat = chatRepo.findById(message.getChatId())
                 .orElseThrow(() ->
@@ -51,6 +68,8 @@ public class MessageServiceImpl implements MessageService {
 
         // Notify participants (non-blocking)
         notifyParticipants(chat, savedMessage);
+        chatDomainEventProducer.publishMessageSent(savedMessage, chat);
+        evictMessagesCache(chatId);
 
         log.info("Message sent successfully. chatId={}, messageId={}",
                 savedMessage.getChatId(), savedMessage.getMessageId());
@@ -83,7 +102,8 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Message> getMessage(String chatId) {
+    @Cacheable(value = CACHE_MESSAGES_BY_CHAT_ID, key = "#chatId")
+    public List<Message> getMessagesByChatId(String chatId) {
 
         List<Message> messages = messageRepo.findByChatIdOrderByCreatedAtDesc(chatId);
 
@@ -98,13 +118,14 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public void deleteMessage(String messageId) {
-        if (!messageRepo.existsById(messageId)) {
-            throw new MessageNotFoundException(
-                    "Message not found with id: " + messageId
-            );
-        }
+        Message existingMessage = messageRepo.findById(messageId)
+                .orElseThrow(() ->
+                        new MessageNotFoundException("Message not found with id: " + messageId)
+                );
 
         messageRepo.deleteById(messageId);
+        chatDomainEventProducer.publishMessageDeleted(existingMessage);
+        evictMessagesCache(existingMessage.getChatId());
         log.info("Message deleted successfully. messageId={}", messageId);
     }
 
@@ -130,7 +151,10 @@ public class MessageServiceImpl implements MessageService {
 
         existingMessage.setRead(message.isRead());
 
-        return messageRepo.save(existingMessage);
+        Message updatedMessage = messageRepo.save(existingMessage);
+        chatDomainEventProducer.publishMessageUpdated(updatedMessage);
+        evictMessagesCache(updatedMessage.getChatId());
+        return updatedMessage;
     }
 
     @Override
@@ -142,6 +166,16 @@ public class MessageServiceImpl implements MessageService {
                 );
 
         existingMessage.setRead(true);
-        return messageRepo.save(existingMessage);
+        Message updatedMessage = messageRepo.save(existingMessage);
+        chatDomainEventProducer.publishMessageRead(updatedMessage);
+        evictMessagesCache(updatedMessage.getChatId());
+        return updatedMessage;
+    }
+
+    private void evictMessagesCache(String chatId) {
+        Cache cache = cacheManager.getCache(CACHE_MESSAGES_BY_CHAT_ID);
+        if (cache != null && chatId != null) {
+            cache.evict(chatId);
+        }
     }
 }

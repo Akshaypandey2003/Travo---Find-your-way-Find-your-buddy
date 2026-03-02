@@ -21,7 +21,8 @@ import com.chat.Entity.Chat;
 import com.chat.Exceptions.ChatNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
-import com.chat.ServiceImpl.ChatNotificationProducer;
+import com.chat.Service.ChatDomainEventProducer;
+import com.chat.Service.NotificationProducer;
 import com.chat.ServiceImpl.ChatServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,7 +35,10 @@ class ChatServiceTest {
     private MessageRepository messageRepo;
 
     @Mock
-    private ChatNotificationProducer notificationProducer;
+    private NotificationProducer notificationProducer;
+
+    @Mock
+    private ChatDomainEventProducer chatDomainEventProducer;
 
     @InjectMocks
     private ChatServiceImpl chatService;
@@ -70,7 +74,7 @@ class ChatServiceTest {
         when(chatRepo.findByParticipantsContaining("user1"))
                 .thenReturn(List.of(chat));
 
-        List<Chat> chats = chatService.getChat("user1");
+        List<Chat> chats = chatService.getChatsByUserId("user1");
 
         assertThat(chats).hasSize(1);
     }
@@ -80,7 +84,7 @@ class ChatServiceTest {
         when(chatRepo.findByParticipantsContaining("user1"))
                 .thenReturn(List.of());
 
-        assertThatThrownBy(() -> chatService.getChat("user1"))
+        assertThatThrownBy(() -> chatService.getChatsByUserId("user1"))
                 .isInstanceOf(ChatNotFoundException.class)
                 .hasMessageContaining("user1");
     }
@@ -91,7 +95,7 @@ class ChatServiceTest {
     void shouldGetChatByChatId() {
         when(chatRepo.findById("chat1")).thenReturn(java.util.Optional.of(chat));
 
-        Chat result = chatService.getChatByChatId("chat1");
+        Chat result = chatService.getChatById("chat1");
 
         assertThat(result.getChatId()).isEqualTo("chat1");
     }
@@ -100,7 +104,7 @@ class ChatServiceTest {
     void shouldFailGetChatByChatId_whenNotFound() {
         when(chatRepo.findById("chat1")).thenReturn(java.util.Optional.empty());
 
-        assertThatThrownBy(() -> chatService.getChatByChatId("chat1"))
+        assertThatThrownBy(() -> chatService.getChatById("chat1"))
                 .isInstanceOf(ChatNotFoundException.class);
     }
 

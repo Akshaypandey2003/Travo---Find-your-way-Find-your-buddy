@@ -2,8 +2,10 @@ package com.notification.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -28,6 +30,9 @@ public class SecurityConfig {
 
     @Autowired
     JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${notification.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    private List<String> allowedOrigins;
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -37,7 +42,7 @@ public class SecurityConfig {
                         "/notification/**"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/actuator/**").permitAll()
+                        auth -> auth.requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                                 .anyRequest()
                                 .authenticated())
                                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -52,12 +57,12 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(Collections.singletonList("*"));// Allowed origins
+        config.setAllowedOrigins(allowedOrigins);
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP
                                                                                                      // methods
         config.setAllowedHeaders(Collections.singletonList("*")); // Allowed headers (* represents all headers)
-        config.setAllowCredentials(true); // Allow credentials (cookies, etc.)
+        config.setAllowCredentials(false);
         config.setExposedHeaders(Arrays.asList("Authorization"));
         config.setMaxAge(3600L); // Cache the preflight response for 1 hour
 

@@ -7,6 +7,56 @@ spring:
   data:
     mongodb:
       database: Chats
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
+      cache-null-values: false
 
   config:
     import: optional:configserver:http://localhost:8086
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+    instances:
+      chatNotificationCircuitBreaker:
+        baseConfig: default
+      chatDomainEventCircuitBreaker:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      chatNotificationRetry:
+        baseConfig: default
+      chatDomainEventRetry:
+        baseConfig: default
+
+chat:
+  security:
+    cors:
+      allowed-origins: ${CHAT_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

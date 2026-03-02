@@ -7,17 +7,14 @@ import com.chat.Entity.Chat;
 
 public interface ChatService {
     
-    // Define methods for chat operations, e.g., createChat, getChat, updateChat, deleteChat
-    public Chat createChat(Chat chat);
+    Chat createChat(Chat chat);
     
-    public List<Chat> getChat(String userId);
-    public Chat getChatByChatId(String chatId);
+    List<Chat> getChatsByUserId(String userId);
+    Chat getChatById(String chatId);
     
-    public Chat updateChat(String adminId, String chatId, Chat chat);
-    public Chat updateFavorite(String chatId, String userId);
-    public Chat updateGroupMembers(String adminId,String chatId, Set<String> members);
+    Chat updateChat(String adminId, String chatId, Chat chat);
+    Chat updateFavorite(String chatId, String userId);
+    Chat updateGroupMembers(String adminId, String chatId, Set<String> members);
     
-    public void deleteChat(String adminId,String chatId);
-    
-    // Additional methods as needed
+    void deleteChat(String adminId, String chatId);
 }

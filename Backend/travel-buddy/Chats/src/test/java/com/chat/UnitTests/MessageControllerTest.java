@@ -62,7 +62,7 @@ class MessageControllerTest {
 
     @Test
     void sendMessage_success() throws Exception {
-        when(messageService.sendMessage(any(Message.class)))
+        when(messageService.sendMessage(anyString(), any(Message.class)))
                 .thenReturn(getSampleMessage());
 
         mockMvc.perform(
@@ -74,7 +74,7 @@ class MessageControllerTest {
 
     @Test
     void sendMessage_failure() throws Exception {
-        when(messageService.sendMessage(any(Message.class)))
+        when(messageService.sendMessage(anyString(), any(Message.class)))
                 .thenThrow(new RuntimeException("Send failed"));
 
         mockMvc.perform(
@@ -88,7 +88,7 @@ class MessageControllerTest {
 
     @Test
     void getMessages_success() throws Exception {
-        when(messageService.getMessage("chat123"))
+        when(messageService.getMessagesByChatId("chat123"))
                 .thenReturn(List.of(getSampleMessage()));
 
         mockMvc.perform(
@@ -98,7 +98,7 @@ class MessageControllerTest {
 
     @Test
     void getMessages_notFound() throws Exception {
-        when(messageService.getMessage("chat123"))
+        when(messageService.getMessagesByChatId("chat123"))
                 .thenThrow(new MessageNotFoundException("Messages not found"));
 
         mockMvc.perform(

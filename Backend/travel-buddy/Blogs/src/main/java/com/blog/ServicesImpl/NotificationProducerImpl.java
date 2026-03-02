@@ -63,7 +63,7 @@ public class NotificationProducerImpl implements NotificationProducer {
     }
     
     @Override
-     @CircuitBreaker(name = "blogNotificationCircuitBreaker", fallbackMethod = "blogCommentFallback")
+    @CircuitBreaker(name = "blogNotificationCircuitBreaker", fallbackMethod = "blogCommentFallback")
     @Retry(name = "blogNotificationRetry")
     public void sendCommentNotification(String senderId, String receiverId, String blogId, String blogTitle) {
         NotificationEvent event = new NotificationEvent(

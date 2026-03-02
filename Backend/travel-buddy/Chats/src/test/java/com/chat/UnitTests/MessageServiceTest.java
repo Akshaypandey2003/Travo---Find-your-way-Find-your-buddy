@@ -1,6 +1,7 @@
 package com.chat.UnitTests;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -11,6 +12,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,8 +23,9 @@ import com.chat.Entity.Message;
 import com.chat.Exceptions.MessageNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
+import com.chat.Service.ChatDomainEventProducer;
+import com.chat.Service.NotificationProducer;
 import com.chat.ServiceImpl.MessageServiceImpl;
-import com.chat.ServiceImpl.ChatNotificationProducer;
 
 @ExtendWith(MockitoExtension.class)
 class MessageServiceTest {
@@ -36,13 +40,24 @@ class MessageServiceTest {
     private ChatRepo chatRepo;
 
     @Mock
-    private ChatNotificationProducer chatNotificationProducer;
+    private NotificationProducer chatNotificationProducer;
+
+    @Mock
+    private ChatDomainEventProducer chatDomainEventProducer;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache cache;
 
     private Chat chat;
     private Message message;
 
     @BeforeEach
     void setup() {
+        lenient().when(cacheManager.getCache(anyString())).thenReturn(cache);
+
         chat = new Chat();
         chat.setChatId("chat123");
         chat.setGroupChat(true);
@@ -66,7 +81,7 @@ class MessageServiceTest {
         when(chatRepo.save(any(Chat.class))).thenReturn(chat);
         when(messageRepo.save(any(Message.class))).thenReturn(message);
 
-        Message result = messageService.sendMessage(message);
+        Message result = messageService.sendMessage("chat123", message);
 
         assertThat(result).isNotNull();
 
@@ -89,7 +104,7 @@ class MessageServiceTest {
 
         when(chatRepo.findById("chat123")).thenReturn(java.util.Optional.empty());
 
-        assertThatThrownBy(() -> messageService.sendMessage(message))
+        assertThatThrownBy(() -> messageService.sendMessage("chat123", message))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Chat not found");
     }
@@ -102,7 +117,7 @@ class MessageServiceTest {
         when(messageRepo.findByChatIdOrderByCreatedAtDesc("chat123"))
                 .thenReturn(List.of(message));
 
-        List<Message> messages = messageService.getMessage("chat123");
+        List<Message> messages = messageService.getMessagesByChatId("chat123");
 
         assertThat(messages).hasSize(1);
     }
@@ -113,7 +128,7 @@ class MessageServiceTest {
         when(messageRepo.findByChatIdOrderByCreatedAtDesc("chat123"))
                 .thenReturn(List.of());
 
-        assertThatThrownBy(() -> messageService.getMessage("chat123"))
+        assertThatThrownBy(() -> messageService.getMessagesByChatId("chat123"))
                 .isInstanceOf(MessageNotFoundException.class)
                 .hasMessageContaining("chat123");
 
@@ -124,12 +139,12 @@ class MessageServiceTest {
     @Test
     void shouldDeleteMessage() {
 
-        when(messageRepo.existsById("msg1")).thenReturn(true);
+        when(messageRepo.findById("msg1")).thenReturn(java.util.Optional.of(message));
         doNothing().when(messageRepo).deleteById("msg1");
 
         messageService.deleteMessage("msg1");
 
-        verify(messageRepo).existsById("msg1");
+        verify(messageRepo).findById("msg1");
         verify(messageRepo).deleteById("msg1");
     }
 

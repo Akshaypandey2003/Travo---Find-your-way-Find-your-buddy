@@ -8,8 +8,8 @@ spring:
     import: optional:configserver:http://localhost:8086
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       timeout: 2000ms
   cloud:
     gateway:
@@ -208,14 +208,25 @@ resilience4j:
 
 logging:
   level:
-    "[org.springframework.cloud.gateway]": DEBUG
-    "[reactor.netty.http.client]": DEBUG
+    "[org.springframework.cloud.gateway]": INFO
+    "[reactor.netty.http.client]": INFO
 
 
 #JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:my-super-secret-jwt-key-my-super-secret-jwt-key}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:3600000}
+
+gateway:
+  security:
+    cors:
+      allowed-origins: ${GATEWAY_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
 
 
         

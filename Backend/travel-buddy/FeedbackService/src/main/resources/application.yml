@@ -41,6 +41,9 @@ resilience4j:
 feedback:
   companion:
     max-peer-reviews-per-trip: 3
+  security:
+    cors:
+      allowed-origins: ${FEEDBACK_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
   pagination:
     max-page-size: 100
   outbox:
@@ -49,3 +52,12 @@ feedback:
       batch-size: 50
       max-attempts: 10
 
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

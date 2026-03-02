@@ -2,7 +2,9 @@ package com.trip.Config;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,9 +21,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final List<String> allowedOrigins;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Value("${trip.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173}") List<String> allowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean
@@ -45,12 +51,12 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(Collections.singletonList("*"));// Allowed origins
+        config.setAllowedOrigins(allowedOrigins);
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP
                                                                                                      // methods
         config.setAllowedHeaders(Collections.singletonList("*")); // Allowed headers (* represents all headers)
-        config.setAllowCredentials(true); // Allow credentials (cookies, etc.)
+        config.setAllowCredentials(false);
         config.setExposedHeaders(Arrays.asList("Authorization"));
         config.setMaxAge(3600L); // Cache the preflight response for 1 hour
 

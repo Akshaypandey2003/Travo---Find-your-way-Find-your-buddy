@@ -9,6 +9,8 @@ eureka:
 
 
 spring:
+  cache:
+    type: simple
   cloud:
     discovery:
       enabled: false

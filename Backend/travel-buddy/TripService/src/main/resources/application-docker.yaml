@@ -34,8 +34,8 @@ spring:
 
   security:
    user:
-    name: ${APP_BASIC_AUTH_USER:admin}
-    password: ${APP_BASIC_AUTH_PASSWORD:password}
+    name: ${APP_BASIC_AUTH_USER}
+    password: ${APP_BASIC_AUTH_PASSWORD}
 
 
   servlet:
@@ -99,4 +99,8 @@ trip:
       fixed-delay-ms: ${TRIP_NOTIFICATION_RETRY_DELAY_MS:30000}
       batch-size: ${TRIP_NOTIFICATION_RETRY_BATCH_SIZE:50}
       max-attempts: ${TRIP_NOTIFICATION_RETRY_MAX_ATTEMPTS:10}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
 

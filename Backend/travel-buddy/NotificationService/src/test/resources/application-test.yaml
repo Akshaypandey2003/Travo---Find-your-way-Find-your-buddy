@@ -1,0 +1,18 @@
+jwt:
+  secret: test-secret-key-for-notification-service-1234567890
+  expiration: 3600000
+
+spring:
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+    compatibility-verifier:
+      enabled: false
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+
+eureka:
+  client:
+    enabled: false

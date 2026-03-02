@@ -24,8 +24,8 @@ spring:
 
   security:
    user:
-    name: ${APP_BASIC_AUTH_USER:admin}
-    password: ${APP_BASIC_AUTH_PASSWORD:password}
+    name: ${APP_BASIC_AUTH_USER}
+    password: ${APP_BASIC_AUTH_PASSWORD}
 
   servlet:
     multipart:
@@ -42,5 +42,5 @@ eureka:
 
 okta:
   oauth2:
-    issuer: ${OKTA_ISSUER:https://dev-95846997.okta.com/oauth2/default}
-    audience: ${OKTA_AUDIENCE:api://default}
+    issuer: ${OKTA_ISSUER}
+    audience: ${OKTA_AUDIENCE}

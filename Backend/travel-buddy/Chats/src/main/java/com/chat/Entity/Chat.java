@@ -8,14 +8,25 @@ import java.util.TreeSet;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.IndexDirection;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Document(collection = "chats")
+@CompoundIndexes({
+        @CompoundIndex(name = "idx_chat_participants_recent", def = "{'participants': 1, 'recentConversationAt': -1}"),
+        @CompoundIndex(name = "idx_chat_group_recent", def = "{'groupChat': 1, 'recentConversationAt': -1}")
+})
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Chat {
@@ -23,11 +34,20 @@ public class Chat {
     @Id
     private String chatId;
 
+    @Version
+    private Long version;
+
     private boolean groupChat;
 
-    private Set<String> favoriteBy; // userIds who marked the chat as favorite
-    private Set<String> participants; // userIds
-    private Set<String> groupAdmin; // only if isGroupChat == true
+    @Builder.Default
+    private Set<String> favoriteBy = new HashSet<>(); // userIds who marked the chat as favorite
+
+    @Indexed
+    @Builder.Default
+    private Set<String> participants = new TreeSet<>(); // userIds
+
+    @Builder.Default
+    private Set<String> groupAdmin = new TreeSet<>(); // only if isGroupChat == true
 
     private String groupName; // null for 1-to-1 chats, set for group chats
     private String groupDescription;
@@ -41,12 +61,6 @@ public class Chat {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    @Indexed(direction = IndexDirection.DESCENDING)
     private LocalDateTime recentConversationAt;
-
-    public Chat()
-    {
-        this.favoriteBy = new HashSet<>();
-        this.groupAdmin = new TreeSet<>();
-        this.participants = new TreeSet<>();
-    }
 }

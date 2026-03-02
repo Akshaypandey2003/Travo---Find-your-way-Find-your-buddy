@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,6 +20,7 @@ import com.user.Entity.CloseFriends;
 import com.user.Repository.CloseFriendsRepo;
 
 @DataMongoTest
+@EnabledIfSystemProperty(named = "runDockerTests", matches = "true")
 @Testcontainers
 @ActiveProfiles("test")
 class CloseFriendsRepositoryTest {

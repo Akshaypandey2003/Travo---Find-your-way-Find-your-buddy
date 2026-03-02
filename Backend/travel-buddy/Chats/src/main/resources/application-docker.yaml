@@ -10,6 +10,16 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://mongodb:27017/Chats}
       database: Chats
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
+      cache-null-values: false
 
   config:
     import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://config-server:8086}
@@ -24,13 +34,43 @@ spring:
 
   security:
    user:
-    name: ${APP_BASIC_AUTH_USER:admin}
-    password: ${APP_BASIC_AUTH_PASSWORD:password}
+    name: ${APP_BASIC_AUTH_USER}
+    password: ${APP_BASIC_AUTH_PASSWORD}
 
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+    instances:
+      chatNotificationCircuitBreaker:
+        baseConfig: default
+      chatDomainEventCircuitBreaker:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      chatNotificationRetry:
+        baseConfig: default
+      chatDomainEventRetry:
+        baseConfig: default
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
 
 eureka:
   client:

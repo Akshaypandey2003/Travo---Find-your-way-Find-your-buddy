@@ -7,6 +7,7 @@ spring:
   config:
     import: optional:configserver:http://localhost:8086
   kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: notification-service
   mail:
@@ -23,4 +24,19 @@ spring:
 
 logging:
   level:
-    org.springframework.kafka: DEBUG
+    org.springframework.kafka: INFO
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+notification:
+  security:
+    cors:
+      allowed-origins: ${NOTIFICATION_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

@@ -3,6 +3,7 @@ package com.chat.IntegrationTests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import java.time.Duration;
 import java.util.*;
@@ -10,6 +11,7 @@ import java.util.*;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +31,7 @@ import com.chat.Repository.MessageRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
+@EnabledIfSystemProperty(named = "runDockerTests", matches = "true")
 @Testcontainers
 @AutoConfigureMockMvc(addFilters = false)
 @EmbeddedKafka(
@@ -95,14 +98,14 @@ class ChatMessageIntegrationTest {
         );
 
         mockMvc.perform(
-                get("/api/v1/chats/user/{userId}", "user1")
+                get("/api/v1/chats/user").with(user("user1"))
         ).andExpect(status().isOk());
     }
 
     @Test
     void shouldReturn404_whenChatNotFound() throws Exception {
         mockMvc.perform(
-                get("/api/v1/chats/user/{userId}", "invalid")
+                get("/api/v1/chats/user").with(user("invalid"))
         ).andExpect(status().isNotFound());
     }
 
@@ -116,8 +119,8 @@ class ChatMessageIntegrationTest {
         );
 
         mockMvc.perform(
-                put("/api/v1/chats/{chatId}/favorite/{userId}",
-                        chat.getChatId(), "user1")
+                put("/api/v1/chats/{chatId}/favorite", chat.getChatId())
+                        .with(user("user1"))
         ).andExpect(status().isOk());
 
         Chat updated = chatRepo.findById(chat.getChatId()).get();
@@ -135,7 +138,7 @@ class ChatMessageIntegrationTest {
 
         mockMvc.perform(
                 delete("/api/v1/chats/{chatId}", chat.getChatId())
-                        .header("X-ADMIN-ID", "user1")
+                        .with(user("user1"))
         ).andExpect(status().isNoContent());
 
         assertThat(chatRepo.findAll()).isEmpty();
@@ -195,7 +198,7 @@ class ChatMessageIntegrationTest {
                 Message.builder()
                         .chatId("chat1")
                         .senderId("user1")
-                        .isRead(false)
+                        .read(false)
                         .build()
         );
 

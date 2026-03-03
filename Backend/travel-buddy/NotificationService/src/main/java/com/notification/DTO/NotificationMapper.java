@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-import com.events.Entity.NotificationEvent;
+import com.events.Notification.NotificationEvent;
 import com.notification.Entity.Notification;
 
 public class NotificationMapper {

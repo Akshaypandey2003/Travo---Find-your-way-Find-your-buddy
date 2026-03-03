@@ -1,6 +1,6 @@
 package com.notification.handler;
 
-import com.events.Entity.NotificationEvent;
+import com.events.Notification.NotificationEvent;
 
 public interface NotificationHandler {
 

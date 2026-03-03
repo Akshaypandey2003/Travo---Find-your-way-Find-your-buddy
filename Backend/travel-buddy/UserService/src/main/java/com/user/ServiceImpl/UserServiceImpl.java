@@ -130,7 +130,7 @@ public class UserServiceImpl implements UserService {
         userEventProducer.publishUserCreated(savedUser.getUserId(), savedUser.getName(), savedUser.getEmail());
 
         //User notification
-            notificationProducer.sendWelcomeNotification(savedUser.getUserId(),savedUser.getName(),savedUser.getEmail());
+        notificationProducer.sendWelcomeNotification(savedUser.getUserId(),savedUser.getName(),savedUser.getEmail());
 
         return new AuthResponse(
                 userResponse,
@@ -412,7 +412,6 @@ public class UserServiceImpl implements UserService {
                 user.getEmail(),
                 user.getName(),
                 resetLink);
-        
     }
 
     @Transactional

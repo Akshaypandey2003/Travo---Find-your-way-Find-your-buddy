@@ -22,10 +22,10 @@ public class NotificationRetryScheduler {
     private final Logger logger = LoggerFactory.getLogger(NotificationRetryScheduler.class);
    
     @Value("${user.notifications.retry.max-attempts:10}")
-    private static int MAX_RETRY;
+    private int MAX_RETRY;
 
     @Value("${user.notifications.retry.batch-size:50}")
-    private static int BATCH_SIZE;
+    private int BATCH_SIZE;
 
     public NotificationRetryScheduler(
             FailedNotificationRepository failedRepo,

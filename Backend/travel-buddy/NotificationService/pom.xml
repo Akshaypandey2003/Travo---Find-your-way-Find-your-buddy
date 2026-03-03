@@ -26,11 +26,6 @@
 		    <artifactId>spring-cloud-starter-openfeign</artifactId>
 		</dependency>
 
-		<dependency>
-           <groupId>com.travelbuddy</groupId>
-           <artifactId>NotificationEvents</artifactId>
-           <version>1.0.0</version>
-      </dependency>
 
       <!-- loading .env -->
       <dependency>
@@ -59,10 +54,15 @@
 
 	<build>
 		<plugins>
+		    <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			
 		</plugins>
 	</build>
 

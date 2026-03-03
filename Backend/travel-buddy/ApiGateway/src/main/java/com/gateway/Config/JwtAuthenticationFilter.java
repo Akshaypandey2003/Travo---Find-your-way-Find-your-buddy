@@ -32,8 +32,8 @@ public class JwtAuthenticationFilter implements WebFilter {
     }
 
     @Override
-    @SuppressWarnings("null")
-    public Mono<Void> filter( ServerWebExchange exchange, WebFilterChain chain) {
+    @SuppressWarnings({ "null" })
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
         String authHeader = exchange.getRequest()
                 .getHeaders()
@@ -48,21 +48,28 @@ public class JwtAuthenticationFilter implements WebFilter {
         try {
             Claims claims = jwtProvider.validateToken(token);
 
-            String email = claims.getSubject();
+            String userId = jwtProvider.extractUserId(token);
+
             List<String> roles = claims.get("roles", List.class)
                     .stream()
                     .map(Object::toString)
                     .toList();
 
             var authorities = roles.stream()
+                    .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
                     .map(SimpleGrantedAuthority::new)
                     .toList();
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(email, token, authorities);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, token,
+                    authorities);
 
             SecurityContext context = new SecurityContextImpl(authentication);
 
-            return chain.filter(exchange)
+            ServerWebExchange mutatedExchange = exchange.mutate()
+                    .request(builder -> builder.header(HttpHeaders.AUTHORIZATION, authHeader))
+                    .build();
+
+            return chain.filter(mutatedExchange)
                     .contextWrite(
                             ReactiveSecurityContextHolder.withSecurityContext(
                                     Mono.just(context)));

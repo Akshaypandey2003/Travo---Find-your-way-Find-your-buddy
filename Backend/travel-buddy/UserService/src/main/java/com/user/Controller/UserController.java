@@ -60,9 +60,9 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserByPreferences(pageable, preferences));
     }
 
-    @DeleteMapping("/{userId}")
+    @DeleteMapping
     public ResponseEntity<Void> deleteUser(
-            @PathVariable String userId) {
+         @AuthenticationPrincipal String userId) {
 
         userService.deleteUser(userId);
 

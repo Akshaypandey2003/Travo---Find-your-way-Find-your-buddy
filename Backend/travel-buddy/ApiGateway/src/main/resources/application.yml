@@ -14,38 +14,11 @@ spring:
   cloud:
     gateway:
       routes:
-      - id: HOTEL-INFO
-        uri: lb://HOTEL-INFO
-        predicates:
-        - Path=/hotelInfo/**
-
-      - id: HOTEL-SERVICE
-        uri: lb://HOTEL-SERVICE
-        predicates:
-        - Path=/hotel/**
-        
-
-      - id: REVIEW-SERVICE
-        uri: lb://REVIEW-SERVICE
-        predicates:
-        - Path=/review/**
-
-
-      - id: ROOM-SERVICE
-        uri: lb://ROOM-SERVICE
-        predicates:
-        - Path=/rooms/**
-
-
-      - id: BOOKING-SERVICE
-        uri: lb://BOOKING-SERVICE
-        predicates:
-        - Path=/booking/**
 
       - id: USER-SERVICE-SECURED
         uri: lb://user-service
         predicates:
-        - Path=/user/**,/connection/**
+        - Path=/api/v1/**
         filters:
             - name: CircuitBreaker
               args:
@@ -61,7 +34,7 @@ spring:
       - id: USER-SERVICE-PUBLIC
         uri: lb://user-service
         predicates:
-        - Path=/auth/**,/user/public/**
+        - Path=/api/v1/auth/**,/user/public/**
         filters:
             - name: CircuitBreaker
               args:

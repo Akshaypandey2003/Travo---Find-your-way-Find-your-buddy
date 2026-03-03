@@ -3,7 +3,7 @@ package com.notification.handler;
 
 import org.springframework.stereotype.Component;
 
-import com.events.Entity.NotificationEvent;
+import com.events.Notification.NotificationEvent;
 import com.notification.Service.EmailService;
 
 @Component
@@ -35,7 +35,8 @@ public class EmailNotificationHandler implements NotificationHandler {
         }
 
         if ("WELCOME".equals(event.getType())) {
-
+             
+            System.out.println("Handling WELCOME event for receiverId=" + event.getReceiverId());
             String email = event.getMetadata().get("email");
             String name = event.getMetadata().get("name");
 
@@ -46,7 +47,7 @@ public class EmailNotificationHandler implements NotificationHandler {
             String email = event.getMetadata().get("email");
             String name = event.getMetadata().get("name");
 
-            emailService.sendWelcomeEmail(email,name);
+            emailService.sendPasswordResetSuccess(email,name);
         }
     }
 }

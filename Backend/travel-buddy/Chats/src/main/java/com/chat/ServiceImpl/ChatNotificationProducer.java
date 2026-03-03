@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.chat.Service.NotificationProducer;
 import com.events.Notification.FailedNotification;
-import com.events.Entity.NotificationEvent;
+import com.events.Notification.NotificationEvent;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;

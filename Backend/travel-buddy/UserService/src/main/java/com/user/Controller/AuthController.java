@@ -61,7 +61,7 @@ public class AuthController {
                 return ResponseEntity.ok(response);
         }
 
-        @PostMapping("/forgot-password")
+        @PostMapping("/forget-password")
         public ResponseEntity<Void> forgotPassword(
                         @Valid @RequestBody ForgotPasswordRequest request) {
 

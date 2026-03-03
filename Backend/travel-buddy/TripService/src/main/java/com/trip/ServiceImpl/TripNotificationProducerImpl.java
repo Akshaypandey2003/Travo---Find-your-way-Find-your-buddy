@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.events.Entity.NotificationEvent;
 import com.events.Notification.FailedNotification;
+import com.events.Notification.NotificationEvent;
 import com.events.Repositories.FailedNotificationRepository;
 import com.trip.Services.TripNotificationProducer;
 

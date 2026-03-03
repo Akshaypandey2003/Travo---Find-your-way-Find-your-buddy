@@ -1,6 +1,7 @@
 package com.gateway.Config;
 
 
+import java.security.Key;
 import java.util.Date;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtProvider {
@@ -20,6 +22,13 @@ public class JwtProvider {
 
     @Value("${jwt.expiration}")
     private long expiration;
+
+     private Key key;
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     public String generateToken(String email, List<String> roles) {
         return Jwts.builder()
@@ -37,5 +46,18 @@ public class JwtProvider {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+     public String getUsernameFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+     public String extractUserId(String token) {
+        return getUsernameFromToken(token);
     }
 }

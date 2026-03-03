@@ -37,15 +37,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        "/user/**",
-                        "/connection/**",
-                        "/auth/**",
-                        "/chat/**"))
+                .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers(
-                                "/auth/**",
+                                "/api/v1/auth/**",
                                 "/actuator/health/**",
                                 "/actuator/info",
                                 "/actuator/prometheus").permitAll()

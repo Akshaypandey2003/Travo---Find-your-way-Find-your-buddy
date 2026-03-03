@@ -3,7 +3,7 @@ package com.notification.handler;
 
 import org.springframework.stereotype.Component;
 
-import com.events.Entity.NotificationEvent;
+import com.events.Notification.NotificationEvent;
 import com.notification.Clients.UserServiceClient;
 import com.notification.Controller.NotificationSocketController;
 import com.notification.DTO.NotificationMapper;

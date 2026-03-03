@@ -53,10 +53,10 @@ public class SecurityConfig {
                     return config;
                 }))
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/auth/**", "/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
+                        .pathMatchers("/api/v1/auth/**", "/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                         .anyExchange().authenticated()
                 )
-                .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+              .addFilterBefore(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
 

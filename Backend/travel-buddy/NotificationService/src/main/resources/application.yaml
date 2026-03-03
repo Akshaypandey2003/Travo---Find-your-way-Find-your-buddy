@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: notification-service
+  data:
+    mongodb:
+      database: Notifications
   config:
     import: optional:configserver:http://localhost:8086
   kafka:
@@ -13,8 +16,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_APP_PASSWORD}
+    username: goldenera20to24@gmail.com
+    password: gsnnnieokhnufdwl
     properties:
       mail:
         smtp:

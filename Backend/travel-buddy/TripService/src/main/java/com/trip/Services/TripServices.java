@@ -5,6 +5,7 @@ import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripListItemDto;
 import com.trip.DTO.TripRequestActionResponseDto;
 import com.trip.DTO.TripRequestDto;
+import com.trip.DTO.TripUpdateRequest;
 import com.trip.Entity.Trip;
 
 public interface TripServices {
@@ -13,7 +14,7 @@ public interface TripServices {
     TripDeleteResponseDto deleteTrip(String tripId);
 
     // Update a trip
-    Trip updateTrip(Trip trip);
+    Trip updateTrip(String authenticatedUserId, TripUpdateRequest trip);
 
     // Get a trip by ID
     Trip getTripById(String tripId);

@@ -8,5 +8,5 @@ import com.notification.Entity.Notification;
 
 public interface NotificationRepo extends MongoRepository<Notification, String> {
 
-    public List<Notification> findByNotificationToAndReadOrderByCreatedAtDesc (String id, String status);
+    public List<Notification> findByNotificationToAndReadOrderByCreatedAtDesc (String id, boolean status);
 }

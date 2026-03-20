@@ -108,25 +108,19 @@ public class ConnectionServiceImpl implements ConnectionService {
 
                 connectionRepo.save(connection);
 
-                try {
-
-                } catch (Exception e) {
-                        // TODO: handle exception
-                }
-
                 // If public account → immediately follow
                 if (status == ConnectionStatus.FOLLOWING) {
 
                         userRepo.incrementFollowingCount(followerId);
                         userRepo.incrementFollowersCount(followingId);
+                        notificationProducer.newFollower(followerId, follower.getName(), followingId);
 
-                        notificationProducer.friendRequestSend(followerId, followingId);
-
-                } else {
-                        // Private → send follow request notification
-                        notificationProducer.friendRequestSend(followerId, followingId);
+                } 
+                else
+                {
+                notificationProducer.friendRequestSend(followerId, follower.getName(), followingId);
+                    
                 }
-
                 return connectionMapper.toResponse(connection);
         }
 
@@ -167,10 +161,13 @@ public class ConnectionServiceImpl implements ConnectionService {
 
                 connectionRepo.save(connection);
 
-                userRepo.incrementFollowersCount(receiverId);
                 userRepo.incrementFollowingCount(followerId);
+                userRepo.incrementFollowersCount(receiverId);
 
-                notificationProducer.friendRequestAccept(receiverId, followerId);
+                User sender = userRepo.findById(receiverId)
+                                .orElseThrow(() -> new UserNotFoundException("Sender not found"));
+
+                notificationProducer.friendRequestAccept(receiverId, sender.getName(),followerId);
 
                 return connectionMapper.toResponse(connection);
         }

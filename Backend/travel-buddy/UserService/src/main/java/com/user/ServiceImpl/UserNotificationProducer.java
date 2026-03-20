@@ -20,7 +20,6 @@ public class UserNotificationProducer {
 
     private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
     private final FailedNotificationRepository failedNotificationRepo;
-
     private final Logger logger = LoggerFactory.getLogger(UserNotificationProducer.class);
 
     private final String NOTIFICATION_TOPIC="notification-events";
@@ -33,14 +32,72 @@ public class UserNotificationProducer {
 
     @CircuitBreaker(name = "notificationServiceCircuitBreaker", fallbackMethod = "sendFriendRequestFallback")
     @Retry(name = "notificationServiceRetry")
-    public void friendRequestSend(String senderId, String receiverId) {
+    public void friendRequestSend(String senderId, String senderName, String receiverId) {
+       
+        try {
+
+            NotificationEvent event = new NotificationEvent(
+                    "FRIEND_REQUEST",
+                    senderId,
+                    receiverId,
+                    senderName + " sent you a friend request.",
+                    "CONNECTION",
+                    null,
+                    null,
+                    System.currentTimeMillis());
+
+            kafkaTemplate.send(NOTIFICATION_TOPIC, receiverId, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            System.out.println(
+                                    "Kafka send success. Topic=" +
+                                            result.getRecordMetadata().topic() +
+                                            ", Partition=" +
+                                            result.getRecordMetadata().partition() +
+                                            ", Offset=" +
+                                            result.getRecordMetadata().offset());
+                        } else {
+                            System.out.println("Kafka send failed: " + ex.getMessage());
+                        }
+                    }).get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+     public void sendFriendRequestFallback(
+            String senderId,
+            String senderName,
+            String receiverId,
+            Exception ex) {
+
+        logger.error(
+                "FAILED to send friend request notification for userId={}. Reason={}",
+                receiverId,
+                ex.getMessage());
+        NotificationEvent event = new NotificationEvent(
+                "FRIEND_REQUEST_SENT",
+                senderId,
+                receiverId,
+                senderName + " has sent you a friend request.",
+                "CONNECTION",
+                null,
+                null,
+                System.currentTimeMillis());
+
+        saveFailedEvent(NOTIFICATION_TOPIC, receiverId, event);
+    }
+
+    @CircuitBreaker(name = "notificationServiceCircuitBreaker", fallbackMethod = "newFollowerFallback")
+    @Retry(name = "notificationServiceRetry")
+    public void newFollower(String senderId, String senderName, String receiverId) {
 
         try {
             NotificationEvent event = new NotificationEvent(
-                    "FRIEND_REQUEST_SENT",
+                    "NEW_FOLLOWER",
                     senderId,
                     receiverId,
-                    "has sent you a friend request.",
+                    senderName + " started following you.",
                     "CONNECTION",
                     null,
                     null,
@@ -66,8 +123,9 @@ public class UserNotificationProducer {
 
     }
 
-    public void sendFriendRequestFallback(
+    public void newFollowerFallback(
             String senderId,
+            String senderName,
             String receiverId,
             Exception ex) {
 
@@ -76,10 +134,10 @@ public class UserNotificationProducer {
                 receiverId,
                 ex.getMessage());
         NotificationEvent event = new NotificationEvent(
-                "FRIEND_REQUEST_SENT",
+                "NEW_FOLLOWER",
                 senderId,
                 receiverId,
-                "has sent you a friend request.",
+                senderName + " started following you.",
                 "CONNECTION",
                 null,
                 null,
@@ -90,14 +148,14 @@ public class UserNotificationProducer {
 
     @CircuitBreaker(name = "notificationServiceCircuitBreaker", fallbackMethod = "acceptFriendRequestFallback")
     @Retry(name = "notificationServiceRetry")
-    public void friendRequestAccept(String senderId, String receiverId) {
+    public void friendRequestAccept(String senderId, String senderName, String receiverId) {
 
         try {
             NotificationEvent event = new NotificationEvent(
                     "FRIEND_REQUEST_ACCEPTED",
                     senderId,
                     receiverId,
-                    "has accepted your friend request.",
+                    senderName + " accepted your follow request.",
                     "CONNECTION",
                     null,
                     null,
@@ -112,6 +170,7 @@ public class UserNotificationProducer {
 
     public void acceptFriendRequestFallback(
             String senderId,
+            String senderName,
             String receiverId,
             Exception ex) {
 
@@ -123,7 +182,7 @@ public class UserNotificationProducer {
                 "FRIEND_REQUEST_ACCEPTED",
                 senderId,
                 receiverId,
-                "has accepted your friend request.",
+                senderName + " accepted your follow request.",
                 "CONNECTION",
                 null,
                 null,
@@ -145,7 +204,7 @@ public class UserNotificationProducer {
                     "PASSWORD_RESET",
                     "SYSTEM",
                     userId,
-                    "",
+                    "Password reset requested for your account.",
                     "USER",
                     userId,
                     Map.of(

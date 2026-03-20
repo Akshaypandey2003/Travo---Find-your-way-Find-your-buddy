@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Entity.Message;
 import com.chat.Exceptions.MessageNotFoundException;
 import com.chat.Repository.ChatRepo;
@@ -78,12 +79,12 @@ public class MessageServiceImpl implements MessageService {
     }
 
     private void notifyParticipants(Chat chat, Message savedMessage) {
-        for (String participant : chat.getParticipants()) {
-            if (!participant.equals(savedMessage.getSenderId())) {
+        for (ChatParticipant participant : chat.getParticipants()) {
+            if (!participant.getUserId().equals(savedMessage.getSenderId())) {
                 try {
                     chatNotificationProducer.messageSent(
                             savedMessage.getSenderId(),
-                            participant,
+                            participant.getUserId(),
                             savedMessage.getChatId(),
                             chat.getGroupName()
                     );

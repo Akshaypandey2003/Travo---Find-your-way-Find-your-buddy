@@ -31,8 +31,9 @@ public class InAppNotificationHandler implements NotificationHandler {
     @Override
     public boolean supports(NotificationEvent event) {
 
-        return "FRIEND_REQUEST_SENT".equals(event.getType())
+        return "FRIEND_REQUEST".equals(event.getType())
                 || "FRIEND_REQUEST_ACCEPTED".equals(event.getType())
+                || "NEW_FOLLOWER".equals(event.getType())
                 || "TRIP_INVITE".equals(event.getType())
                 || "TRIP_CREATED".equals(event.getType())
                 || "TRIP_REQUEST_SENT".equals(event.getType())

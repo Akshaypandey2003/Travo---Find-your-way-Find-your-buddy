@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.chat.Config.JwtProvider;
 import com.chat.Controller.ChatController;
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Service.ChatService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -53,7 +54,9 @@ class ChatControllerTest {
         chat.setChatId("chat123");
         chat.setGroupChat(true);
         chat.setGroupName("Test Group");
-        chat.setParticipants(Set.of("user1", "user2"));
+        chat.setParticipants(Set.of(
+                new ChatParticipant("user1", "User One", "pic1"),
+                new ChatParticipant("user2", "User Two", "pic2")));
         chat.setGroupAdmin(Set.of("admin1"));
         return chat;
     }
@@ -189,7 +192,8 @@ class ChatControllerTest {
                 put("/api/v1/chats/chat123/members")
                         .header("X-ADMIN-ID", "admin1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Set.of("user3")))
+                        .content(objectMapper.writeValueAsString(
+                                Set.of(new ChatParticipant("user3", "User Three", "pic3"))))
         ).andExpect(status().isOk());
     }
 
@@ -202,7 +206,8 @@ class ChatControllerTest {
                 put("/api/v1/chats/chat123/members")
                         .header("X-ADMIN-ID", "admin1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Set.of("user3")))
+                        .content(objectMapper.writeValueAsString(
+                                Set.of(new ChatParticipant("user3", "User Three", "pic3"))))
         ).andExpect(status().isInternalServerError());
     }
 

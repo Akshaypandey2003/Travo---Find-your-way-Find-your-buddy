@@ -4,9 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.trip.Entity.Trip;
-import com.trip.Entity.Trip.TripStatus;
-import com.trip.Entity.Trip.TripType;
-
+import com.trip.Enum.TripStatus;
+import com.trip.Enum.TripType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

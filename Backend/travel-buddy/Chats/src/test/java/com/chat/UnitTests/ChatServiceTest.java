@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Exceptions.ChatNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
@@ -51,7 +52,9 @@ class ChatServiceTest {
         chat.setChatId("chat1");
         chat.setGroupChat(true);
         chat.setGroupName("Test Group");
-        chat.setParticipants(new java.util.HashSet<>(Set.of("user1", "user2")));
+        chat.setParticipants(new java.util.HashSet<>(Set.of(
+                new ChatParticipant("user1", "User One", "pic1"),
+                new ChatParticipant("user2", "User Two", "pic2"))));
         chat.setGroupAdmin(new TreeSet<>(Set.of("admin1")));
     }
 
@@ -155,9 +158,11 @@ class ChatServiceTest {
         Chat result = chatService.updateGroupMembers(
                 "admin1",
                 "chat1",
-                Set.of("user3"));
+                Set.of(new ChatParticipant("user3", "User Three", "pic3")));
 
-        assertThat(result.getParticipants()).contains("user3");
+        assertThat(result.getParticipants())
+                .extracting(ChatParticipant::getUserId)
+                .contains("user3");
     }
 
     // ---------- DELETE CHAT ----------

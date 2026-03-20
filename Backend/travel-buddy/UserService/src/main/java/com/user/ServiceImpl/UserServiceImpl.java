@@ -334,6 +334,10 @@ public class UserServiceImpl implements UserService {
             updatedFields.put("cloudinaryImagePublicId",
                     request.getCloudinaryImagePublicId());
         }
+         if (request.getAccountType() != null) {
+            user.setAccountType(request.getAccountType());
+            updatedFields.put("accountType", request.getAccountType());
+        }
 
         User saved = userRepo.save(user);
 
@@ -449,5 +453,11 @@ public class UserServiceImpl implements UserService {
        
 
         logger.info("Password reset successful for userId={}", user.getUserId());
+    }
+
+    protected String getUserName(String userId) {
+        return userRepo.findById(userId)
+                .map(User::getName)
+                .orElse("Unknown User");
     }
 }

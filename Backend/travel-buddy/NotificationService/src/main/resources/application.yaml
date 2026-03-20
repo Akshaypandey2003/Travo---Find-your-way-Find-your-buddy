@@ -29,6 +29,11 @@ logging:
   level:
     org.springframework.kafka: INFO
 
+app:
+  kafka:
+    topics:
+      user-events: ${USER_EVENTS_TOPIC:user-events}
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:3600000}

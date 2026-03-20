@@ -20,6 +20,11 @@ spring:
   config:
     import: optional:configserver:http://localhost:8086
 
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: chat-service
+
 resilience4j:
   circuitbreaker:
     configs:
@@ -60,3 +65,7 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+
+kafka:
+  topic:
+    user-events: ${USER_EVENTS_TOPIC:user-events}

@@ -28,10 +28,12 @@ import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripListItemDto;
 import com.trip.DTO.TripRequestActionResponseDto;
 import com.trip.DTO.TripRequestDto;
+import com.trip.DTO.TripUpdateRequest;
 import com.trip.Entity.Trip;
-import com.trip.Entity.Trip.TripStatus;
+import com.trip.Entity.TripMember;
 import com.trip.Entity.TripRequest;
 import com.trip.Entity.TripRequest.RequestStatus;
+import com.trip.Enum.TripStatus;
 import com.trip.Exceptions.TripNotFoundException;
 import com.trip.Repositories.TripRequestRepository;
 import com.trip.Repositories.TripRespository;
@@ -120,9 +122,12 @@ public class TripServiceImpl implements TripServices {
             @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
             @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
     })
-    public Trip updateTrip(Trip trip) {
+    public Trip updateTrip(String authenticatedUserId, TripUpdateRequest trip) {
+
+       
         logger.debug("Updating trip with ID: {}", trip.getTripId());
         Trip existingTrip = getTripOrThrow(trip.getTripId());
+
 
         if (trip.getTripCity() != null) {
             existingTrip.setTripCity(trip.getTripCity());
@@ -221,7 +226,7 @@ public class TripServiceImpl implements TripServices {
     })
     public Trip sendTripRequest(String tripId, String requestFrom) {
         Trip trip = getTripOrThrow(tripId);
-        if (safeSet(trip.getTripMembers()).contains(requestFrom)) {
+        if (containsMember(safeSet(trip.getTripMembers()), requestFrom)) {
             return trip;
         }
 
@@ -275,8 +280,8 @@ public class TripServiceImpl implements TripServices {
         tripRequest.setActionByUserId(trip.getTripOwnerId());
         tripRequestRepository.save(tripRequest);
 
-        Set<String> members = safeSet(trip.getTripMembers());
-        members.add(requestFrom);
+        Set<TripMember> members = safeSet(trip.getTripMembers());
+        addMember(members, requestFrom);
         trip.setTripMembers(members);
         trip.setPendingRequestCount((int) tripRequestRepository.countByTripIdAndStatus(tripId, RequestStatus.PENDING));
 
@@ -395,8 +400,8 @@ public class TripServiceImpl implements TripServices {
     public Trip removeTripMember(String tripId, String memberId) {
         Trip trip = getTripOrThrow(tripId);
 
-        Set<String> members = safeSet(trip.getTripMembers());
-        members.remove(memberId);
+        Set<TripMember> members = safeSet(trip.getTripMembers());
+        removeMember(members, memberId);
         trip.setTripMembers(members);
 
         Trip savedTrip = tripRespository.save(trip);
@@ -426,8 +431,13 @@ public class TripServiceImpl implements TripServices {
             trips = tripRespository.findByTripStartDate(startDate, pageable);
 
             for (Trip trip : trips.getContent()) {
-                for (String userId : safeSet(trip.getTripMembers())) {
-                    tripNotificationProducer.sendTripStartReminderNotification(userId, trip.getTripId(), trip.getTripName());
+                for (TripMember member : safeSet(trip.getTripMembers())) {
+                    if (member.getUserId() != null) {
+                        tripNotificationProducer.sendTripStartReminderNotification(
+                                member.getUserId(),
+                                trip.getTripId(),
+                                trip.getTripName());
+                    }
                 }
             }
             page++;
@@ -444,8 +454,13 @@ public class TripServiceImpl implements TripServices {
 
             for (Trip trip : trips.getContent()) {
                 if (trip.getTripStatus() != TripStatus.COMPLETED) {
-                    for (String userId : safeSet(trip.getTripMembers())) {
-                        tripNotificationProducer.sendTripEndReminderNotification(userId, trip.getTripId(), trip.getTripName());
+                    for (TripMember member : safeSet(trip.getTripMembers())) {
+                        if (member.getUserId() != null) {
+                            tripNotificationProducer.sendTripEndReminderNotification(
+                                    member.getUserId(),
+                                    trip.getTripId(),
+                                    trip.getTripName());
+                        }
                     }
                 }
             }
@@ -458,13 +473,17 @@ public class TripServiceImpl implements TripServices {
                 .orElseThrow(() -> new TripNotFoundException(TRIP_NOT_FOUND + tripId));
     }
 
-    private Set<String> safeSet(Set<String> values) {
+    private Set<TripMember> safeSet(Set<TripMember> values) {
+        return values == null ? new LinkedHashSet<>() : values;
+    }
+
+    private Set<String> safeStringSet(Set<String> values) {
         return values == null ? new LinkedHashSet<>() : values;
     }
 
     private void sanitizeTripCollections(Trip trip) {
         trip.setTripMembers(safeSet(trip.getTripMembers()));
-        trip.setTripTags(safeSet(trip.getTripTags()));
+        trip.setTripTags(safeStringSet(trip.getTripTags()));
 
         if (trip.getTripHighlights() == null) {
             trip.setTripHighlights(new ArrayList<>());
@@ -500,5 +519,30 @@ public class TripServiceImpl implements TripServices {
                 .hasNext(tripPage.hasNext())
                 .hasPrevious(tripPage.hasPrevious())
                 .build();
+    }
+
+    private boolean containsMember(Set<TripMember> members, String userId) {
+        if (userId == null || members == null) {
+            return false;
+        }
+        return members.stream().anyMatch(member -> userId.equals(member.getUserId()));
+    }
+
+    private void addMember(Set<TripMember> members, String userId) {
+        if (userId == null || members == null) {
+            return;
+        }
+        if (!containsMember(members, userId)) {
+            members.add(TripMember.builder()
+                    .userId(userId)
+                    .build());
+        }
+    }
+
+    private void removeMember(Set<TripMember> members, String userId) {
+        if (userId == null || members == null) {
+            return;
+        }
+        members.removeIf(member -> userId.equals(member.getUserId()));
     }
 }

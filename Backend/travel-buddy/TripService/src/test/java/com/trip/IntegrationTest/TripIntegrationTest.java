@@ -34,9 +34,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trip.Config.JwtProvider;
 import com.trip.Entity.Trip;
-import com.trip.Entity.Trip.TripType;
+import com.trip.Entity.TripMember;
 import com.trip.Entity.TripRequest;
 import com.trip.Entity.TripRequest.RequestStatus;
+import com.trip.Enum.TripType;
 import com.trip.Repositories.TripRequestRepository;
 import com.trip.Repositories.TripRespository;
 import com.trip.Services.TripDomainEventPublisher;
@@ -179,7 +180,9 @@ class TripIntegrationTest {
         Trip updatedTrip = tripRepo.findById(trip.getTripId()).orElseThrow();
         TripRequest updatedRequest = tripRequestRepository.findByTripIdAndRequesterUserId(trip.getTripId(), "userA").orElseThrow();
 
-        assertThat(updatedTrip.getTripMembers()).contains("userA");
+        assertThat(updatedTrip.getTripMembers())
+                .extracting(TripMember::getUserId)
+                .contains("userA");
         assertThat(updatedTrip.getPendingRequestCount()).isZero();
         assertThat(updatedRequest.getStatus()).isEqualTo(RequestStatus.ACCEPTED);
     }
@@ -287,7 +290,8 @@ class TripIntegrationTest {
                 .tripStartDate(LocalDate.now().plusDays(5))
                 .tripEndDate(LocalDate.now().plusDays(8))
                 .tripType(TripType.GROUP)
-                .tripMembers(new LinkedHashSet<>(List.of(ownerId)))
+                .tripMembers(new LinkedHashSet<>(List.of(
+                        TripMember.builder().userId(ownerId).name("Owner").build())))
                 .build();
     }
 }

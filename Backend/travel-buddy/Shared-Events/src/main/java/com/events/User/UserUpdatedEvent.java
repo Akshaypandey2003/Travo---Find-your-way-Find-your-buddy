@@ -2,6 +2,7 @@ package com.events.User;
 
 import lombok.*;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Data
@@ -15,6 +16,6 @@ public class UserUpdatedEvent {
     // changed fields only
     private Map<String, Object> updatedFields;
 
-    private long timestamp;
+    private Instant timestamp;
 
 }

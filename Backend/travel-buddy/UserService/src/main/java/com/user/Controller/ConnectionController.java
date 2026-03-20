@@ -26,7 +26,6 @@ public class ConnectionController {
 
         public ConnectionController(
                         ConnectionService connectionService) {
-
                 this.connectionService = connectionService;
         }
 
@@ -35,7 +34,6 @@ public class ConnectionController {
         public ResponseEntity<ConnectionResponse> followUser(
                         @AuthenticationPrincipal String followerId,
                         @PathVariable String userId) {
-
                 return ResponseEntity.ok(
                                 connectionService.sendFollowRequest(
                                                 followerId,
@@ -85,9 +83,8 @@ public class ConnectionController {
                 return ResponseEntity.ok(
                                 connectionService.getFollowers(userId,pageable));
         }
-
         // Get Following
-        @GetMapping("/following")
+        @GetMapping("/followings")
         public ResponseEntity<PageResponse<UserSummary>> getFollowing(@AuthenticationPrincipal String userId,Pageable pageable) {
 
                 return ResponseEntity.ok(

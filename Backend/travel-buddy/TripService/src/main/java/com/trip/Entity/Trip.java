@@ -20,6 +20,9 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.trip.Enum.TripStatus;
+import com.trip.Enum.TripType;
+
 import lombok.*;
 
 
@@ -63,7 +66,7 @@ public class Trip {
     private String tripCountry;
 
     @Size(max = 80, message = "Trip state cannot exceed 80 characters")
-    
+
     private String tripState;
 
     @NotNull(message = "Trip start date is required")
@@ -98,7 +101,7 @@ public class Trip {
     private TripType tripType;
 
     @Builder.Default
-    private Set<String> tripMembers = new LinkedHashSet<>();
+    private Set<TripMember> tripMembers = new LinkedHashSet<>();
     
     private LocalDateTime tripUpdatedAt;
 
@@ -120,12 +123,6 @@ public class Trip {
     @Builder.Default
     private List<String> tripImages = new ArrayList<>();
     
-    public enum TripStatus {
-        UPCOMING, ONGOING, COMPLETED, CANCELLED
-    }
-    public enum TripType {
-        SOLO, GROUP, FAMILY
-    }
 
     @AssertTrue(message = "Trip end date must be on or after trip start date")
     public boolean isTripDateRangeValid() {

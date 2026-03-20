@@ -18,7 +18,7 @@ spring:
       - id: USER-SERVICE-SECURED
         uri: lb://user-service
         predicates:
-        - Path=/api/v1/**
+        - Path=/api/v1/users/**,/api/v1/connections,/api/v1/connections/**
         filters:
             - name: CircuitBreaker
               args:
@@ -51,7 +51,7 @@ spring:
       - id: TRIPS-SERVICE
         uri: lb://trip-service
         predicates:
-        - Path=/trip/**
+        - Path=/api/v1/trips,/api/v1/trips/**
         filters:
             - name: CircuitBreaker
               args:
@@ -115,7 +115,7 @@ spring:
       - id: NOTIFICATION-SERVICE
         uri: lb://notification-service
         predicates:
-          - Path=/ws/**,/notification/**
+          - Path=/ws/**,/api/v1/notification,/api/v1/notification/**
         filters:
             - name: CircuitBreaker
               args:

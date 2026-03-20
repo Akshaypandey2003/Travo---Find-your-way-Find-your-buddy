@@ -45,6 +45,7 @@ public class User {
     private String state;
     private String city;
     private String bio;
+    
     private AccountType accountType;
     
 

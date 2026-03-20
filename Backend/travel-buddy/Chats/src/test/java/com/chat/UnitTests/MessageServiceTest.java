@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Entity.Message;
 import com.chat.Exceptions.MessageNotFoundException;
 import com.chat.Repository.ChatRepo;
@@ -62,7 +63,10 @@ class MessageServiceTest {
         chat.setChatId("chat123");
         chat.setGroupChat(true);
         chat.setGroupName("Dev Group");
-        chat.setParticipants(Set.of("user1", "user2", "user3"));
+        chat.setParticipants(Set.of(
+                new ChatParticipant("user1", "User One", "pic1"),
+                new ChatParticipant("user2", "User Two", "pic2"),
+                new ChatParticipant("user3", "User Three", "pic3")));
 
         message = new Message();
         message.setMessageId("msg1");

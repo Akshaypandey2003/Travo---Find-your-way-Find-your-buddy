@@ -101,7 +101,7 @@ public class UserEventProducer {
             UserUpdatedEvent event = UserUpdatedEvent.builder()
                     .userId(userId)
                     .updatedFields(updatedFields)
-                    .timestamp(System.currentTimeMillis())
+                    .timestamp(Instant.now())
                     .build();
 
             kafkaTemplate.send(USER_EVENTS_TOPIC, userId, event)
@@ -123,7 +123,7 @@ public class UserEventProducer {
         UserUpdatedEvent event = UserUpdatedEvent.builder()
                 .userId(userId)
                 .updatedFields(updatedFields)
-                .timestamp(System.currentTimeMillis())
+                .timestamp(Instant.now())
                 .build();
 
         saveFailedEvent(USER_EVENTS_TOPIC, userId, event);

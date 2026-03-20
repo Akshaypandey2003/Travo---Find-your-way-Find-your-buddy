@@ -2,6 +2,7 @@ package com.trip.DTO;
 
 import java.util.Set;
 
+import com.trip.Entity.TripMember;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,6 @@ import lombok.NoArgsConstructor;
 public class TripSummary {
     private String tripId;
     private String tripName;
-    private Set<String> members;
+    private Set<TripMember> members;
 
 }

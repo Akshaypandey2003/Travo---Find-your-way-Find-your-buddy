@@ -16,7 +16,6 @@ logging:
 
 
 resilience4j:
-
   circuitbreaker:
     configs:
       default:

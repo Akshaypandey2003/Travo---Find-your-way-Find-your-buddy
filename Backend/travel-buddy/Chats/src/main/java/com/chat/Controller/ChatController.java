@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Service.ChatService;
 
 @RestController
@@ -59,7 +60,7 @@ public class ChatController {
     public ResponseEntity<Chat> updateGroupMembers(
             @AuthenticationPrincipal String adminId,
             @PathVariable String chatId,
-            @RequestBody Set<String> members) {
+            @RequestBody Set<ChatParticipant> members) {
 
         return ResponseEntity.ok(chatService.updateGroupMembers(adminId, chatId, members));
     }

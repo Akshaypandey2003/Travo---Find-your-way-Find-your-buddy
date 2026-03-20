@@ -32,8 +32,9 @@ import com.trip.DTO.PageResponseDto;
 import com.trip.DTO.TripRequestActionResponseDto;
 import com.trip.DTO.TripRequestDto;
 import com.trip.Entity.Trip;
-import com.trip.Entity.Trip.TripType;
+import com.trip.Entity.TripMember;
 import com.trip.Entity.TripRequest.RequestStatus;
+import com.trip.Enum.TripType;
 import com.trip.Repositories.TripRequestRepository;
 import com.trip.Repositories.TripRespository;
 import com.trip.Services.TripServices;
@@ -84,7 +85,8 @@ class TripRequestControllerTest {
                 .tripStartDate(LocalDate.now().plusDays(2))
                 .tripEndDate(LocalDate.now().plusDays(4))
                 .tripType(TripType.GROUP)
-                .tripMembers(new LinkedHashSet<>(List.of("owner1")))
+                .tripMembers(new LinkedHashSet<>(List.of(
+                        TripMember.builder().userId("owner1").name("Owner").build())))
                 .build();
     }
 

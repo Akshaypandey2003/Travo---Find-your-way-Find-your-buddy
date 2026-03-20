@@ -25,6 +25,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Entity.Message;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
@@ -75,7 +76,9 @@ class ChatMessageIntegrationTest {
     void shouldCreateChat_andProduceKafkaEvent() throws Exception {
 
         Chat chat = new Chat();
-        chat.setParticipants(Set.of("user1", "user2"));
+        chat.setParticipants(Set.of(
+                participant("user1"),
+                participant("user2")));
         chat.setGroupChat(false);
 
         mockMvc.perform(
@@ -93,7 +96,7 @@ class ChatMessageIntegrationTest {
     void shouldGetChatByUserId() throws Exception {
         chatRepo.save(
                 Chat.builder()
-                        .participants(Set.of("user1"))
+                        .participants(Set.of(participant("user1")))
                         .build()
         );
 
@@ -113,7 +116,7 @@ class ChatMessageIntegrationTest {
     void shouldUpdateFavorite() throws Exception {
         Chat chat = chatRepo.save(
                 Chat.builder()
-                        .participants(Set.of("user1"))
+                        .participants(Set.of(participant("user1")))
                         .favoriteBy(new HashSet<>())
                         .build()
         );
@@ -131,7 +134,7 @@ class ChatMessageIntegrationTest {
     void shouldDeleteChat_andMessages() throws Exception {
         Chat chat = chatRepo.save(
                 Chat.builder()
-                        .participants(Set.of("user1"))
+                        .participants(Set.of(participant("user1")))
                         .groupName("Test Group")
                         .build()
         );
@@ -151,7 +154,9 @@ class ChatMessageIntegrationTest {
 
         Chat chat = chatRepo.save(
                 Chat.builder()
-                        .participants(Set.of("user1", "user2"))
+                        .participants(Set.of(
+                                participant("user1"),
+                                participant("user2")))
                         .build()
         );
 
@@ -175,7 +180,7 @@ class ChatMessageIntegrationTest {
     void shouldGetMessages() throws Exception {
         Chat chat = chatRepo.save(
                 Chat.builder()
-                        .participants(Set.of("user1"))
+                        .participants(Set.of(participant("user1")))
                         .build()
         );
 
@@ -248,5 +253,9 @@ class ChatMessageIntegrationTest {
 
             assertThat(records.count()).isGreaterThan(0);
         }
+    }
+
+    private static ChatParticipant participant(String userId) {
+        return new ChatParticipant(userId, "User " + userId, "pic-" + userId);
     }
 }

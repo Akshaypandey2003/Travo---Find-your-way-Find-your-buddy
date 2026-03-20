@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chat.Entity.Chat;
+import com.chat.Entity.ChatParticipant;
 import com.chat.Exceptions.ChatNotFoundException;
 import com.chat.Repository.ChatRepo;
 import com.chat.Repository.MessageRepository;
@@ -67,11 +68,11 @@ public class ChatServiceImpl implements ChatService {
     private void notifyGroupCreated(Chat chat) {
         String adminId = resolveActor(chat.getGroupAdmin());
 
-        for (String participant : chat.getParticipants()) {
+        for (ChatParticipant participant : chat.getParticipants()) {
             try {
                 notificationProducer.groupCreated(
                         adminId,
-                        participant,
+                        participant.getUserId(),
                         chat.getChatId(),
                         chat.getGroupName()
                 );
@@ -162,11 +163,11 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void notifyGroupUpdated(String adminId, Chat chat) {
-        for (String participant : chat.getParticipants()) {
+        for (ChatParticipant participant : chat.getParticipants()) {
             try {
                 notificationProducer.groupUpdated(
                         adminId,
-                        participant,
+                        participant.getUserId(),
                         chat.getChatId(),
                         chat.getGroupName()
                 );
@@ -212,21 +213,21 @@ public class ChatServiceImpl implements ChatService {
             @CacheEvict(value = CACHE_CHAT_BY_ID, key = "#chatId"),
             @CacheEvict(value = CACHE_CHATS_BY_USER_ID, allEntries = true)
     })
-    public Chat updateGroupMembers(String adminId, String chatId, Set<String> members) {
+    public Chat updateGroupMembers(String adminId, String chatId, Set<ChatParticipant> members) {
 
         Chat chat = chatRepo.findById(chatId)
                 .orElseThrow(() ->
                         new ChatNotFoundException("Chat not found with id: " + chatId)
                 );
 
-        Set<String> existingMembers = chat.getParticipants() == null ? new HashSet<>() : chat.getParticipants();
+        Set<ChatParticipant> existingMembers = chat.getParticipants() == null ? new HashSet<>() : chat.getParticipants();
 
-        for (String member : members) {
+        for (ChatParticipant member : members) {
             try {
                 if (!existingMembers.contains(member)) {
                     notificationProducer.addGroupMember(
                             adminId,
-                            member,
+                            member.getUserId(),
                             chat.getChatId(),
                             chat.getGroupName()
                     );
@@ -234,7 +235,7 @@ public class ChatServiceImpl implements ChatService {
                 } else {
                     notificationProducer.removeGroupMember(
                             adminId,
-                            member,
+                            member.getUserId(),
                             chat.getChatId(),
                             chat.getGroupName()
                     );
@@ -269,11 +270,11 @@ public class ChatServiceImpl implements ChatService {
                         new ChatNotFoundException("Chat not found with id: " + chatId)
                 );
 
-        for (String participant : existingChat.getParticipants()) {
+        for (ChatParticipant participant : existingChat.getParticipants()) {
             try {
                 notificationProducer.deleteGroup(
                         adminId,
-                        participant,
+                        participant.getUserId(),
                         chatId,
                         existingChat.getGroupName()
                 );

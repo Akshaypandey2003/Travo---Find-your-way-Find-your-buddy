@@ -25,7 +25,7 @@ public class NotificationService {
     }
 
 
-    public Object getNotificationsByUserId(String id, String status)
+    public Object getNotificationsByUserId(String id, boolean status)
     {
            List<Notification> notifications = notificationRepo.findByNotificationToAndReadOrderByCreatedAtDesc(id, status);
 

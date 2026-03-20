@@ -101,7 +101,7 @@ public class ConnectionServiceTest {
         verify(userRepo).incrementFollowersCount("user2");
 
         verify(notificationProducer)
-                .friendRequestSend("user1", "user2");
+                .friendRequestSend("user1", "Akshay", "user2");
     }
 
     @Test
@@ -123,7 +123,7 @@ public class ConnectionServiceTest {
         assertNotNull(response);
 
         verify(notificationProducer)
-                .friendRequestSend("user1", "user2");
+                .friendRequestSend("user1", "Akshay", "user2");
 
         verify(userRepo, never())
                 .incrementFollowersCount(any());
@@ -212,7 +212,7 @@ public class ConnectionServiceTest {
         assertNotNull(response);
 
         verify(notificationProducer)
-                .friendRequestAccept("user2", "user1");
+                .friendRequestAccept("user2","John","user1");
 
         verify(userRepo).incrementFollowersCount("user2");
         verify(userRepo).incrementFollowingCount("user1");

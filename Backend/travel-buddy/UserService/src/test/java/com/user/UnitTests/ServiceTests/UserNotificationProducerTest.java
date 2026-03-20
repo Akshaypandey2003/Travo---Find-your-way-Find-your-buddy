@@ -66,7 +66,7 @@ public class UserNotificationProducerTest {
         when(kafkaTemplate.send(anyString(), anyString(), any()))
                 .thenReturn(successFuture);
 
-        producer.friendRequestSend("sender1", "receiver1");
+        producer.friendRequestSend("sender1", "Akshay", "receiver1");
 
         verify(kafkaTemplate, times(1))
                 .send(eq("notification-events"), eq("receiver1"), any());
@@ -92,7 +92,7 @@ public class UserNotificationProducerTest {
                 .thenReturn(failedFuture);
 
         assertThrows(RuntimeException.class,
-                () -> producer.friendRequestSend("sender", "receiver"));
+                () -> producer.friendRequestSend("sender","Akshay", "receiver"));
     }
 
     // =====================================================
@@ -104,6 +104,7 @@ public class UserNotificationProducerTest {
 
         producer.sendFriendRequestFallback(
                 "sender",
+                "Akshay",
                 "receiver",
                 new RuntimeException("Kafka down"));
 
@@ -121,7 +122,7 @@ public class UserNotificationProducerTest {
         when(kafkaTemplate.send(anyString(), anyString(), any()))
                 .thenReturn(successFuture);
 
-        producer.friendRequestAccept("sender", "receiver");
+        producer.friendRequestAccept("sender", "Akhil", "receiver");
 
         verify(kafkaTemplate).send(anyString(), anyString(), any());
 
@@ -137,6 +138,7 @@ public class UserNotificationProducerTest {
 
         producer.acceptFriendRequestFallback(
                 "sender",
+                "Akhil",
                 "receiver",
                 new RuntimeException("Kafka error"));
 

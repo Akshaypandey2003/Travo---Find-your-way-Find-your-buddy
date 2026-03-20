@@ -23,9 +23,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripRequestActionResponseDto;
 import com.trip.Entity.Trip;
-import com.trip.Entity.Trip.TripType;
+import com.trip.Entity.TripMember;
 import com.trip.Entity.TripRequest;
 import com.trip.Entity.TripRequest.RequestStatus;
+import com.trip.Enum.TripType;
 import com.trip.Exceptions.TripNotFoundException;
 import com.trip.Repositories.TripRequestRepository;
 import com.trip.Repositories.TripRespository;
@@ -108,12 +109,14 @@ class TripServiceTest {
 
     @Test
     void sendTripRequest_whenAlreadyMember_noRequestCreated() {
-        trip.getTripMembers().add("userA");
+        trip.getTripMembers().add(TripMember.builder().userId("userA").build());
         when(tripRespository.findById("t1")).thenReturn(Optional.of(trip));
 
         Trip result = tripService.sendTripRequest("t1", "userA");
 
-        assertThat(result.getTripMembers()).contains("userA");
+        assertThat(result.getTripMembers())
+                .extracting(TripMember::getUserId)
+                .contains("userA");
         verify(tripRequestRepository, never()).save(any(TripRequest.class));
         verify(tripNotificationProducer, never()).sendTripRequestNotification(any(), any(), any(), any());
     }
@@ -136,7 +139,9 @@ class TripServiceTest {
 
         Trip saved = tripService.acceptTripRequest("t1", "userA", "notif-1");
 
-        assertThat(saved.getTripMembers()).contains("userA");
+        assertThat(saved.getTripMembers())
+                .extracting(TripMember::getUserId)
+                .contains("userA");
         assertThat(saved.getPendingRequestCount()).isZero();
         verify(tripNotificationProducer).acceptTripRequestNotification("owner1", "userA", "t1", "Manali");
         verify(tripDomainEventPublisher).publishNotificationDeleteEvent("owner1", "notif-1");
@@ -198,13 +203,15 @@ class TripServiceTest {
 
     @Test
     void removeTripMember_success_removesMemberAndPublishesUpdateEvent() {
-        trip.getTripMembers().add("userA");
+        trip.getTripMembers().add(TripMember.builder().userId("userA").build());
         when(tripRespository.findById("t1")).thenReturn(Optional.of(trip));
         when(tripRespository.save(any(Trip.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Trip updated = tripService.removeTripMember("t1", "userA");
 
-        assertThat(updated.getTripMembers()).doesNotContain("userA");
+        assertThat(updated.getTripMembers())
+                .extracting(TripMember::getUserId)
+                .doesNotContain("userA");
         verify(tripDomainEventPublisher).publishTripUpdated(eq(updated), any());
     }
 }

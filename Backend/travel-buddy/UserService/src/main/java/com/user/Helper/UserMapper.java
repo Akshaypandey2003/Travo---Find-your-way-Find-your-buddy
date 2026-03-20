@@ -48,6 +48,11 @@ public class UserMapper {
                 .country(user.getCountry())
                 .state(user.getState())
                 .city(user.getCity())
+                .followersCount(user.getFollowersCount())
+                .followingsCount(user.getFollowingsCount())
+                .accountType(user.getAccountType())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .ratingsReceivedCount(user.getRatingsReceivedCount())
                 .averageRating(user.getAverageRating())
                 .build();

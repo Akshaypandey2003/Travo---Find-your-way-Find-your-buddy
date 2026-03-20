@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trip.DTO.PageResponseDto;
 import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripListItemDto;
+import com.trip.DTO.TripUpdateRequest;
 import com.trip.Entity.Trip;
 import com.trip.Response.MessageResponse;
 import com.trip.Services.TripServices;
@@ -59,14 +60,16 @@ public class TripController {
     @PutMapping
     public ResponseEntity<Trip> updateTrip(
             @AuthenticationPrincipal String authenticatedUserId,
-            @Valid @RequestBody Trip trip) {
+            @Valid @RequestBody TripUpdateRequest trip) {
         enforceAuthenticated(authenticatedUserId);
+
         Trip existingTrip = tripService.getTripById(trip.getTripId());
-        if (!authenticatedUserId.equals(existingTrip.getTripOwnerId())) {
+        
+          if (!authenticatedUserId.equals(existingTrip.getTripOwnerId())) {
             throw new AccessDeniedException("You are not allowed to update this trip.");
         }
         logger.info("Updating trip with ID={}", trip.getTripId());
-        Trip updatedTrip = tripService.updateTrip(trip);
+        Trip updatedTrip = tripService.updateTrip(authenticatedUserId, trip);
         return ResponseEntity.ok(updatedTrip);
     }
 
@@ -147,7 +150,7 @@ public class TripController {
         PageResponseDto<TripListItemDto> trips = tripService.getAllTrips(page, size, sortBy, direction);
         return ResponseEntity.ok(trips);
     }
-
+    
     @GetMapping("/get-trips-by-user/{userId}")
     public ResponseEntity<PageResponseDto<TripListItemDto>> getTripsByUserId(
             @AuthenticationPrincipal String authenticatedUserId,

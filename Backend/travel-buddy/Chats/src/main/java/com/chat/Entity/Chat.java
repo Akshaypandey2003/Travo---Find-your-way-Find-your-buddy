@@ -44,7 +44,7 @@ public class Chat {
 
     @Indexed
     @Builder.Default
-    private Set<String> participants = new TreeSet<>(); // userIds
+    private Set<ChatParticipant> participants = new HashSet<>();
 
     @Builder.Default
     private Set<String> groupAdmin = new TreeSet<>(); // only if isGroupChat == true
@@ -52,8 +52,6 @@ public class Chat {
     private String groupName; // null for 1-to-1 chats, set for group chats
     private String groupDescription;
     private String groupImageUrl; // null for 1-to-1 chats, set for group chats
-
-    
 
     @CreatedDate
     private LocalDateTime createdAt;

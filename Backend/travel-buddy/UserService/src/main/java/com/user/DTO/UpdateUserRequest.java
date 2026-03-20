@@ -1,6 +1,8 @@
 package com.user.DTO;
 
 
+import com.user.Enum.AccountType;
+
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,9 +30,8 @@ public class UpdateUserRequest {
     private String gender;
 
     private String profilePic;
-
+    private AccountType accountType;
     private String cloudinaryImagePublicId;
-
     @Size(max = 20)
     private String role;
 }

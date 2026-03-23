@@ -1,9 +1,12 @@
 package com.trip.DTO;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import com.trip.Entity.Trip;
+import com.trip.Entity.TripMember;
 import com.trip.Enum.TripStatus;
 import com.trip.Enum.TripType;
 import lombok.AllArgsConstructor;
@@ -23,6 +26,7 @@ public class TripListItemDto {
     private String tripName;
     private String tripOwnerId;
     private String tripOwnerName;
+    private String tripOwnerProfilePic;
     private String tripCity;
     private String tripCountry;
     private String tripCategory;
@@ -31,12 +35,14 @@ public class TripListItemDto {
     private TripStatus tripStatus;
     private TripType tripType;
     private int memberCount;
+    @Builder.Default
+    private Set<TripMember> tripMembers = new LinkedHashSet<>();
     private int pendingRequestCount;
     private int totalRequestCount;
     private String isPrivateTrip;
     private double tripBudget;
-    private LocalDateTime tripCreatedAt;
-    private LocalDateTime tripUpdatedAt;
+    private Instant tripCreatedAt;
+    private Instant tripUpdatedAt;
 
     public static TripListItemDto from(Trip trip) {
         return TripListItemDto.builder()
@@ -44,6 +50,7 @@ public class TripListItemDto {
                 .tripName(trip.getTripName())
                 .tripOwnerId(trip.getTripOwnerId())
                 .tripOwnerName(trip.getTripOwnerName())
+                .tripOwnerProfilePic(trip.getTripOwnerProfilePic())
                 .tripCity(trip.getTripCity())
                 .tripCountry(trip.getTripCountry())
                 .tripCategory(trip.getTripCategory())
@@ -52,6 +59,7 @@ public class TripListItemDto {
                 .tripStatus(trip.getTripStatus())
                 .tripType(trip.getTripType())
                 .memberCount(trip.getTripMembers() == null ? 0 : trip.getTripMembers().size())
+                .tripMembers(trip.getTripMembers())
                 .pendingRequestCount(trip.getPendingRequestCount())
                 .totalRequestCount(trip.getTotalRequestCount())
                 .isPrivateTrip(trip.getIsPrivateTrip())

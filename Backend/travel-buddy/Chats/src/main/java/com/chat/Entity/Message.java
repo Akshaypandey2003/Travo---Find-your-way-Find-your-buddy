@@ -2,6 +2,8 @@ package com.chat.Entity;
 
 import lombok.*;
 
+import java.time.Instant;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -12,7 +14,6 @@ import org.springframework.data.mongodb.core.index.IndexDirection;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
 
 @Document(collection = "messages")
 @CompoundIndexes({
@@ -50,8 +51,8 @@ public class Message {
 
     @CreatedDate
     @Indexed(direction = IndexDirection.DESCENDING)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

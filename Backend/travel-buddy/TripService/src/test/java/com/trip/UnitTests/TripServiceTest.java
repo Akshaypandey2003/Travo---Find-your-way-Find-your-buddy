@@ -8,8 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 
@@ -129,7 +129,7 @@ class TripServiceTest {
                 .ownerUserId("owner1")
                 .requesterUserId("userA")
                 .status(RequestStatus.PENDING)
-                .requestedAt(LocalDateTime.now())
+                .requestedAt(Instant.now())
                 .build();
 
         when(tripRespository.findById("t1")).thenReturn(Optional.of(trip));

@@ -9,8 +9,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -100,7 +100,7 @@ class TripRequestControllerTest {
                         .ownerUserId("owner1")
                         .requesterUserId("userA")
                         .status(RequestStatus.PENDING)
-                        .requestedAt(LocalDateTime.now())
+                        .requestedAt(Instant.now())
                         .build()))
                 .page(0)
                 .size(20)

@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -82,7 +82,7 @@ public class Trip {
     private String tripDescription;
 
     @Builder.Default
-    private LocalDateTime tripCreatedAt = LocalDateTime.now();
+    private Instant tripCreatedAt = Instant.now();
 
     @Pattern(regexp = "^\\d{1,3}$", message = "Member size must be a numeric string")
     private String memberSize;
@@ -103,7 +103,7 @@ public class Trip {
     @Builder.Default
     private Set<TripMember> tripMembers = new LinkedHashSet<>();
     
-    private LocalDateTime tripUpdatedAt;
+    private Instant tripUpdatedAt;
 
     @Builder.Default
     private TripStatus tripStatus = TripStatus.UPCOMING;

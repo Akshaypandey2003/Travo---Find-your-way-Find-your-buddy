@@ -1,6 +1,6 @@
 package com.chat.ServiceImpl;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -61,7 +61,7 @@ public class MessageServiceImpl implements MessageService {
                 );
 
         // Update recent activity
-        chat.setRecentConversationAt(LocalDateTime.now());
+        chat.setRecentConversationAt(Instant.now());
         chatRepo.save(chat);
 
         // Persist message

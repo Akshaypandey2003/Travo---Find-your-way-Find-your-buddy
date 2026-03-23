@@ -5,7 +5,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -73,7 +73,7 @@ class MessageServiceTest {
         message.setChatId("chat123");
         message.setSenderId("user1");
         message.setMessageContent("Hello");
-        message.setCreatedAt(LocalDateTime.now());
+        message.setCreatedAt(Instant.now());
     }
 
     // ---------- SEND MESSAGE ----------

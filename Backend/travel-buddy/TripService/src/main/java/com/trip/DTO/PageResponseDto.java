@@ -2,6 +2,8 @@ package com.trip.DTO;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,6 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
 public class PageResponseDto<T> {
     private List<T> items;
     private int page;

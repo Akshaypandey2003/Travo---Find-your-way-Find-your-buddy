@@ -1,6 +1,6 @@
 package com.notification.Entity;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
@@ -49,6 +49,6 @@ public class Notification {
     private boolean read = false;
 
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
 }

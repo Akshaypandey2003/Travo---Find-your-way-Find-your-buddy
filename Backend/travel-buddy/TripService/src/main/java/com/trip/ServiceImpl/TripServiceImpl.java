@@ -1,7 +1,7 @@
 package com.trip.ServiceImpl;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -82,7 +82,7 @@ public class TripServiceImpl implements TripServices {
     })
     public Trip createTrip(Trip trip) {
         sanitizeTripCollections(trip);
-        trip.setTripCreatedAt(LocalDateTime.now());
+        trip.setTripCreatedAt(Instant.now());
         trip.setPendingRequestCount(0);
         trip.setTotalRequestCount(0);
 
@@ -163,7 +163,7 @@ public class TripServiceImpl implements TripServices {
             existingTrip.setTripType(trip.getTripType());
         }
 
-        existingTrip.setTripUpdatedAt(LocalDateTime.now());
+        existingTrip.setTripUpdatedAt(Instant.now());
         sanitizeTripCollections(existingTrip);
 
         Trip savedTrip = tripRespository.save(existingTrip);
@@ -237,13 +237,13 @@ public class TripServiceImpl implements TripServices {
                     .ownerUserId(trip.getTripOwnerId())
                     .requesterUserId(requestFrom)
                     .status(RequestStatus.PENDING)
-                    .requestedAt(LocalDateTime.now())
+                    .requestedAt(Instant.now())
                     .build();
             tripRequestRepository.save(request);
             trip.setTotalRequestCount(trip.getTotalRequestCount() + 1);
         } else if (existing.getStatus() != RequestStatus.PENDING) {
             existing.setStatus(RequestStatus.PENDING);
-            existing.setRequestedAt(LocalDateTime.now());
+            existing.setRequestedAt(Instant.now());
             existing.setActedAt(null);
             existing.setActionByUserId(null);
             tripRequestRepository.save(existing);
@@ -276,7 +276,7 @@ public class TripServiceImpl implements TripServices {
                 .orElseThrow(() -> new TripNotFoundException("Trip request not found for tripId: " + tripId + " userId: " + requestFrom));
 
         tripRequest.setStatus(RequestStatus.ACCEPTED);
-        tripRequest.setActedAt(LocalDateTime.now());
+        tripRequest.setActedAt(Instant.now());
         tripRequest.setActionByUserId(trip.getTripOwnerId());
         tripRequestRepository.save(tripRequest);
 
@@ -339,7 +339,7 @@ public class TripServiceImpl implements TripServices {
                 .orElseThrow(() -> new TripNotFoundException("Trip request not found for tripId: " + tripId + " userId: " + requesterUserId));
 
         tripRequest.setStatus(RequestStatus.REJECTED);
-        tripRequest.setActedAt(LocalDateTime.now());
+        tripRequest.setActedAt(Instant.now());
         tripRequest.setActionByUserId(actionByUserId);
         tripRequestRepository.save(tripRequest);
 
@@ -371,7 +371,7 @@ public class TripServiceImpl implements TripServices {
                 .orElseThrow(() -> new TripNotFoundException("Trip request not found for tripId: " + tripId + " userId: " + requesterUserId));
 
         tripRequest.setStatus(RequestStatus.CANCELLED);
-        tripRequest.setActedAt(LocalDateTime.now());
+        tripRequest.setActedAt(Instant.now());
         tripRequest.setActionByUserId(actionByUserId);
         tripRequestRepository.save(tripRequest);
 
@@ -397,6 +397,50 @@ public class TripServiceImpl implements TripServices {
             @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
             @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
     })
+
+    
+    public Trip addTripMember(String tripId, List<TripMember> members) {
+
+    Trip trip = getTripOrThrow(tripId);
+
+    Set<TripMember> memberSet = safeSet(trip.getTripMembers());
+
+    List<String> addedMemberIds = new ArrayList<>();
+
+    for (TripMember member : members) {
+
+        if (member.getUserId() == null) {
+            continue; // skip invalid
+        }
+
+        boolean added = memberSet.add(member); // Set prevents duplicates
+
+        if (added) {
+            addedMemberIds.add(member.getUserId());
+        }
+    }
+
+    trip.setTripMembers(memberSet);
+
+    Trip savedTrip = tripRespository.save(trip);
+
+    // 🔥 Event payload
+    Map<String, Object> updatedFields = new HashMap<>();
+    updatedFields.put("membersAdded", addedMemberIds);
+    updatedFields.put("memberCount", memberSet.size());
+
+    tripDomainEventPublisher.publishTripUpdated(savedTrip, updatedFields);
+
+    return savedTrip;
+}
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_TRIP_BY_ID, key = "#tripId"),
+            @CacheEvict(value = CACHE_TRIP_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_USER_PAGES, allEntries = true),
+            @CacheEvict(value = CACHE_TRIP_CATEGORY_PAGES, allEntries = true)
+    })
     public Trip removeTripMember(String tripId, String memberId) {
         Trip trip = getTripOrThrow(tripId);
 
@@ -414,7 +458,7 @@ public class TripServiceImpl implements TripServices {
 
     @Scheduled(cron = "${trip.reminder.cron:0 0 10 * * ?}", zone = "${trip.reminder.zone:Asia/Kolkata}")
     public void sendTripReminders() {
-        logger.info("Running trip reminder scheduler at {}", LocalDateTime.now());
+        logger.info("Running trip reminder scheduler at {}", Instant.now());
         LocalDate today = LocalDate.now();
         LocalDate tomorrow = today.plusDays(1);
 
@@ -544,5 +588,8 @@ public class TripServiceImpl implements TripServices {
             return;
         }
         members.removeIf(member -> userId.equals(member.getUserId()));
+    }
+    public void removeTrip(String userId) {
+        tripRespository.deleteByTripOwnerId(userId);
     }
 }

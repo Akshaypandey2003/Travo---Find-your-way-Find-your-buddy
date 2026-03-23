@@ -1,5 +1,9 @@
 package com.trip.Services;
 
+import java.util.List;
+
+import org.checkerframework.checker.units.qual.t;
+
 import com.trip.DTO.PageResponseDto;
 import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripListItemDto;
@@ -7,6 +11,7 @@ import com.trip.DTO.TripRequestActionResponseDto;
 import com.trip.DTO.TripRequestDto;
 import com.trip.DTO.TripUpdateRequest;
 import com.trip.Entity.Trip;
+import com.trip.Entity.TripMember;
 
 public interface TripServices {
     // Create a new trip
@@ -32,6 +37,8 @@ public interface TripServices {
     public PageResponseDto<TripRequestDto> getPendingTripRequests(String tripId, int page, int size, String sortBy, String direction);
     public TripRequestActionResponseDto rejectTripRequest(String tripId, String requesterUserId, String actionByUserId);
     public TripRequestActionResponseDto cancelTripRequest(String tripId, String requesterUserId, String actionByUserId);
+    public Trip addTripMember(String tripId, List<TripMember> members);
     public Trip removeTripMember(String tripId, String memberId);
+    public void removeTrip(String userId);
 
 }

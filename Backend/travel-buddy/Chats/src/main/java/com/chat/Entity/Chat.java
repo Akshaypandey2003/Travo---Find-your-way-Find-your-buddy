@@ -1,6 +1,6 @@
 package com.chat.Entity;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -54,11 +54,11 @@ public class Chat {
     private String groupImageUrl; // null for 1-to-1 chats, set for group chats
 
     @CreatedDate
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @Indexed(direction = IndexDirection.DESCENDING)
-    private LocalDateTime recentConversationAt;
+    private Instant recentConversationAt;
 }

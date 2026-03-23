@@ -1,6 +1,7 @@
 package com.trip.DTO;
 
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 
 import com.trip.Entity.TripRequest;
 import com.trip.Entity.TripRequest.RequestStatus;
@@ -22,8 +23,8 @@ public class TripRequestDto {
     private String ownerUserId;
     private String requesterUserId;
     private RequestStatus status;
-    private LocalDateTime requestedAt;
-    private LocalDateTime actedAt;
+    private Instant requestedAt;
+    private Instant actedAt;
     private String actionByUserId;
 
     public static TripRequestDto from(TripRequest request) {

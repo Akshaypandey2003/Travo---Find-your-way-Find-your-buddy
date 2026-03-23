@@ -52,7 +52,7 @@ user:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000}
+  expiration: ${JWT_EXPIRATION:7200000}
 
 cloudinary:
   cloud:

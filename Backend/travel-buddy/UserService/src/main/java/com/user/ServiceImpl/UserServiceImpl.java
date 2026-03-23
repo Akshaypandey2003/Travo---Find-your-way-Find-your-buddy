@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordResetTokenRepo tokenRepo;
     private final UserNotificationProducer notificationProducer;
+    private final RefreshTokenService refreshTokenService;
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
@@ -68,7 +69,7 @@ public class UserServiceImpl implements UserService {
             JwtProvider jwtProvider,
             PasswordEncoder passwordEncoder, UserMapper userMapper, ConnectionRepo connectionRepo,
             CloseFriendsRepo closeFriendsRepo, UserEventProducer userEventProducer, PasswordResetTokenRepo tokenRepo,
-            UserNotificationProducer notificationProducer) {
+            UserNotificationProducer notificationProducer,RefreshTokenService refreshTokenService) {
         this.userRepo = userRepo;
         this.jwtProvider = jwtProvider;
         this.passwordEncoder = passwordEncoder;
@@ -78,6 +79,7 @@ public class UserServiceImpl implements UserService {
         this.userEventProducer = userEventProducer;
         this.tokenRepo = tokenRepo;
         this.notificationProducer = notificationProducer;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -126,11 +128,11 @@ public class UserServiceImpl implements UserService {
         // Convert to response DTO
         UserResponse userResponse = userMapper.toResponse(savedUser);
 
-        //Service level events
+        // Service level events
         userEventProducer.publishUserCreated(savedUser.getUserId(), savedUser.getName(), savedUser.getEmail());
 
-        //User notification
-        notificationProducer.sendWelcomeNotification(savedUser.getUserId(),savedUser.getName(),savedUser.getEmail());
+        // User notification
+        notificationProducer.sendWelcomeNotification(savedUser.getUserId(), savedUser.getName(), savedUser.getEmail());
 
         return new AuthResponse(
                 userResponse,
@@ -274,7 +276,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-     @Cacheable(value = "users", key = "#email")
+    @Cacheable(value = "users", key = "#email")
     public User getUserByEmail(String email) {
         return userRepo.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(
@@ -334,7 +336,7 @@ public class UserServiceImpl implements UserService {
             updatedFields.put("cloudinaryImagePublicId",
                     request.getCloudinaryImagePublicId());
         }
-         if (request.getAccountType() != null) {
+        if (request.getAccountType() != null) {
             user.setAccountType(request.getAccountType());
             updatedFields.put("accountType", request.getAccountType());
         }
@@ -372,6 +374,9 @@ public class UserServiceImpl implements UserService {
 
         String refreshToken = UUID.randomUUID().toString();
 
+        // ✅ SAVE IT
+        refreshTokenService.save(refreshToken, user.getUserId());
+
         UserResponse userResponse = userMapper.toResponse(user);
 
         return new AuthResponse(
@@ -382,9 +387,8 @@ public class UserServiceImpl implements UserService {
                 roles,
                 new MessageResponse("User logged in successfully", "success"));
     }
-
     @Override
-    public void forgotPassword(String email){
+    public void forgotPassword(String email) {
 
         Optional<User> optionalUser = userRepo.findByEmail(email);
 
@@ -411,7 +415,7 @@ public class UserServiceImpl implements UserService {
 
         String resetLink = "http://localhost:3000/reset-password?token=" + token;
 
-            notificationProducer.sendPasswordResetNotification(
+        notificationProducer.sendPasswordResetNotification(
                 user.getUserId(),
                 user.getEmail(),
                 user.getName(),
@@ -444,13 +448,10 @@ public class UserServiceImpl implements UserService {
         tokenRepo.delete(resetToken);
         tokenRepo.deleteByUserId(user.getUserId());
 
-             notificationProducer.sendPasswordResetSuccessNotification(
-            user.getUserId(),
-            user.getName(),
-            user.getEmail()
-    );
-       
-       
+        notificationProducer.sendPasswordResetSuccessNotification(
+                user.getUserId(),
+                user.getName(),
+                user.getEmail());
 
         logger.info("Password reset successful for userId={}", user.getUserId());
     }

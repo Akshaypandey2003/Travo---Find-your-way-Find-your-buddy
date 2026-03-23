@@ -1,5 +1,10 @@
 package com.user.Controller;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -9,13 +14,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.user.Config.JwtProvider;
 import com.user.DTO.AuthResponse;
 import com.user.DTO.ForgotPasswordRequest;
 import com.user.DTO.LoginRequest;
 import com.user.DTO.MessageResponse;
+import com.user.DTO.RefreshRequest;
 import com.user.DTO.RegisterRequest;
 import com.user.DTO.ResetPasswordRequest;
+import com.user.DTO.UserResponse;
 import com.user.Service.UserService;
+import com.user.ServiceImpl.RefreshTokenService;
 
 import jakarta.validation.Valid;
 
@@ -26,9 +35,14 @@ public class AuthController {
         private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
         private final UserService userService;
+        private JwtProvider jwtProvider;
+        private final RefreshTokenService refreshTokenService;
 
-        public AuthController(UserService userService) {
+        public AuthController(UserService userService, JwtProvider jwtProvider,
+                        RefreshTokenService refreshTokenService) {
                 this.userService = userService;
+                this.jwtProvider = jwtProvider;
+                this.refreshTokenService = refreshTokenService;
         }
 
         @PostMapping("/register")
@@ -75,7 +89,49 @@ public class AuthController {
                         @Valid @RequestBody ResetPasswordRequest request) {
 
                 userService.resetPassword(request);
-                return ResponseEntity.ok(new MessageResponse("Password reset successfully","success"));
+                return ResponseEntity.ok(new MessageResponse("Password reset successfully", "success"));
         }
 
+        @PostMapping("/refresh")
+        public ResponseEntity<?> refresh(@RequestBody RefreshRequest request) {
+
+                String refreshToken = request.getRefreshToken();
+
+                // ✅ 1. Validate and get userId
+                String userId = refreshTokenService.validate(refreshToken);
+
+                System.out.println("Refresh token valid for userId=" + userId);
+
+                // ✅ 2. Fetch user (for roles)
+                UserResponse user = userService.getUserById(userId);
+
+                List<String> roles = Optional.ofNullable(user.getRole())
+                                .map(List::of)
+                                .orElse(List.of("ROLE_USER"));
+
+                // ✅ 3. Generate new access token
+                String newAccessToken = jwtProvider.generateToken(
+                                userId,
+                                user.getEmail(),
+                                roles);
+
+                // ✅ 4. (OPTIONAL but recommended) rotate refresh token
+                refreshTokenService.delete(refreshToken);
+
+                String newRefreshToken = UUID.randomUUID().toString();
+                refreshTokenService.save(newRefreshToken, userId);
+
+                return ResponseEntity.ok(Map.of(
+                                "accessToken", newAccessToken,
+                                "refreshToken", newRefreshToken));
+        }
+
+        @PostMapping("/logout")
+        public ResponseEntity<?> logout(@RequestBody RefreshRequest request) {
+
+                refreshTokenService.delete(request.getRefreshToken());
+
+                return ResponseEntity.ok(
+                                new MessageResponse("Logged out successfully", "success"));
+        }
 }

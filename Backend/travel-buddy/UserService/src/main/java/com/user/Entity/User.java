@@ -47,7 +47,6 @@ public class User {
     private String bio;
     
     private AccountType accountType;
-    
 
 
     @Builder.Default

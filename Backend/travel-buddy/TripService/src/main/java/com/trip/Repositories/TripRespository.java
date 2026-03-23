@@ -22,4 +22,6 @@ public interface TripRespository extends MongoRepository<Trip,String>{
     Page<Trip> findByTripEndDate(LocalDate date, Pageable pageable);
 
     List<Trip> findByTripOwnerId(String userId);
+
+    void deleteByTripOwnerId(String userId);
 } 

@@ -3,6 +3,9 @@ package com.trip.Controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +28,7 @@ import com.trip.DTO.TripDeleteResponseDto;
 import com.trip.DTO.TripListItemDto;
 import com.trip.DTO.TripUpdateRequest;
 import com.trip.Entity.Trip;
+import com.trip.Entity.TripMember;
 import com.trip.Response.MessageResponse;
 import com.trip.Services.TripServices;
 
@@ -73,6 +77,8 @@ public class TripController {
         return ResponseEntity.ok(updatedTrip);
     }
 
+
+  
     @DeleteMapping("/{tripId}")
     public ResponseEntity<TripDeleteResponseDto> deleteTrip(
             @AuthenticationPrincipal String authenticatedUserId,
@@ -183,7 +189,7 @@ public class TripController {
     public ResponseEntity<Object> removeTripMember(
             @AuthenticationPrincipal String authenticatedUserId,
             @PathVariable String tripId,
-            @PathVariable String memberId) {
+            @PathVariable @NotBlank String memberId) {
         enforceAuthenticated(authenticatedUserId);
         Trip existingTrip = tripService.getTripById(tripId);
         if (!authenticatedUserId.equals(existingTrip.getTripOwnerId()) && !authenticatedUserId.equals(memberId)) {
@@ -193,9 +199,33 @@ public class TripController {
         return ResponseEntity.ok(updatedTrip);
     }
 
+    @PutMapping("/add-trip-member/{tripId}")
+    public ResponseEntity<Object> addTripMember(
+            @AuthenticationPrincipal String authenticatedUserId,
+            @PathVariable String tripId,
+            @RequestBody List<TripMember> members) {
+        enforceAuthenticated(authenticatedUserId);
+        Trip existingTrip = tripService.getTripById(tripId);
+        if (!authenticatedUserId.equals(existingTrip.getTripOwnerId())) {
+            throw new AccessDeniedException("Only trip owner can add trip members.");
+        }
+        Trip updatedTrip = tripService.addTripMember(tripId, members);
+        return ResponseEntity.ok(updatedTrip);
+    }
+
+     @DeleteMapping
+    public ResponseEntity<Object> removeTripsByUserId(
+            @AuthenticationPrincipal String authenticatedUserId) {
+        enforceAuthenticated(authenticatedUserId);
+        tripService.removeTrip(authenticatedUserId);
+        return ResponseEntity.ok().build();
+    }
+
     private void enforceAuthenticated(String authenticatedUserId) {
         if (authenticatedUserId == null || authenticatedUserId.isBlank()) {
             throw new AccessDeniedException("Authenticated user is required.");
         }
     }
+
+
 }

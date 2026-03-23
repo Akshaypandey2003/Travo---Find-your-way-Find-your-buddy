@@ -1,9 +1,10 @@
 package com.trip.Entity;
 
-import java.time.LocalDateTime;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
+import java.time.Instant;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -52,9 +53,9 @@ public class TripRequest {
     private RequestStatus status;
 
     @Builder.Default
-    private LocalDateTime requestedAt = LocalDateTime.now();
+    private Instant requestedAt = Instant.now();
 
-    private LocalDateTime actedAt;
+    private Instant actedAt;
 
     private String actionByUserId;
 }

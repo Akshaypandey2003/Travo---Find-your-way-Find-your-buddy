@@ -1,7 +1,6 @@
 package com.notification.DTO;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import com.events.Notification.NotificationEvent;
@@ -24,9 +23,7 @@ public class NotificationMapper {
                 .resourceType(event.getResourceType())
                 .resourceId(event.getResourceId())
                 .metadata(event.getMetadata())
-                .createdAt(LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(event.getTimestamp()),
-                        ZoneId.systemDefault()))
+                .createdAt(Instant.now())
                 .read(false)
                 .build();
     }

@@ -1,5 +1,6 @@
 package com.trip.ServiceImpl;
 
+import java.time.Instant;
 import java.util.Map;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -47,7 +48,7 @@ public class UserEventConsumer {
 
         if (updatedFields.containsKey("name")) {
             ownerUpdate.set("tripOwnerName", updatedFields.get("name"));
-            memberUpdate.set("tripMembers.$[elem].name", updatedFields.get("name"));
+            memberUpdate.set("tripMembers.$.name", updatedFields.get("name"));
             hasRelevantChange = true;
             hasOwnerChange = true;
             hasMemberChange = true;
@@ -55,7 +56,7 @@ public class UserEventConsumer {
 
         if (updatedFields.containsKey("profilePic")) {
             ownerUpdate.set("tripOwnerProfilePic", updatedFields.get("profilePic"));
-            memberUpdate.set("tripMembers.$[elem].profilePic", updatedFields.get("profilePic"));
+            memberUpdate.set("tripMembers.$.profilePic", updatedFields.get("profilePic"));
             hasRelevantChange = true;
             hasOwnerChange = true;
             hasMemberChange = true;
@@ -67,14 +68,13 @@ public class UserEventConsumer {
         }
 
         if (hasOwnerChange) {
-            ownerUpdate.set("tripUpdatedAt", java.time.LocalDateTime.now());
+            ownerUpdate.set("tripUpdatedAt", Instant.now());
             Query ownerQuery = new Query(Criteria.where("tripOwnerId").is(userId));
             UpdateResult ownerResult = mongoTemplate.updateMulti(ownerQuery, ownerUpdate, Trip.class);
             log.info("Updated {} trip owners for userId={}", ownerResult.getModifiedCount(), userId);
         }
         if (hasMemberChange) {
             Query memberQuery = new Query(Criteria.where("tripMembers.userId").is(userId));
-            memberUpdate.filterArray(Criteria.where("elem.userId").is(userId));
             UpdateResult memberResult = mongoTemplate.updateMulti(memberQuery, memberUpdate, Trip.class);
             log.info("Updated {} trip members for userId={}", memberResult.getModifiedCount(), userId);
         }

@@ -28,6 +28,7 @@
         <module>TripService</module>
         <module>UserService</module>
         <module>NotificationService</module>
+        <module>UserFeedService</module>
        
     </modules>
 

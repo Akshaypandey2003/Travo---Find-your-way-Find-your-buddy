@@ -52,6 +52,7 @@ public class UserMapper {
                 .city(user.getCity())
                 .followersCount(user.getFollowersCount())
                 .followingsCount(user.getFollowingsCount())
+                .tripsCount(user.getTripsCount())
                 .accountType(user.getAccountType())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())

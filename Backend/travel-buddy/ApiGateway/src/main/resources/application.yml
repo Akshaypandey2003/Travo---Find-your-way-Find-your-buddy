@@ -99,7 +99,7 @@ spring:
       - id: BLOGS-SERVICE
         uri: lb://blog-service
         predicates:
-        - Path=/blog/**,/comment/**
+        - Path=/api/v1/blogs,/api/v1/blogs/**,/comment/**
         filters:
             - name: CircuitBreaker
               args:
@@ -127,7 +127,21 @@ spring:
                 key-resolver: "#{@userKeyResolver}"
                 "[redis-rate-limiter.replenishRate]": 10
                 "[redis-rate-limiter.burstCapacity]": 20
-      
+      - id: USER-FEED-SERVICE
+        uri: lb://user-feed-service
+        predicates:
+        - Path=/api/v1/feed/**,/api/v1/feed
+        filters:
+            - name: CircuitBreaker
+              args:
+                name: userFeedServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-feed-service
+
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                "[redis-rate-limiter.replenishRate]": 10
+                "[redis-rate-limiter.burstCapacity]": 20
       discovery:
         locator:
           enabled: true
@@ -158,6 +172,8 @@ resilience4j:
         baseConfig: default
       notificationServiceCircuitBreaker:
         baseConfig: default
+      userFeedServiceCircuitBreaker:
+        baseConfig: default
 
 
   timelimiter:
@@ -177,6 +193,8 @@ resilience4j:
       feedbackServiceCircuitBreaker:
         baseConfig: default
       notificationServiceCircuitBreaker:
+        baseConfig: default
+      userFeedServiceCircuitBreaker:
         baseConfig: default
 
 logging:
@@ -203,3 +221,8 @@ management:
 
 
         
+
+
+
+
+

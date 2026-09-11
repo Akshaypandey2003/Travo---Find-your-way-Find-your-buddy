@@ -3,7 +3,8 @@ package com.user.InternalController;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -14,10 +15,9 @@ import com.user.Entity.User;
 import com.user.Enum.ConnectionStatus;
 import com.user.Helper.UserMapper;
 import com.user.Repository.ConnectionRepo;
-import com.user.Service.ConnectionService;
 import com.user.Service.UserService;
 
-@Controller
+@RestController
 @RequestMapping("/user/internal")
 public class UserInternalController {
     
@@ -35,7 +35,7 @@ public class UserInternalController {
 
 
     @GetMapping("/summary/{userId}")
-    public ResponseEntity<UserSummary> getUserSummaryById(String userId) {
+    public ResponseEntity<UserSummary> getUserSummaryById(@PathVariable String userId) {
         UserResponse userResponse = userService.getUserById(userId);
 
         User user = userMapper.toEntity(userResponse);
@@ -52,7 +52,7 @@ public class UserInternalController {
     }
     
     @GetMapping("/get-all-friends/{userId}")
-    public ResponseEntity<List<String>> getAllFriends(String userId) {
+    public ResponseEntity<List<String>> getAllFriends(@PathVariable String userId) {
 
 
         List<String> friends = connectionRepo
@@ -64,5 +64,18 @@ public class UserInternalController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(friends);
+    }
+
+    @GetMapping("/followers/{userId}")
+    public ResponseEntity<List<String>> getFollowers(@PathVariable String userId) {
+        List<String> followers = connectionRepo
+                                .findByFollowingIdAndStatus(userId, ConnectionStatus.FOLLOWING)
+                                .stream()
+                                .map(Connections::getFollowerId)
+                                .toList();
+        if (followers == null || followers.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(followers);
     }
 }

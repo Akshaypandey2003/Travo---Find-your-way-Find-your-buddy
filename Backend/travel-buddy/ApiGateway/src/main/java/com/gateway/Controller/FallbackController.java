@@ -34,4 +34,8 @@ public class FallbackController {
     public Mono<String> notificationServiceFallback() {
         return Mono.just("Notification Service is currently unavailable.");
     }
+    @RequestMapping("/user-feed-service")
+    public Mono<String> userFeedServiceFallback() {
+        return Mono.just("User Feed Service is currently unavailable.");
+    }
 }

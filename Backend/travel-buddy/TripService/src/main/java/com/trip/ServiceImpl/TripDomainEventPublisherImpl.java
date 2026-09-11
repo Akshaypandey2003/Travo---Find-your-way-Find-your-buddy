@@ -16,6 +16,8 @@ import com.events.Trip.TripRequestCancelledEvent;
 import com.events.Trip.TripRequestCreatedEvent;
 import com.events.Trip.TripRequestRejectedEvent;
 import com.events.Trip.TripUpdatedEvent;
+import com.events.Feed.PostCreatedEvent;
+import com.events.Feed.PostDeletedEvent;
 import com.events.Notification.FailedNotification;
 import com.events.Repositories.FailedNotificationRepository;
 import com.trip.Entity.Trip;
@@ -29,6 +31,7 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
 
     private static final Logger logger = LoggerFactory.getLogger(TripDomainEventPublisherImpl.class);
     private static final String TOPIC = "trip-events";
+    private static final String POST_TOPIC = "post-events";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final FailedNotificationRepository failedNotificationRepository;
@@ -54,7 +57,8 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
                 .pendingRequestCount(trip.getPendingRequestCount())
                 .timestamp(System.currentTimeMillis())
                 .build();
-        publish(trip.getTripId(), event);
+        publish(trip.getTripOwnerId(), event);
+        publishPostCreatedEvent(trip);
     }
 
     @Override
@@ -80,6 +84,7 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
                 .timestamp(System.currentTimeMillis())
                 .build();
         publish(tripId, event);
+        publishPostDeletedEvent(tripId, ownerUserId);
     }
 
     @Override
@@ -161,6 +166,7 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
                 .timestamp(System.currentTimeMillis())
                 .build();
         saveFailedEvent(TOPIC, trip.getTripId(), event, ex);
+        saveFailedPostCreatedEvent(trip, ex);
     }
 
     public void tripUpdatedFallback(Trip trip, Map<String, Object> updatedFields, Exception ex) {
@@ -182,6 +188,7 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
                 .timestamp(System.currentTimeMillis())
                 .build();
         saveFailedEvent(TOPIC, tripId, event, ex);
+        saveFailedPostDeletedEvent(tripId, ownerUserId, ex);
     }
 
     public void tripRequestCreatedFallback(String tripId, String ownerUserId, String requesterUserId, Exception ex) {
@@ -243,11 +250,82 @@ public class TripDomainEventPublisherImpl implements TripDomainEventPublisher {
 
 
     private void publish(String key, Object event) {
+        publish(TOPIC, key, event);
+    }
+
+    private void publish(String topic, String key, Object event) {
         try {
-            kafkaTemplate.send(TOPIC, key, event).get();
+            kafkaTemplate.send(topic, key, event).get();
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish trip domain event", e);
         }
+    }
+
+    private void publishPostCreatedEvent(Trip trip) {
+        try {
+            PostCreatedEvent postEvent = PostCreatedEvent.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .resourceType("TRIP")
+                    .authorId(trip.getTripOwnerId())
+                    .authorName(trip.getTripOwnerName())
+                    .authorProfilePic(trip.getTripOwnerProfilePic())
+                    .resourceId(trip.getTripId())
+                    .caption(trip.getTripName())
+                    .images(trip.getTripImages() == null ? java.util.List.of() : trip.getTripImages())
+                    .visibility(isPrivateTrip(trip) ? "FRIENDS" : "PUBLIC")
+                    .createdAt(trip.getTripCreatedAt())
+                    .build();
+            publish(POST_TOPIC, trip.getTripId(), postEvent);
+        } catch (Exception ex) {
+            logger.error("Failed to publish PostCreatedEvent for tripId {}: {}", trip.getTripId(), ex.getMessage());
+            saveFailedPostCreatedEvent(trip, ex);
+        }
+    }
+
+    private void publishPostDeletedEvent(String tripId, String ownerUserId) {
+        try {
+            PostDeletedEvent postDeletedEvent = PostDeletedEvent.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .resourceType("TRIP")
+                    .resourceId(tripId)
+                    .authorId(ownerUserId)
+                    .build();
+            publish(POST_TOPIC, tripId, postDeletedEvent);
+        } catch (Exception ex) {
+            logger.error("Failed to publish PostDeletedEvent for tripId {}: {}", tripId, ex.getMessage());
+            saveFailedPostDeletedEvent(tripId, ownerUserId, ex);
+        }
+    }
+
+    private void saveFailedPostCreatedEvent(Trip trip, Exception ex) {
+        PostCreatedEvent postEvent = PostCreatedEvent.builder()
+                .eventId(java.util.UUID.randomUUID().toString())
+                .resourceType("TRIP")
+                .authorId(trip.getTripOwnerId())
+                .authorName(trip.getTripOwnerName())
+                .authorProfilePic(trip.getTripOwnerProfilePic())
+                .resourceId(trip.getTripId())
+                .caption(trip.getTripName())
+                .images(trip.getTripImages() == null ? java.util.List.of() : trip.getTripImages())
+                .visibility(isPrivateTrip(trip) ? "FRIENDS" : "PUBLIC")
+                .createdAt(trip.getTripCreatedAt())
+                .build();
+        saveFailedEvent(POST_TOPIC, trip.getTripId(), postEvent, ex);
+    }
+
+    private void saveFailedPostDeletedEvent(String tripId, String ownerUserId, Exception ex) {
+        PostDeletedEvent postDeletedEvent = PostDeletedEvent.builder()
+                .eventId(java.util.UUID.randomUUID().toString())
+                .resourceType("TRIP")
+                .resourceId(tripId)
+                .authorId(ownerUserId)
+                .build();
+        saveFailedEvent(POST_TOPIC, tripId, postDeletedEvent, ex);
+    }
+
+    private boolean isPrivateTrip(Trip trip) {
+        String value = trip.getIsPrivateTrip();
+        return value != null && value.equalsIgnoreCase("true");
     }
 
     private void saveFailedEvent(String topic, String key, Object event, Exception ex) {

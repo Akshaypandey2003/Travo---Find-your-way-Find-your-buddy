@@ -178,6 +178,7 @@ import useBlog from "../../../CustomHooks/useBlog";
 import { addBlog, setBlogsNextPageToken } from "../../../Redux/Slices/blogsSlice";
 
 export const BlogsPage = () => {
+
   const dispatch = useDispatch();
   const scrollRef = useRef(null);
   const loadMoreRef = useRef(null);

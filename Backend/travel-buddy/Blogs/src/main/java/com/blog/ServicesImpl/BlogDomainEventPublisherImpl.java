@@ -11,6 +11,8 @@ import com.blog.Entity.Blog;
 import com.blog.Services.EventPublisher;
 import com.events.Blog.BlogCreatedEvent;
 import com.events.Blog.BlogDeletedEvent;
+import com.events.Feed.PostCreatedEvent;
+import com.events.Feed.PostDeletedEvent;
 import com.events.Notification.FailedNotification;
 import com.events.Repositories.FailedNotificationRepository;
 
@@ -23,6 +25,7 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
 
     private static final Logger logger = LoggerFactory.getLogger(BlogDomainEventPublisherImpl.class);
     private static final String TOPIC = "blog-events";
+    private static final String POST_TOPIC = "post-events";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final FailedNotificationRepository failedNotificationRepository;
@@ -53,6 +56,7 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
                 .createdAt(blog.getCreatedAt())
                 .build();
         publish(blog.getId(), event);
+        publishPostCreatedEvent(blog);
     }
     
     @Override
@@ -66,14 +70,81 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
                 .authorId(authorId)
                 .build();
         publish(blogId,event);
+        publishPostDeletedEvent(blogId, authorId);
     }
 
      private void publish(String key, Object event) {
+        publish(TOPIC, key, event);
+    }
+
+    private void publish(String topic, String key, Object event) {
         try {
-            kafkaTemplate.send(TOPIC, key, event).get();
+            kafkaTemplate.send(topic, key, event).get();
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish trip domain event", e);
         }
+    }
+
+    private void publishPostCreatedEvent(Blog blog) {
+        try {
+            PostCreatedEvent postEvent = PostCreatedEvent.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .resourceType("BLOG")
+                    .authorId(blog.getAuthorId())
+                    .authorName(blog.getAuthorName())
+                    .authorProfilePic(blog.getAuthorProfilePic())
+                    .resourceId(blog.getId())
+                    .caption(blog.getCaption())
+                    .images(blog.getImageUrls())
+                    .visibility("PUBLIC")
+                    .createdAt(blog.getCreatedAt())
+                    .build();
+            publish(POST_TOPIC, blog.getId(), postEvent);
+        } catch (Exception ex) {
+            logger.error("Failed to publish PostCreatedEvent for blogId {}: {}", blog.getId(), ex.getMessage());
+            saveFailedPostCreatedEvent(blog, ex);
+        }
+    }
+
+    private void publishPostDeletedEvent(String blogId, String authorId) {
+        try {
+            PostDeletedEvent postDeletedEvent = PostDeletedEvent.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .resourceType("BLOG")
+                    .resourceId(blogId)
+                    .authorId(authorId)
+                    .build();
+            publish(POST_TOPIC, blogId, postDeletedEvent);
+        } catch (Exception ex) {
+            logger.error("Failed to publish PostDeletedEvent for blogId {}: {}", blogId, ex.getMessage());
+            saveFailedPostDeletedEvent(blogId, authorId, ex);
+        }
+    }
+
+    private void saveFailedPostCreatedEvent(Blog blog, Exception ex) {
+        PostCreatedEvent postEvent = PostCreatedEvent.builder()
+                .eventId(java.util.UUID.randomUUID().toString())
+                .resourceType("BLOG")
+                .authorId(blog.getAuthorId())
+                .authorName(blog.getAuthorName())
+                .authorProfilePic(blog.getAuthorProfilePic())
+                .resourceId(blog.getId())
+                .caption(blog.getCaption())
+                .images(blog.getImageUrls())
+                .visibility("PUBLIC")
+                .createdAt(blog.getCreatedAt())
+                .build();
+        saveFailedEvent(POST_TOPIC, blog.getId(), postEvent, ex);
+    }
+
+    private void saveFailedPostDeletedEvent(String blogId, String authorId, Exception ex) {
+        PostDeletedEvent postDeletedEvent = PostDeletedEvent.builder()
+                .eventId(java.util.UUID.randomUUID().toString())
+                .resourceType("BLOG")
+                .resourceId(blogId)
+                .authorId(authorId)
+                .build();
+        saveFailedEvent(POST_TOPIC, blogId, postDeletedEvent, ex);
     }
 
     public void blogCreatedFallback(Blog blog, Exception ex)
@@ -95,6 +166,7 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
                 .createdAt(blog.getCreatedAt())
                 .build();
         saveFailedEvent(TOPIC, blog.getId(), event, ex);
+        saveFailedPostCreatedEvent(blog, ex);
     }
 
     public void blogDeletedFallback(String blogId, String authorId, Exception ex)
@@ -105,6 +177,7 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
                 .authorId(authorId)
                 .build();
         saveFailedEvent(TOPIC, blogId, event, ex);
+        saveFailedPostDeletedEvent(blogId, authorId, ex);
     }
 
      private void saveFailedEvent(String topic, String key, Object event, Exception ex) {

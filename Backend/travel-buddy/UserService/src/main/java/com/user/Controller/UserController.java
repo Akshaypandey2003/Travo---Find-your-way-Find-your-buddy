@@ -23,7 +23,7 @@ import com.user.Service.UserService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/user")
 public class UserController {
 
     private final UserService userService;
@@ -37,11 +37,13 @@ public class UserController {
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody UpdateUserRequest request) {
 
+          System.out.println("User details to be updated: " + request.toString());
+
         return ResponseEntity.ok(
                 userService.updateUser(userId, request));
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<PageResponse<UserResponse>> getAllUsers(Pageable pageable) {
 
         return ResponseEntity.ok(userService.getAllUsers(pageable));

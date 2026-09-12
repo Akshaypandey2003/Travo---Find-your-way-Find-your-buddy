@@ -15,18 +15,31 @@ import com.user.DTO.MessageResponse;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<?> handleUserNotFoundException(UserNotFoundException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    public ResponseEntity<MessageResponse> handleUserNotFoundException(UserNotFoundException ex) {
+        MessageResponse response = new MessageResponse(
+                ex.getMessage(),
+                "error"
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @ExceptionHandler(UserConflictException.class)
-    public ResponseEntity<?> handleUserConflictException(UserConflictException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    public ResponseEntity<MessageResponse> handleUserConflictException(UserConflictException ex) {
+         MessageResponse response = new MessageResponse(
+                ex.getMessage(),
+                "error"
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(InvalidPasswordException.class)
-    public ResponseEntity<String> handleInvalidPasswordException(InvalidPasswordException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<MessageResponse> handleInvalidPasswordException(InvalidPasswordException ex) {
+
+          MessageResponse response = new MessageResponse(
+                ex.getMessage(),
+                "error"
+        );
+        return  ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(ConnectionRequestException.class)

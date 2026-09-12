@@ -340,6 +340,10 @@ public class UserServiceImpl implements UserService {
             user.setAccountType(request.getAccountType());
             updatedFields.put("accountType", request.getAccountType());
         }
+        if( request.getPreferences() != null) {
+            user.setPreferences(request.getPreferences());
+            updatedFields.put("preferences", request.getPreferences());
+        }
 
         User saved = userRepo.save(user);
 
@@ -388,7 +392,7 @@ public class UserServiceImpl implements UserService {
                 new MessageResponse("User logged in successfully", "success"));
     }
     @Override
-    public void forgotPassword(String email) {
+    public MessageResponse forgotPassword(String email) {
 
         Optional<User> optionalUser = userRepo.findByEmail(email);
 
@@ -396,8 +400,7 @@ public class UserServiceImpl implements UserService {
 
             // DO NOT reveal user doesn't exist
             logger.warn("Password reset requested for non-existing email: {}", email);
-
-            return;
+            throw new UserNotFoundException("Account does not exists");
         }
 
         User user = optionalUser.get();
@@ -420,6 +423,8 @@ public class UserServiceImpl implements UserService {
                 user.getEmail(),
                 user.getName(),
                 resetLink);
+        
+        return new MessageResponse("Password reset link sent to email", "success");
     }
 
     @Transactional

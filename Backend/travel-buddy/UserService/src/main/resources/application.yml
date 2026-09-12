@@ -11,6 +11,8 @@ spring:
     import: optional:configserver:http://localhost:8086
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      auto-startup: false
     consumer:
       group-id: user-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -70,6 +72,9 @@ cloudinary:
     secret: ${CLOUDINARY_API_SECRET}
 
 management:
+  health:
+    redis:
+      enabled: false
   endpoints:
     web:
       exposure:

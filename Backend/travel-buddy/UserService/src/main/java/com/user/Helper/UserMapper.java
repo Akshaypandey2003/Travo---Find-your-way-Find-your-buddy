@@ -47,6 +47,7 @@ public class UserMapper {
                 .profilePic(user.getProfilePic())
                 .role(user.getRole())
                 .bio(user.getBio())
+                .preferences(user.getPreferences())
                 .country(user.getCountry())
                 .state(user.getState())
                 .city(user.getCity())

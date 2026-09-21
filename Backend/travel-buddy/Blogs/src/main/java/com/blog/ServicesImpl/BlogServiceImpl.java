@@ -88,13 +88,22 @@ public class BlogServiceImpl implements BlogService {
         Blog savedBlog = blogRepo.save(newBlog);
 
         List<String> friends = userServiceClient.getFriendsByUser(authorId);
-        Set<String> friendSet = new HashSet<>(friends);
 
-        for (String friend : friendSet) {
-            notificationProducer.postBlogNotification(
-                    authorId, friend,
-                    savedBlog.getId(), savedBlog.getTitle());
+        if (friends == null || friends.isEmpty()) {
 
+            logger.info(
+                    "No friends found for authorId: {}",
+                    authorId);
+
+        } else {
+            Set<String> friendSet = new HashSet<>(friends);
+
+            for (String friend : friendSet) {
+                notificationProducer.postBlogNotification(
+                        authorId, friend,
+                        savedBlog.getId(), savedBlog.getTitle());
+
+            }
         }
         eventPublisher.publishBlogCreated(savedBlog);
 
@@ -187,8 +196,8 @@ public class BlogServiceImpl implements BlogService {
             throw new UnauthorizedAccessException("User is not authorized to delete this blog.");
         }
 
-        List<String> cloudinaryPublicIds =
-                blog.getCloudinaryPublicIds() == null ? Collections.emptyList() : blog.getCloudinaryPublicIds();
+        List<String> cloudinaryPublicIds = blog.getCloudinaryPublicIds() == null ? Collections.emptyList()
+                : blog.getCloudinaryPublicIds();
         for (String publicId : cloudinaryPublicIds) {
             try {
                 cloudinaryService.deleteImage(publicId);
@@ -215,18 +224,18 @@ public class BlogServiceImpl implements BlogService {
     @Override
     public ApiResponse<Page<Blog>> getBlogsByCategory(String category, int page, int size) {
         Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
-       
+
         Page<Blog> blogPage = blogRepo.findByCategoryIgnoreCase(category, pageable);
-        return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
+        return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
     }
 
     @Override
-    public ApiResponse<Page<Blog>> getBlogsByAuthor(String authorId,int page, int size) {
-    
+    public ApiResponse<Page<Blog>> getBlogsByAuthor(String authorId, int page, int size) {
+
         Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
-     
-        Page<Blog> blogPage = blogRepo.findByAuthorId(authorId,pageable);
-        return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
+
+        Page<Blog> blogPage = blogRepo.findByAuthorId(authorId, pageable);
+        return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
 
     }
 
@@ -244,7 +253,8 @@ public class BlogServiceImpl implements BlogService {
 
         Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<Blog> blogPage = blogRepo.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
+        Page<Blog> blogPage = blogRepo.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword,
+                pageable);
 
         return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
     }
@@ -253,9 +263,9 @@ public class BlogServiceImpl implements BlogService {
     public ApiResponse<Page<Blog>> getBlogsByTitle(String title, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
-     
+
         Page<Blog> blogPage = blogRepo.findByTitleIgnoreCase(title, pageable);
-        return new ApiResponse<>(true,blogPage,"Blogs fetched successfully.");
+        return new ApiResponse<>(true, blogPage, "Blogs fetched successfully.");
     }
 
     @Transactional

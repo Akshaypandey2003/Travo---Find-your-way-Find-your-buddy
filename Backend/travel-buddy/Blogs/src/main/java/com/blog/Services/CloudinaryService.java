@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor 
 public class CloudinaryService {
     
-    @Autowired
+    
     private Cloudinary cloudinary;
 
     public void deleteImage(String publicId) throws IOException {

@@ -1,5 +1,6 @@
 package com.gateway.Controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -23,8 +24,8 @@ public class FallbackController {
         return Mono.just("Chat Service is currently unavailable.");
     }
     @RequestMapping("/blog-service")
-    public Mono<String> blogServiceFallback() {
-        return Mono.just("Blog Service is currently unavailable.");
+    public ResponseEntity<String> blogServiceFallback() {
+        return ResponseEntity.ok("Blog Service is currently unavailable.");
     }
     @RequestMapping("/feedback-service")
     public Mono<String> feedbackServiceFallback() {

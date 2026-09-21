@@ -60,9 +60,9 @@ public class UserInternalController {
                                 .stream()
                                 .map(Connections::getFollowingId)
                                 .toList();
-        if (friends == null || friends.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        // if (friends == null || friends.isEmpty()) {
+        //     return ResponseEntity.notFound().build();
+        // }
         return ResponseEntity.ok(friends);
     }
 
@@ -73,9 +73,9 @@ public class UserInternalController {
                                 .stream()
                                 .map(Connections::getFollowerId)
                                 .toList();
-        if (followers == null || followers.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        // if (followers == null || followers.isEmpty()) {
+        //     return ResponseEntity.notFound().build();
+        // }
         return ResponseEntity.ok(followers);
     }
 }

@@ -43,8 +43,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConnectionRequestException.class)
-    public ResponseEntity<String> handleConnectionRequestException(ConnectionRequestException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    public ResponseEntity<MessageResponse> handleConnectionRequestException(ConnectionRequestException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new MessageResponse(ex.getMessage(), "error"));
     }
 
     @ExceptionHandler(InvalidResetTokenException.class)

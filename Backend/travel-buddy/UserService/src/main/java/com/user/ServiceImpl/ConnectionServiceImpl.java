@@ -69,14 +69,14 @@ public class ConnectionServiceImpl implements ConnectionService {
         public ConnectionResponse sendFollowRequest(String followerId, String followingId) {
 
                 if (followerId.equals(followingId)) {
-                        throw new ConnectionRequestException("Cannot follow yourself");
+                        throw new ConnectionRequestException("Invalid Action !");
                 }
 
                 User follower = userRepo.findById(followerId)
-                                .orElseThrow(() -> new UserNotFoundException("Follower not found"));
+                                .orElseThrow(() -> new UserNotFoundException("User Not Found"));
 
                 User following = userRepo.findById(followingId)
-                                .orElseThrow(() -> new UserNotFoundException("Target user not found"));
+                                .orElseThrow(() -> new UserNotFoundException("User Not Found"));
 
                 Optional<Connections> existingOpt = connectionRepo.findByFollowerIdAndFollowingId(followerId,
                                 followingId);

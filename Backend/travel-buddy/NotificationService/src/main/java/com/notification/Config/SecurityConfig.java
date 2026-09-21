@@ -42,7 +42,7 @@ public class SecurityConfig {
                         "/notification/**"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
+                        auth -> auth.requestMatchers("/ws", "/ws/**", "/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                                 .anyRequest()
                                 .authenticated())
                                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -62,7 +62,7 @@ public class SecurityConfig {
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP
                                                                                                      // methods
         config.setAllowedHeaders(Collections.singletonList("*")); // Allowed headers (* represents all headers)
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true);
         config.setExposedHeaders(Arrays.asList("Authorization"));
         config.setMaxAge(3600L); // Cache the preflight response for 1 hour
 

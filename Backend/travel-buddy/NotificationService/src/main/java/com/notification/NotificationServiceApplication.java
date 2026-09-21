@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = "com.notification.client")
+@EnableFeignClients(basePackages = "com.notification.Clients")
 public class NotificationServiceApplication {
 
 	public static void main(String[] args) {

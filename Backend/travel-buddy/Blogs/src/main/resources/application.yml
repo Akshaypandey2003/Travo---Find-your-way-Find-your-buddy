@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: blog-service
+    name: blogs-service
   data:
     mongodb:
       database: Blogs
@@ -75,7 +75,10 @@ cloudinary:
     secret: ${CLOUDINARY_API_SECRET}
 
 management:
-  endpoints:
+ health:
+    redis:
+      enabled: false
+ endpoints:
     web:
       exposure:
         include: health,info,prometheus

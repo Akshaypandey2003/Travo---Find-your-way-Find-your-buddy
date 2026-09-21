@@ -22,26 +22,26 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
 
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
+        return Mono.fromCallable(() -> {
+            String token = authentication.getCredentials().toString();
+            Claims claims = jwtProvider.validateToken(token);
 
-        String token = authentication.getCredentials().toString();
-        Claims claims = jwtProvider.validateToken(token);
+            String email = claims.getSubject();
 
-        String email = claims.getSubject();
+            @SuppressWarnings("unchecked")
+            List<String> roles = claims.get("roles", List.class);
 
-        @SuppressWarnings("unchecked")
-        List<String> roles = claims.get("roles", List.class);
+            if (roles == null) {
+                roles = List.of();
+            }
 
-        if (roles == null) {
-            roles = List.of();
-        }
+            var authorities = roles.stream()
+                    .filter(role -> role != null && !role.isBlank())
+                    .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
 
-        var authorities = roles.stream()
-                .filter(role -> role != null && !role.isBlank()) // 🔥 FIX
-                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
-                .map(SimpleGrantedAuthority::new)
-                .toList();
-
-        return Mono.just(
-                new UsernamePasswordAuthenticationToken(email, token, authorities));
+            return new UsernamePasswordAuthenticationToken(email, token, authorities);
+        });
     }
 }

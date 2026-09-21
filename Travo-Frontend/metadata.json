@@ -1,0 +1,8 @@
+
+{
+  "name": "Travo - The Ultimate Travel Social Network",
+  "description": "A comprehensive social platform for travelers to connect, plan itineraries, find travel partners, and share experiences. Features include a dynamic feed, messaging center, trip management, and AI-powered partner matching.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

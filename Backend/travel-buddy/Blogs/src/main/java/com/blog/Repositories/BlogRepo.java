@@ -15,6 +15,7 @@ public interface BlogRepo extends MongoRepository<Blog,String> {
     
     Page<Blog> findByCategoryIgnoreCase(String category, Pageable pageable);
     Page<Blog> findByAuthorId(String authorId, Pageable pageable);
+    Page<Blog> findByAuthorIdIn(List<String> authorIds, Pageable pageable);
     Page<Blog> findByTitleIgnoreCase(String title, Pageable pageable);
     Page<Blog> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(
             String keyword,

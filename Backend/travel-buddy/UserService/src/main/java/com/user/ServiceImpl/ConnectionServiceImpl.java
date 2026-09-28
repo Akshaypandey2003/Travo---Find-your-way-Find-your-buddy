@@ -51,17 +51,20 @@ public class ConnectionServiceImpl implements ConnectionService {
         private final UserRepo userRepo;
         private final CloseFriendsRepo closeFriendsRepo;
         private final UserNotificationProducer notificationProducer;
+        private final ConnectionEventProducer connectionEventProducer;
 
         public ConnectionServiceImpl(
                         ConnectionRepo connectionRepo,
                         ConnectionMapper connectionMapper, UserRepo userRepo,
-                        CloseFriendsRepo closeFriendsRepo, UserNotificationProducer notificationProducer) {
+                        CloseFriendsRepo closeFriendsRepo, UserNotificationProducer notificationProducer,
+                        ConnectionEventProducer connectionEventProducer) {
 
                 this.connectionRepo = connectionRepo;
                 this.connectionMapper = connectionMapper;
                 this.userRepo = userRepo;
                 this.closeFriendsRepo = closeFriendsRepo;
                 this.notificationProducer = notificationProducer;
+                this.connectionEventProducer = connectionEventProducer;
         }
 
         // FOLLOW USER
@@ -113,6 +116,7 @@ public class ConnectionServiceImpl implements ConnectionService {
                         userRepo.incrementFollowingCount(followerId);
                         userRepo.incrementFollowersCount(followingId);
                         notificationProducer.newFollower(followerId, follower.getName(), followingId);
+                        connectionEventProducer.publishCreated(followerId, followingId);
 
                 } 
                 else
@@ -134,6 +138,8 @@ public class ConnectionServiceImpl implements ConnectionService {
                         throw new IllegalStateException("Not following");
 
                 connectionRepo.delete(connection);
+
+                connectionEventProducer.publishRemoved(followerId, followingId);
 
                 userRepo.decrementFollowingCount(followerId);
                 userRepo.decrementFollowersCount(followingId);
@@ -162,6 +168,8 @@ public class ConnectionServiceImpl implements ConnectionService {
 
                 userRepo.incrementFollowingCount(followerId);
                 userRepo.incrementFollowersCount(receiverId);
+
+                connectionEventProducer.publishCreated(followerId, receiverId);
 
                 User sender = userRepo.findById(receiverId)
                                 .orElseThrow(() -> new UserNotFoundException("Sender not found"));

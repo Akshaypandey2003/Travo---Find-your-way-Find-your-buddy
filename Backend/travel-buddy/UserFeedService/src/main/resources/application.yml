@@ -35,10 +35,16 @@ app:
   kafka:
     topics:
       post-events: ${POST_EVENTS_TOPIC:post-events}
+      connection-events: ${CONNECTION_EVENTS_TOPIC:connection-events}
+      user-events: ${USER_EVENTS_TOPIC:user-events}
 
 user:
   service:
     base-url: ${USER_SERVICE_BASE_URL:http://localhost:8080}
+
+blog:
+  service:
+    base-url: ${BLOG_SERVICE_BASE_URL:http://localhost:8089}
 
 feed:
   redis:

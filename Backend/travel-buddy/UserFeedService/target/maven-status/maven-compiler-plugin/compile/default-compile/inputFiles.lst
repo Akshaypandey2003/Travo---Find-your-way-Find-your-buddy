@@ -1,11 +1,15 @@
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Config\WebSocketAuthInterceptor.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Service\FeedService.java
+C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Service\UserEventConsumer.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Config\JwtAuthenticationFilter.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Config\SecurityConfig.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\UserFeedServiceApplication.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Config\JwtProvider.java
+C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Service\BlogDiscoveryService.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Controller\FeedController.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Repository\FeedItemRepository.java
+C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\DTO\DiscoveryBlogResponse.java
+C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Service\ConnectionEventConsumer.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Config\RedisConfig.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\DTO\FeedItemResponse.java
 C:\Complete web development Tutorial\Full stack Projects\TravelBuddyApp\Backend\travel-buddy\UserFeedService\src\main\java\com\feed\Config\WebSocketConfig.java

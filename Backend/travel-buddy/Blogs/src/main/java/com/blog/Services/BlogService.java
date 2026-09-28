@@ -11,6 +11,8 @@ import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
 
 public interface BlogService {
+
+    Page<Blog> getBlogsByAuthors(List<String> authorIds, int size);
     
     public ApiResponse<Blog> createBlog(CreateBlogRequest blo, String authorId);
     public ApiResponse<Blog> getBlogById(String blogId);

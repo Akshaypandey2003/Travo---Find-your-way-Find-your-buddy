@@ -15,5 +15,9 @@ public interface FeedItemRepository extends MongoRepository<FeedItem, String> {
 
     Optional<FeedItem> findByEventIdAndViewerId(String eventId, String viewerId);
 
+    Optional<FeedItem> findByResourceIdAndViewerId(String resourceId, String viewerId);
+
+    List<FeedItem> findByViewerIdAndAuthorIdAndActiveTrue(String viewerId, String authorId);
+
     List<FeedItem> findByResourceIdAndResourceTypeAndActiveTrue(String resourceId, String resourceType);
 }

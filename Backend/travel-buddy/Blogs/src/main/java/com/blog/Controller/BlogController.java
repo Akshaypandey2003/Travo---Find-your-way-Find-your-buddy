@@ -21,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.blog.DTO.ApiResponse;
 import com.blog.DTO.CreateBlogRequest;
+import com.blog.DTO.DiscoveryBlogResponse;
 import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
 import com.blog.Exceptions.InvalidRequestException;
@@ -39,6 +40,18 @@ import lombok.extern.slf4j.Slf4j;
 public class BlogController {
 
     private final BlogService blogService;
+
+    @GetMapping("/internal/discovery")
+    public ResponseEntity<List<DiscoveryBlogResponse>> getDiscoveryBlogs(
+            @RequestParam List<String> authorIds,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+        int safeSize = Math.min(size, 100);
+        Page<Blog> blogs = blogService.getBlogsByAuthors(authorIds, safeSize);
+        List<DiscoveryBlogResponse> response = blogs.getContent().stream()
+                .map(DiscoveryBlogResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
 
     // ✅ Create Blog
     @PostMapping

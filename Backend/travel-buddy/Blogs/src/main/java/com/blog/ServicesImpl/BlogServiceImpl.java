@@ -48,6 +48,15 @@ public class BlogServiceImpl implements BlogService {
     private final EventPublisher eventPublisher;
     private final int maxPageSize;
 
+    @Override
+    public Page<Blog> getBlogsByAuthors(List<String> authorIds, int size) {
+        if (authorIds == null || authorIds.isEmpty()) {
+            return Page.empty();
+        }
+        Pageable pageable = PageRequest.of(0, normalizePageSize(size), Sort.by(Sort.Direction.DESC, "createdAt"));
+        return blogRepo.findByAuthorIdIn(authorIds, pageable);
+    }
+
     public BlogServiceImpl(
             BlogRepo blogRepo,
             CloudinaryService cloudinaryService,

@@ -16,6 +16,8 @@ import com.user.Entity.User;
 
 public interface UserService 
 {
+    List<String> getPublicUserIds(int page, int size);
+
     public AuthResponse addUser(RegisterRequest request);;
     public User getUserByEmail(String email);
     public PageResponse<UserResponse> getUserByPreferences(Pageable pageable, List<String> preferences);

@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Update;
 
 import com.user.Entity.User;
+import com.user.Enum.AccountType;
 
 public interface UserRepo extends MongoRepository<User, String> {
 
@@ -58,4 +59,6 @@ public interface UserRepo extends MongoRepository<User, String> {
     void decrementBlogsCount(String userId);
 
     List<User> findByUserIdIn(List<String> userIds);
+
+    Page<User> findByAccountType(AccountType accountType, Pageable pageable);
 }

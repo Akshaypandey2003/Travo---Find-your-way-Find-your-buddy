@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,6 +78,31 @@ public class UserConnectionService {
         } catch (Exception ex) {
             logger.error("Failed to fetch followers for userId={}: {}", userId, ex.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    public List<String> getPublicUserIds(int limit) {
+        String url = UriComponentsBuilder
+                .fromHttpUrl(userServiceBaseUrl + "/user/internal/public-user-ids")
+                .queryParam("page", 0)
+                .queryParam("size", Math.min(Math.max(limit, 1), 100))
+                .toUriString();
+        try {
+            ResponseEntity<List<String>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<String>>() {});
+            return response.getBody() == null ? Collections.emptyList() : response.getBody();
+        } catch (Exception ex) {
+            logger.error("Failed to fetch public user ids: {}", ex.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    public void evictFollowersCache(String userId) {
+        if (userId != null && !userId.isBlank()) {
+            redisTemplate.delete("feed:connections:" + userId);
         }
     }
 }

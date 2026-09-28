@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.user.DTO.UserResponse;
 import com.user.DTO.UserSummary;
@@ -77,5 +78,13 @@ public class UserInternalController {
         //     return ResponseEntity.notFound().build();
         // }
         return ResponseEntity.ok(followers);
+    }
+
+    @GetMapping("/public-user-ids")
+    public ResponseEntity<List<String>> getPublicUserIds(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        return ResponseEntity.ok(userService.getPublicUserIds(page, safeSize));
     }
 }

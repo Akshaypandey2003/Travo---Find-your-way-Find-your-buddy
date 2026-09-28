@@ -39,7 +39,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/ws/**",
-                        "/notification/**"))
+                    "/notification/**",
+                    "/api/v1/notification/**"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers("/ws", "/ws/**", "/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()

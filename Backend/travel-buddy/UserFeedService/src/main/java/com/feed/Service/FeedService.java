@@ -3,7 +3,10 @@ package com.feed.Service;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,7 @@ import com.events.Feed.PostDeletedEvent;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feed.DTO.FeedItemResponse;
+import com.feed.DTO.DiscoveryBlogResponse;
 import com.feed.Entity.FeedItem;
 import com.feed.Repository.FeedItemRepository;
 
@@ -29,6 +33,7 @@ public class FeedService {
 
     private final FeedItemRepository feedItemRepository;
     private final UserConnectionService userConnectionService;
+    private final BlogDiscoveryService blogDiscoveryService;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate messagingTemplate;
@@ -45,11 +50,13 @@ public class FeedService {
     public FeedService(
             FeedItemRepository feedItemRepository,
             UserConnectionService userConnectionService,
+            BlogDiscoveryService blogDiscoveryService,
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
             SimpMessagingTemplate messagingTemplate) {
         this.feedItemRepository = feedItemRepository;
         this.userConnectionService = userConnectionService;
+        this.blogDiscoveryService = blogDiscoveryService;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.messagingTemplate = messagingTemplate;
@@ -71,7 +78,7 @@ public class FeedService {
                 continue;
             }
 
-            if (isDuplicate(event.getEventId(), viewerId)) {
+            if (isDuplicate(event.getEventId(), event.getResourceId(), viewerId)) {
                 continue;
             }
 
@@ -142,30 +149,102 @@ public class FeedService {
         }
 
         int safeLimit = Math.min(Math.max(limit, 1), 100);
-        List<FeedItemResponse> cached = getLatestFeedFromCache(userId, safeLimit);
-        if (!cached.isEmpty()) {
+        List<FeedItemResponse> personalized = getPersonalizedFeed(userId, safeLimit);
+        if (personalized.size() >= safeLimit) {
+            return personalized.subList(0, safeLimit);
+        }
+
+        int remaining = safeLimit - personalized.size();
+        List<String> publicAuthors = userConnectionService.getPublicUserIds(Math.min(100, Math.max(remaining * 10, 20)));
+        List<FeedItemResponse> discovery = blogDiscoveryService.getDiscoveryBlogs(publicAuthors, remaining)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+        return mergeAndDeduplicate(personalized, discovery, safeLimit);
+    }
+
+    public void backfillConnection(String viewerId, String authorId) {
+        if (viewerId == null || viewerId.isBlank() || authorId == null || authorId.isBlank()) {
+            return;
+        }
+        List<DiscoveryBlogResponse> blogs = blogDiscoveryService.getBlogsByAuthor(authorId, 100);
+        for (DiscoveryBlogResponse blog : blogs) {
+            if (blog.getResourceId() == null || feedItemRepository.findByResourceIdAndViewerId(blog.getResourceId(), viewerId).isPresent()) {
+                continue;
+            }
+            FeedItem item = FeedItem.builder()
+                    .viewerId(viewerId)
+                    .eventId("blog:" + blog.getResourceId())
+                    .resourceType("BLOG")
+                    .authorId(blog.getAuthorId())
+                    .authorName(blog.getAuthorName())
+                    .authorProfilePic(blog.getAuthorProfilePic())
+                    .resourceId(blog.getResourceId())
+                    .caption(blog.getCaption())
+                    .images(blog.getImages() == null ? List.of() : blog.getImages())
+                    .visibility("PUBLIC")
+                    .createdAt(blog.getCreatedAt())
+                    .thumbnailUrl(firstImage(blog.getImages()))
+                    .active(true)
+                    .build();
+            feedItemRepository.save(item);
+        }
+        evictLatestFeedCache(viewerId);
+    }
+
+    public void removeConnection(String viewerId, String authorId) {
+        List<FeedItem> items = feedItemRepository.findByViewerIdAndAuthorIdAndActiveTrue(viewerId, authorId);
+        if (items.isEmpty()) {
+            return;
+        }
+        items.forEach(item -> item.setActive(false));
+        feedItemRepository.saveAll(items);
+        evictLatestFeedCache(viewerId);
+    }
+
+    public void initializeUser(String userId) {
+        redisTemplate.opsForValue().setIfAbsent("feed:initialized:" + userId, "1");
+        evictLatestFeedCache(userId);
+    }
+
+    private List<FeedItemResponse> getPersonalizedFeed(String userId, int limit) {
+        List<FeedItemResponse> cached = getLatestFeedFromCache(userId, limit);
+        if (cached.size() >= limit) {
             return cached;
         }
 
         List<FeedItem> items = feedItemRepository
-                .findByViewerIdAndActiveTrueOrderByCreatedAtDesc(userId, PageRequest.of(0, safeLimit))
+                .findByViewerIdAndActiveTrueOrderByCreatedAtDesc(userId, PageRequest.of(0, limit))
                 .getContent();
-
-        if (items.isEmpty()) {
-            return Collections.emptyList();
+        List<FeedItemResponse> responses = items.stream().map(this::toResponse).toList();
+        if (!responses.isEmpty()) {
+            cacheLatestFeed(userId, responses);
         }
-
-        List<FeedItemResponse> responses = items.stream()
-                .map(this::toResponse)
-                .toList();
-
-        cacheLatestFeed(userId, responses);
-
         return responses;
     }
 
-    private boolean isDuplicate(String eventId, String viewerId) {
-        if (eventId == null || viewerId == null) {
+    private List<FeedItemResponse> mergeAndDeduplicate(
+            List<FeedItemResponse> personalized,
+            List<FeedItemResponse> discovery,
+            int limit) {
+        Map<String, FeedItemResponse> unique = new LinkedHashMap<>();
+        personalized.forEach(item -> unique.put(item.getResourceId(), item));
+        discovery.forEach(item -> unique.putIfAbsent(item.getResourceId(), item));
+        return unique.values().stream()
+                .sorted(Comparator.comparing(FeedItemResponse::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(limit)
+                .toList();
+    }
+
+    private boolean isDuplicate(String eventId, String resourceId, String viewerId) {
+        if (viewerId == null) {
+            return true;
+        }
+        if (resourceId != null && feedItemRepository.findByResourceIdAndViewerId(resourceId, viewerId).isPresent()) {
+            return true;
+        }
+        if (eventId == null) {
             return false;
         }
         String key = "feed:dedupe:" + eventId + ":" + viewerId;
@@ -261,6 +340,22 @@ public class FeedService {
                 .visibility(item.getVisibility())
                 .createdAt(item.getCreatedAt())
                 .thumbnailUrl(item.getThumbnailUrl())
+                .build();
+    }
+
+    private FeedItemResponse toResponse(DiscoveryBlogResponse blog) {
+        return FeedItemResponse.builder()
+                .eventId("discovery:" + blog.getResourceId())
+                .resourceType("BLOG")
+                .authorId(blog.getAuthorId())
+                .authorName(blog.getAuthorName())
+                .authorProfilePic(blog.getAuthorProfilePic())
+                .resourceId(blog.getResourceId())
+                .caption(blog.getCaption())
+                .images(blog.getImages() == null ? List.of() : blog.getImages())
+                .visibility("PUBLIC")
+                .createdAt(blog.getCreatedAt())
+                .thumbnailUrl(firstImage(blog.getImages()))
                 .build();
     }
 }

@@ -15,6 +15,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,6 +66,17 @@ public class UserServiceImpl implements UserService {
     private final RefreshTokenService refreshTokenService;
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+    @Override
+    public List<String> getPublicUserIds(int page, int size) {
+        return userRepo.findByAccountType(
+                        AccountType.PUBLIC,
+                        PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by(Sort.Direction.ASC, "userId")))
+                .getContent()
+                .stream()
+                .map(User::getUserId)
+                .toList();
+    }
 
     public UserServiceImpl(UserRepo userRepo,
             JwtProvider jwtProvider,

@@ -39,9 +39,10 @@ public class NotificationService {
         return notificationRepo.findAll();
     }
 
-    public  Notification deleteNotificationById(String id) 
+    public Notification deleteNotificationById(String id, String userId)
     {
-        Notification notification = notificationRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + id));
+        Notification notification = notificationRepo.findByNotificationIdAndNotificationTo(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found for this user: " + id));
         Notification existingNotification = notification;
         notificationRepo.delete(notification);
 

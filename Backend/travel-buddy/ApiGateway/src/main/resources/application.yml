@@ -13,6 +13,8 @@ spring:
       timeout: 2000ms
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials RETAIN_FIRST
       routes:
 
       - id: USER-SERVICE-SECURED

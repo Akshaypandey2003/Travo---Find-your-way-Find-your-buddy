@@ -2,14 +2,15 @@
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setMessage } from "../Redux/Slices/notificationSlice";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
 const useFriendRequest = () => {
   const loggedInUser = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const sendFriendRequest = async (userId) => {
+  const sendFriendRequest = async (userId, userName) => {
     
     const token = localStorage.getItem("token");
     if (!loggedInUser) {
@@ -19,7 +20,7 @@ const useFriendRequest = () => {
 
     console.log("Received user id, ", userId);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/api/v1/connections/follow/${userId}`,
         {
           method: "POST",
@@ -30,28 +31,14 @@ const useFriendRequest = () => {
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Friend request sent:", result);
-         dispatch(setMessage({
-          message: "Friend request sent successfully.",
-          error: false,
-          success: true,
-          notificationStatus: true
-        }));
-        // Optionally, show a toast/alert
-      } else {
-        const err = await response.json();
-        console.error("Error sending friend request:", err.message);
-        dispatch(setMessage({
-          message: err.message || "Unable to send friend request.",
-          error: true,
-          success: false,
-          notificationStatus: true
-        }));
-      }
+      const message = data?.status === "FOLLOWING"
+        ? `You started following ${userName || "this user"}.`
+        : `Follow request sent to ${userName || "this user"}.`;
+      notifyApiSuccess(dispatch, message);
     } catch (error) {
-      console.error("Network error:", error.message);
+      const message = getApiErrorMessage(error);
+      notifyApiError(dispatch, message);
+      console.error("Friend request failed:", message);
     }
   };
 
@@ -63,7 +50,7 @@ const useFriendRequest = () => {
       return;
     }
     try {
-      const response = await fetch(
+      const { message } = await apiRequest(
         `http://localhost:8085/api/v1/connections/accept/${userId}`,
         {
           method: "POST",
@@ -74,16 +61,9 @@ const useFriendRequest = () => {
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Friend request sent:", result);
-        // Optionally, show a toast/alert
-      } else {
-        const err = await response.json();
-        console.error("Error sending friend request:", err.message);
-      }
+      notifyApiSuccess(dispatch, message || "Friend request accepted successfully.");
     } catch (error) {
-      console.error("Network error:", error.message);
+      notifyApiError(dispatch, getApiErrorMessage(error));
     }
   };
 
@@ -95,7 +75,7 @@ const useFriendRequest = () => {
       return;
     }
     try {
-      const response = await fetch(
+      const { message } = await apiRequest(
         `http://localhost:8085/api/v1/connections/unfollow/${userId}`,
         {
           method: "POST",
@@ -106,16 +86,9 @@ const useFriendRequest = () => {
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Friend request sent:", result);
-        // Optionally, show a toast/alert
-      } else {
-        const err = await response.json();
-        console.error("Error sending friend request:", err.message);
-      }
+      notifyApiSuccess(dispatch, message || "User unfollowed successfully.");
     } catch (error) {
-      console.error("Network error:", error.message);
+      notifyApiError(dispatch, getApiErrorMessage(error));
     }
   };
   const rejectFriendRequest = async ({userId}) => {
@@ -126,7 +99,7 @@ const useFriendRequest = () => {
       return;
     }
     try {
-      const response = await fetch(
+      const { message } = await apiRequest(
         `http://localhost:8085/api/v1/connections/reject/${userId}`,
         {
           method: "POST",
@@ -137,16 +110,9 @@ const useFriendRequest = () => {
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Friend request sent:", result);
-        // Optionally, show a toast/alert
-      } else {
-        const err = await response.json();
-        console.error("Error sending friend request:", err.message);
-      }
+      notifyApiSuccess(dispatch, message || "Friend request rejected successfully.");
     } catch (error) {
-      console.error("Network error:", error.message);
+      notifyApiError(dispatch, getApiErrorMessage(error));
     }
   };
 
@@ -159,7 +125,7 @@ const useFriendRequest = () => {
       return;
     }
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/connection/received/${loggedInUser?.userId}`,
         {
           method: "POST",
@@ -170,16 +136,9 @@ const useFriendRequest = () => {
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Received friend requests:", result);
-        // Optionally, show a toast/alert
-      } else {
-        const err = await response.json();
-        console.error("Error fetching received friend request:", err.message);
-      }
+      console.log("Received friend requests:", data);
     } catch (error) {
-      console.error("Network error:", error.message);
+      notifyApiError(dispatch, getApiErrorMessage(error));
     }
   };
 

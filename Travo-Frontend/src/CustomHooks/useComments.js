@@ -4,6 +4,8 @@ import {
   setCommentNextPageToken,
   updateCommentLike,
 } from "../Redux/Slices/commentSlice";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
 const useComments = () => {
 
@@ -13,7 +15,7 @@ const useComments = () => {
     const token = localStorage.getItem("token");
     console.log("Received comment data is: ", commentData);
     try {
-      const response = await fetch(
+      const { data, message } = await apiRequest(
         `http://localhost:8085/comment/post/${blogAuthorId}`,
         {
           method: "POST",
@@ -24,16 +26,12 @@ const useComments = () => {
           body: JSON.stringify(commentData),
         }
       );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Comment posting failed");
-      } else {
-        console.log("Comment posted successfully: ", data);
-        dispatch(addComment(data));
-        // dispatch(updateSuccess({success:true,message:data?.messageResponse?.message}));
-      }
+      console.log("Comment posted successfully: ", data);
+      dispatch(addComment(data));
+      notifyApiSuccess(dispatch, message || "Comment posted successfully.");
     } catch (error) {
-      console.log("Some error occured while posting comment", error.message);
+      notifyApiError(dispatch, getApiErrorMessage(error));
+      console.log("Some error occured while posting comment", error);
     }
   };
 
@@ -42,7 +40,7 @@ const useComments = () => {
     console.log("Fetching comments for blogId: ", blogId);
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data, raw } = await apiRequest(
         `http://localhost:8085/comment/get-comments/${blogId}?page=${page}&size=5`,
         {
           method: "GET",
@@ -52,20 +50,18 @@ const useComments = () => {
           },
         }
       );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.message || "Comments Fetching failed");
-      } else {
-        console.log("All Comments fetched successfully: ", data);
-        dispatch(addComment(data?.comments));
+      if (raw?.data) {
+        console.log("All Comments fetched successfully: ", raw);
+        dispatch(addComment(data?.comments || data?.content || data));
         // Check for last page
         if (data?.lastPage) {
           console.log("This is last page");
           dispatch(setCommentNextPageToken({ blogId, nextPageToken: false }));
         }
       }
-      return data;
+      return raw;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.log("Some error occured while fetching comments",error.message);
     }
   };
@@ -73,7 +69,7 @@ const useComments = () => {
   const likeComment = async (commentId, userId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data, message } = await apiRequest(
         `http://localhost:8085/comment/like-comment/${commentId}/${userId}`,
         {
           method: "PUT",
@@ -83,14 +79,11 @@ const useComments = () => {
           },
         }
       );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Comments liking failed");
-      } else {
-        console.log("Comment liked successfully: ", data);
-        dispatch(updateCommentLike({ commentId, userId }));
-      }
+      console.log("Comment liked successfully: ", data);
+      dispatch(updateCommentLike({ commentId, userId }));
+      notifyApiSuccess(dispatch, message || "Comment updated successfully.");
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.log("Some error occured while liking comment", error.message);
     }
   };

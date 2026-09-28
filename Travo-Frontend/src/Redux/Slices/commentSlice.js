@@ -6,9 +6,6 @@ const commentSlice = createSlice({
   initialState: {
     comments: [],
     nextPageTokens: {},
-    success: false,
-    failure: false,
-    message: "",
   },
   reducers: {
     // addComment: (state, action) => {
@@ -57,21 +54,8 @@ const commentSlice = createSlice({
         (comment) => comment?.commentId != commentId
       );
     },
-    updateSuccess: (state, action) => {
-      const { success, message } = action.payload;
-      state.success = success;
-      state.message = message;
-    },
-    updateFailure: (state, action) => {
-      const { failure, message } = action.payload;
-      state.failure = failure;
-      state.message = message;
-    },
     clearCommentsData: (state) => {
       state.comments = [];
-      state.success = false;
-      state.failure = false;
-      state.message = "";
       state.nextPageToken = true;
     },
     updateCommentLike: (state, action) => {
@@ -112,8 +96,6 @@ const commentSlice = createSlice({
 });
 export const {
   addComment,
-  updateSuccess,
-  updateFailure,
   clearCommentsData,
   filtercomment,
   updateCommentLike,

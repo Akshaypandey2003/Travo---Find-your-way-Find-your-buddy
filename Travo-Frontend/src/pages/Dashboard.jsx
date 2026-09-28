@@ -1,112 +1,47 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, UserPlus, MoreHorizontal, Calendar, Camera, RefreshCw, TrendingUp } from 'lucide-react';
-import { shallowEqual, useDispatch, useSelector } from "react-redux";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useCallback, useEffect, useRef } from "react";
+import { Heart, MessageCircle, Share2, UserPlus, MoreHorizontal, Camera, RefreshCw, TrendingUp } from 'lucide-react';
+import { useEffect } from "react";
 import useBlog from "../CustomHooks/useBlog";
-import { addBlog, setBlogsNextPageToken } from "../Redux/Slices/blogsSlice";
 import useNotificationsData from '../CustomHooks/useNotificationsData';
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const [postText, setPostText] = useState('');
-    const posts = [
-        {
-            id: '1',
-            user: { name: 'Marcus Chen', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC46bdSJmeyhnGLQBrtyvgNnLwqeq7rFMhICgNhE08lGFCrLnfzl4yuCZgysAy9ilnTWgb3bsV7-n7SmS0A9c4OAP95iIecyDPhYdxHUxgz2c-wxV48CuR3MBJPrlJXVWQUDP0Y9sP_3o_eDQL2jnN1sq0sgJvxZvBY02qD7wvVUScbOrFCiVg-dPXCuT6XTMPw0ydeya7eObOTTZczfMthsNtDlAcetWxf9XeWm4ilkHBk7d0t7KNzRKobJuIs0BH7CktODB6iLZaY', location: 'Kyoto, Japan' },
-            time: '2h ago',
-            content: 'Just arrived in Kyoto! The autumn colors are starting to show and it\'s absolutely magical. Looking for someone to grab dinner with tonight around Gion. Any recommendations? 🍁🍜',
-            tags: ['#KyotoTravel', '#Foodie'],
-            specialTag: 'Looking for buddy',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBaY9yCh_w2QDmo20_W8OSqoY3a2OZ7ikVBIlmC3mRpZzH9O0ldxWNRK2Tdc8pFcsqAwNMwm3ezr3GWIgi9kPQgDFNmmBvtOF7ac5gzabTi3mL_LqDDtViVWXig_U8AJXNJDoBiWXnMm4h8e45HN_7-F3NVDk460y53qaRbgD52IzBz3mlLUAh2B-HYKCAUugvXYHJs3bUfcjnrdYR5g4VDI5nFfpLAbA2J4R9cZmxOpIRmjEpOajG7eMRWlnRRGtK_sgOyGz9Dna04',
-            likes: 142,
-            comments: 24,
-        },
-        {
-            id: '2',
-            user: { name: 'Sarah Jenkins', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBhU98cqIOodyTR0IGfcD1laB2Oim7KZ285ETY2fu9SFqbpyj3nzd3z0Dx7t3J-RzEcQGhaIpFB_E13wWQmdXXzFfMnobTfEOLut35WHvAkLLa32pjIBDYbm3ksek0wafxQS118KLW6V_u9oYqOYSOvzZV4uUqu12sg-qYLY-jgas7L2Va9h45fMAkbVAkjK19beOAYCE2iwZtWYJlToQGgJ7n5oas5vzMGNFgQvYNLJfU6OcQZNX_8VbfTE51r2n6_UFvudb9tEmsf', location: 'Reykjavik, Iceland' },
-            time: '5h ago',
-            content: 'Does anyone have a 5-day itinerary for Iceland\'s South Coast? Planning a trip for next month and want to hit all the major waterfalls and black sand beaches! 🏔️🌊',
-            isTripCard: true,
-            tripTitle: 'Iceland Explorer',
-            tripDates: 'Oct 12 - Oct 17',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQT0vc0j5ld9q_or_8xw0rm73cepogtBxISWYmTQkC1wrM-dhgum5Ebmcbnci9IaXvadtzkldPRcJO_L-m_XaMRnjEmKX5ZH6b4pS3OK_Gg51E0QMJKEF80Hxa2XZ6S1lM0yOaROQZa6zSQdIpNE4rTWqJEssONJOzRekS9hErr2G8Kogvpob65N6rfZl_pi7_1ahAx3y7XJ_3ChQciQLHPyCzcSWAVEQGrh5Y-gNKaCeatXD40ymZfFA4EagbyLPPqbhkRFTzMHG1',
-            likes: 89,
-            comments: 56,
-        }
-    ];
-    
-  const dispatch = useDispatch();
-  const scrollRef = useRef(null);
-  const loadMoreRef = useRef(null);
-
-  const { getAllBlogs } = useBlog();
+  const [feedPosts, setFeedPosts] = useState([]);
+  const [feedLoading, setFeedLoading] = useState(true);
+  const { getUserFeed } = useBlog();
   const {getAllNotifications} = useNotificationsData();
 
-  const currentBlogs = useSelector((store) => store.blog.blogs, shallowEqual);
-  const blogNextPageToken = useSelector(
-    (store) => store.blog.nextPageToken,
-    shallowEqual
-  );
-
-
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
-
-  // ✅ Load blogs function (correct pagination)
-  const loadMoreBlogs = useCallback(async () => {
-    if (loading || !blogNextPageToken) return;
-
-    setLoading(true);
-
-    const nextPage = page + 1;
-    const data = await getAllBlogs(nextPage);
-
-    if (!data || data.length === 0) {
-      dispatch(setBlogsNextPageToken(false));
-    } else {
-      dispatch(addBlog(data));
-      setPage(nextPage);
-    }
-
-    setLoading(false);
-  }, [page, loading, blogNextPageToken]);
-
-  
-
-  // ✅ Infinite scroll observer (ONLY this observer in page)
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMoreBlogs();
-        }
-      },
-      {
-        root: scrollRef.current?.querySelector(
-          "[data-radix-scroll-area-viewport]"
-        ),
-        threshold: 1.0,
+    let mounted = true;
+    const loadFeed = async () => {
+      setFeedLoading(true);
+      const feed = await getUserFeed(20);
+      if (mounted) {
+        setFeedPosts(feed);
+        setFeedLoading(false);
       }
-    );
+    };
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [loadMoreBlogs]);
-
-  // ✅ First load
-  useEffect(() => {
-    if (currentBlogs.length === 0) {
-
-      console.log("Fetching initial blogs...");
-      loadMoreBlogs();
-    }
+    loadFeed();
     getAllNotifications();
+    return () => { mounted = false; };
   }, []);
+
+  const posts = feedPosts.map((item) => ({
+    id: item.resourceId || item.eventId,
+    user: {
+      userId: item.authorId,
+      name: item.authorName || "TRAVO traveler",
+      avatar: item.authorProfilePic || "https://picsum.photos/seed/travo-user/100/100",
+    },
+    time: item.createdAt ? new Date(item.createdAt).toLocaleString() : "Recently",
+    content: item.caption || "Shared a travel update.",
+    image: item.images?.[0] || item.thumbnailUrl,
+    likes: 0,
+    comments: 0,
+  }));
 
     return (
     <div className="flex flex-col xl:flex-row gap-8 max-w-7xl mx-auto">
@@ -148,7 +83,11 @@ const Dashboard = () => {
         </div> */}
 
         {/* Post List */}
-        {posts.map((post) => (<div key={post.id} className="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-gray-900 overflow-hidden">
+        {feedLoading ? (
+          <div className="bg-white dark:bg-surface-dark rounded-2xl p-8 text-center text-sm text-slate-500">Loading your feed...</div>
+        ) : posts.length === 0 ? (
+          <div className="bg-white dark:bg-surface-dark rounded-2xl p-8 text-center text-sm text-slate-500">No feed posts yet. Follow travelers or publish a blog to get started.</div>
+        ) : posts.map((post) => (<div key={post.id} className="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-gray-900 overflow-hidden">
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/profile/${post.user.userId}`)}>
                 <div className="relative">
@@ -158,7 +97,7 @@ const Dashboard = () => {
                 <div>
                   <h3 className="font-bold text-sm tracking-tight">{post.user.name}</h3>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-                    {post.user.location} <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"/> {post.time}
+                    TRAVO feed <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"/> {post.time}
                   </p>
                 </div>
               </div>
@@ -174,23 +113,12 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {post.isTripCard ? (<div className="relative aspect-[2/1] cursor-pointer group" onClick={() => navigate('/trips/1')}>
-                <img src={post.image} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700" alt="Trip"/>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"/>
-                <div className="absolute bottom-5 left-5 text-white">
-                  <h4 className="font-extrabold text-xl tracking-tight">TRIP: {post.tripTitle}</h4>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-2 mt-1.5 opacity-90"><Calendar size={12}/> {post.tripDates}</p>
-                </div>
-                <button className="absolute bottom-5 right-5 bg-primary text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-primary-hover transition-all shadow-xl shadow-primary/30">
-                  View Itinerary
-                </button>
-              </div>) : (<div className="relative aspect-video">
-                <img src={post.image} className="w-full h-full object-cover" alt="Post"/>
+            {post.image && (<div className="relative aspect-video">
+                <img src={post.image} className="w-full h-full object-cover" alt="Travel post"/>
                 <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2 uppercase tracking-widest border border-white/10">
-                  <Camera size={14}/> 1/4
+                  <Camera size={14}/> {post.user.name}
                 </div>
               </div>)}
-
             <div className="px-5 py-4 border-t border-slate-100 dark:border-gray-900 flex items-center justify-between">
               <div className="flex gap-8">
                 <button className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors group">

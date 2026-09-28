@@ -10,6 +10,8 @@ import {
 import useAuth from "./useAuth";
 import { useCallback } from "react";
 import useUserData from "./useUserData";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError } from "../lib/apiNotifications";
 
 /* eslint-disable no-unused-vars */
 const useChat = () => {
@@ -26,7 +28,7 @@ const useChat = () => {
        
       const groupImage = data?.groupImageUrl;
       data.groupImageUrl = "";
-      const response = await fetch(`http://localhost:8085/chat/create`, {
+      const { data: createdGroup } = await apiRequest(`http://localhost:8085/chat/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -34,10 +36,6 @@ const useChat = () => {
         },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        throw new Error("Failed to create group");
-      }
-      const createdGroup = await response.json();
       console.log("Group Created Successfully: ", createdGroup);
 
       dispatch(addChats(createdGroup));
@@ -53,6 +51,7 @@ const useChat = () => {
       updateGroupChat(createdGroup.chatId, createdGroup);
       return createdGroup;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error while creating new group chat:", error.message);
     }
   };
@@ -61,7 +60,7 @@ const useChat = () => {
     const token = localStorage.getItem("token");
     console.log("Fetching chats for user:", userId);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/get-chat/${userId}`,
         {
           method: "GET",
@@ -71,15 +70,12 @@ const useChat = () => {
           },
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to fetch chats");
-      }
-      const data = await response.json();
       console.log("All chats fetched successfully: ", data);
       dispatch(addChats(data));
 
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error fetching chats:", error.message);
     }
   };
@@ -88,7 +84,7 @@ const useChat = () => {
     const token = localStorage.getItem("token");
     console.log("Received message to send is: ", message);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/message/send`,
         {
           method: "POST",
@@ -99,10 +95,6 @@ const useChat = () => {
           body: JSON.stringify(message),
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-      const data = await response.json();
       console.log("Message Sent Successfully: ", data);
       dispatch(addMessageToChat({ chatId: data?.chatId, message: data }));
       dispatch(
@@ -116,6 +108,7 @@ const useChat = () => {
 
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error sending message:", error.message);
     }
   };
@@ -128,7 +121,7 @@ const useChat = () => {
     };
     console.log("Starting chat with: ", payload.participants);
     try {
-      const response = await fetch(`http://localhost:8085/chat/create`, {
+      const { data } = await apiRequest(`http://localhost:8085/chat/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,10 +129,6 @@ const useChat = () => {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) {
-        throw new Error("Failed to create chat");
-      }
-      const data = await response.json();
       console.log("Chat Created Successfully: ", data);
 
       const messageData = {
@@ -155,6 +144,7 @@ const useChat = () => {
       dispatch(setActiveChat(data));
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error while creating new chat:", error.message);
     }
   };
@@ -163,7 +153,7 @@ const useChat = () => {
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/message/get-messages/${chatId}`,
         {
           method: "GET",
@@ -173,14 +163,11 @@ const useChat = () => {
           },
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages");
-      }
-      const data = await response.json();
       console.log("Messages fetched successfully: ", data);
       dispatch(setMessagesForChat({ chatId, messages: data }));
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error fetching messages:", error.message);
     }
   };
@@ -190,7 +177,7 @@ const useChat = () => {
     const token = localStorage.getItem("token");
     console.log("Updating read status for messageId:", messageId);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/message/read/${messageId}`,
         {
           method: "PUT",
@@ -201,16 +188,13 @@ const useChat = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to update read status");
-      }
-      const data = await response.json();
       console.log("Message read status updated successfully: ", data);
       dispatch(
         updateMessage({ messageId: messageId, chatId: chatId, message: data })
       );
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error updating read status:", error.message);
     }
   };
@@ -220,7 +204,7 @@ const useChat = () => {
     const token = localStorage.getItem("token");
     console.log("Updating message for messageId:", messageId);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/message/update/${messageId}`,
         {
           method: "PUT",
@@ -231,16 +215,13 @@ const useChat = () => {
           body: JSON.stringify(messageData),
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to update message");
-      }
-      const data = await response.json();
       console.log("Message updated successfully: ", data);
       dispatch(
         updateMessage({ messageId: messageId, chatId: chatId, message: data })
       );
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error updating message:", error.message);
     }
   };
@@ -250,7 +231,7 @@ const useChat = () => {
     const token = localStorage.getItem("token");
     console.log("Updating favorite status for chatId:", chatId);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/update-favorite/${chatId}/${userId}`,
         {
           method: "PUT",
@@ -260,15 +241,12 @@ const useChat = () => {
           },
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to update favorite status");
-      }
-      const data = await response.json();
       console.log("Favorite status updated successfully: ", data);
       dispatch(updateChat({ chatId, updatedData: data }));
       dispatch(setActiveChat(data));
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error updating favorite status:", error.message);
     }
   };
@@ -291,7 +269,7 @@ const useChat = () => {
       finalMembers
     );
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/update-group-members/${chatId}`,
         {
           method: "PUT",
@@ -302,15 +280,12 @@ const useChat = () => {
           body: JSON.stringify(finalMembers),
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to update group members");
-      }
-      const data = await response.json();
       console.log("Group members updated successfully: ", data);
       dispatch(updateChat({ chatId, updatedData: data }));
       dispatch(setActiveChat(data));
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error updating group members:", error.message);
     }
   };
@@ -320,7 +295,7 @@ const useChat = () => {
     const token = localStorage.getItem("token");
     console.log("Updating group for chatId:", chatId);
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/chat/update/${chatId}`,
         {
           method: "PUT",
@@ -331,15 +306,12 @@ const useChat = () => {
           body: JSON.stringify(groupData),
         }
       );
-      if (!response.ok) {
-        throw new Error("Failed to update group");
-      }
-      const data = await response.json();
       console.log("Group updated successfully: ", data);
       dispatch(updateChat({ chatId, updatedData: data }));
       dispatch(setActiveChat(data));
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error updating group:", error.message);
     }
   };

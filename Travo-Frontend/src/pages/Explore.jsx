@@ -226,7 +226,7 @@ const Explore = () => {
               </div>
               <div className="w-full grid grid-cols-2 gap-4 mt-auto">
                 <button className="py-3 rounded-xl bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-hover transition-all"
-                onClick={()=>sendFriendRequest(user?.userId)}
+                onClick={() => sendFriendRequest(user?.userId, user?.name)}
                 >
                   Follow
                 </button>
@@ -356,7 +356,7 @@ const Explore = () => {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-12 mt-4 relative">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 ">
           <div>
             <h5 className="text-primary font-bold tracking-[0.2em] uppercase text-[10px] mb-3">
               Discover Community

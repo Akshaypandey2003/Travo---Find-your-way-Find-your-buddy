@@ -6,12 +6,14 @@ import { BrowserRouter } from "react-router-dom";
 import { PersistGate } from "redux-persist/integration/react";
 import { Provider } from "react-redux";
 import store, { persistor } from "./Redux/Store";
+import ApiAlert from "./components/ApiAlert";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter>
+          <ApiAlert />
           <App />
         </BrowserRouter>
       </PersistGate>

@@ -2,7 +2,9 @@
 
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { addBlog, filterBlog, updatePostLike, updatePostViews, updateSuccess } from "../Redux/Slices/blogsSlice";
+import { addBlog, filterBlog, updatePostLike, updatePostViews } from "../Redux/Slices/blogsSlice";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
 const useBlog = ()=>{
    
@@ -16,16 +18,11 @@ const useBlog = ()=>{
     formData.append("upload_preset", "TravoApp");  // Replace with your preset
     formData.append("cloud_name", "dwg7vniow");          // Replace with your Cloudinary cloud name
   
-    const response = await fetch(`https://api.cloudinary.com/v1_1/dwg7vniow/image/upload`, {
+    const { data } = await apiRequest(`https://api.cloudinary.com/v1_1/dwg7vniow/image/upload`, {
       method: "POST",
       body: formData,
     });
-  
-    if (!response.ok) {
-      throw new Error("Image upload failed");
-    }
-  
-    const data = await response.json();
+
      console.log("Image uploaded successfully: ",data);
     return  { 
       url: data.secure_url, 
@@ -59,7 +56,7 @@ const useBlog = ()=>{
 
     console.log("final blog data after uploading images: ",finalBlogData);
 
-    const response = await fetch(
+    const { raw: data } = await apiRequest(
         `http://localhost:8085/api/v1/blogs`,
         {
           method: "POST",
@@ -70,24 +67,17 @@ const useBlog = ()=>{
           body: JSON.stringify(finalBlogData),
         }
       );
-      const data = await response.json();
-      if (!response.ok)
-      {
-         throw new Error(data.message || "Blog Creation failed");
-      }
-      else
-      {
-          console.log("Blog Created Successfully: ",data);
-          dispatch(addBlog(data?.data));
-          dispatch(updateSuccess({success:data?.success,message:data?.message}));
-      }
+        console.log("Blog Created Successfully: ", data);
+        dispatch(addBlog(data?.data));
+        notifyApiSuccess(dispatch, data?.message);
       
       navigate("/dashboard");
 
     // console.log("Final blog data to send to backend: ", finalBlogData);
     
   } catch (error) {
-    console.error("Something went wrong while creating blog", error.message);
+    notifyApiError(dispatch, getApiErrorMessage(error));
+    console.error("Something went wrong while creating blog", error);
   }
 };
 
@@ -127,7 +117,7 @@ const updateBlog = async (blogData, blogId) => {
 
     console.log("Blog data to update after image uploads: ", finalBlogData);
 
-    const response = await fetch(
+    const { raw: data } = await apiRequest(
       `http://localhost:8085/api/v1/blogs/${blogId}`,
       {
         method: "PUT",
@@ -139,17 +129,12 @@ const updateBlog = async (blogData, blogId) => {
       }
     );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Blog Update failed");
-    } else {
-      console.log("Blog updated Successfully: ", data);
-      dispatch(addBlog(data));
-      dispatch(updateSuccess({ success: true, message: data?.messageResponse?.message }));
-    }
+    console.log("Blog updated Successfully: ", data);
+    dispatch(addBlog(data?.data));
+    notifyApiSuccess(dispatch, data?.message);
   } catch (error) {
-    console.error("Something went wrong while updating blog", error.message);
+    notifyApiError(dispatch, getApiErrorMessage(error));
+    console.error("Something went wrong while updating blog", error);
   }
 };
 
@@ -157,7 +142,7 @@ const updateBlog = async (blogData, blogId) => {
 const getAllBlogs = async(page)=>{
   const token = localStorage.getItem("token");
   try {
-      const response = await fetch(
+      const { raw: data } = await apiRequest(
         `http://localhost:8085/api/v1/blogs/get-all?page=${page}&size=10`,
         {
           method: "GET",
@@ -167,22 +152,36 @@ const getAllBlogs = async(page)=>{
           },
         }
       );
-      const data = await response.json();
-      if (!response.ok)
-      {
-         throw new Error(data.message || "Blog Fetching failed");
-      }
-      else
-      {
-          console.log("All Blogs fetched successfully: ",data);
-          dispatch(addBlog(data));
-          return data;
-          // dispatch(updateSuccess({success:true,message:data?.messageResponse?.message}));
-      }
+        console.log("All Blogs fetched successfully: ", data);
+        dispatch(addBlog(data?.data?.content || data?.data || data));
+        return data;
   } catch (error) {
-      console.log("Some error occured while fetching blogs");
+        notifyApiError(dispatch, getApiErrorMessage(error));
+        console.log("Some error occured while fetching blogs", error);
   } 
 }
+
+const getUserFeed = async (limit = 20) => {
+  const token = localStorage.getItem("token");
+  try {
+    const { data } = await apiRequest(
+      `http://localhost:8085/api/v1/feed?limit=${limit}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      },
+    );
+
+    return Array.isArray(data) ? data : data?.content || [];
+  } catch (error) {
+    notifyApiError(dispatch, getApiErrorMessage(error), "getUserFeed");
+    console.error("Some error occurred while fetching the user feed", error);
+    return [];
+  }
+};
 
 const updateBlogLike = async(blogId, userId)=>{
   console.log("User with id : ",userId," is liking blog with id: ",blogId);
@@ -190,7 +189,7 @@ const updateBlogLike = async(blogId, userId)=>{
   const token = localStorage.getItem("token");
   try {
     
-      const response = await fetch(
+      const { raw: data } = await apiRequest(
         `http://localhost:8085/blog/like-blog/${blogId}/${userId}`,
         {
           method: "POST",
@@ -200,19 +199,12 @@ const updateBlogLike = async(blogId, userId)=>{
           },
         }
       );
-      const data = await response.json(); 
-      if (!response.ok)
-      {
-         throw new Error(data.message || "Liking Blog failed");
-      }
-      else
-      {
-          console.log("Blog liked successfully: ",data);
-          dispatch(updatePostLike({blogId,userId}));
-          // dispatch(updateSuccess({success:true,message:data?.messageResponse?.message}));
-      }
+        console.log("Blog liked successfully: ", data);
+        dispatch(updatePostLike({blogId,userId}));
+        notifyApiSuccess(dispatch, data?.message);
   } catch (error) {
-      console.log("Some error occured while liking blogs",error.message);
+        notifyApiError(dispatch, getApiErrorMessage(error));
+        console.log("Some error occured while liking blogs",error);
   } 
 }
 
@@ -226,7 +218,7 @@ const updateBlogViews = async(blogId, userId)=>{
   }
     try {
     
-      const response = await fetch(
+      const { raw: data } = await apiRequest(
         `http://localhost:8085/blog/update-blog-views/${blogId}/${userId}`,
         {
           method: "POST",
@@ -236,24 +228,18 @@ const updateBlogViews = async(blogId, userId)=>{
           },
         }
       );
-      const data = await response.json();
-      if (!response.ok)
-      {
-         throw new Error(data.message || "Blog view update failed");
-      }
-      else
-      {
-          console.log("Blog view updated successfully: ",data);
-          dispatch(updatePostViews({blogId,userId}));
-      }
+        console.log("Blog view updated successfully: ", data);
+        dispatch(updatePostViews({blogId,userId}));
+        notifyApiSuccess(dispatch, data?.message);
   } catch (error) {
-      console.log("Some error occured while updating blog views",error.message);
+        notifyApiError(dispatch, getApiErrorMessage(error));
+        console.log("Some error occured while updating blog views",error);
   } 
 }
 const deleteBlog = async(blogId)=>{
   const token = localStorage.getItem("token");
   try {
-      const response = await fetch(
+      const { raw: data } = await apiRequest(
         `http://localhost:8085/blog/delete-blog/${blogId}`,
         {
           method: "DELETE",
@@ -263,23 +249,16 @@ const deleteBlog = async(blogId)=>{
           },
         }
       );
-      const data = await response.json();
-      if (!response.ok)
-      {
-         throw new Error(data.message || "Blog Deletion failed");
-      }
-      else
-      {
-          console.log("Blog Deleted Successfully: ",data);
-          dispatch(filterBlog({blogId}));
-          dispatch(updateSuccess({success:true,message:data?.message}));
-      }
+        console.log("Blog Deleted Successfully: ",data);
+        dispatch(filterBlog({blogId}));
+        notifyApiSuccess(dispatch, data?.message);
   } catch (error) {
-      console.log("Some error occured while Deleting blog",error.message);
+        notifyApiError(dispatch, getApiErrorMessage(error));
+        console.log("Some error occured while Deleting blog",error);
   } 
 }
 
 
-    return {postBlog,updateBlog,getAllBlogs,deleteBlog,updateBlogLike,updateBlogViews};
+    return {postBlog,updateBlog,getAllBlogs,getUserFeed,deleteBlog,updateBlogLike,updateBlogViews};
 }
 export default useBlog;

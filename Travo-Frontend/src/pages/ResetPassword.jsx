@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Lock, PlaneTakeoff, CheckCircle, AlertCircle } from "lucide-react";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         "http://localhost:8085/api/v1/auth/reset-password",
         {
           method: "POST",
@@ -90,14 +91,6 @@ const ResetPassword = () => {
           }),
         }
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Unable to reset password. Please try again."
-        );
-      }
 
       setSuccessMessage(
         data.message ||
@@ -115,10 +108,7 @@ const ResetPassword = () => {
       }, 2000);
     } catch (error) {
       console.error("Password reset failed:", error);
-      setApiError(
-        error.message ||
-          "Something went wrong. Please try again."
-      );
+      setApiError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }

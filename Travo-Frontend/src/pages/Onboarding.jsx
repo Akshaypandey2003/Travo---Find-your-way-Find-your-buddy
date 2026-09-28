@@ -133,8 +133,11 @@ const Onboarding = () => {
 
   const auth = useSelector((store) => store.auth);
 
-  // Backend registration error from Redux
-  const error = useSelector((store) => store.auth.error);
+  const apiStatus = useSelector((store) => store.apiStatus);
+  const error =
+    apiStatus.status === "failed" && apiStatus.requestKey === "registerUser"
+      ? apiStatus.message
+      : "";
 
   // Current onboarding step
   const [step, setStep] = useState(1);
@@ -473,13 +476,6 @@ const Onboarding = () => {
 
                 {/* Form Content */}
                 <div className="md:col-span-8 space-y-10">
-
-                   {/* Backend Error */}
-                  {error && (
-                    <p className="text-red-500 text-xs text-center">
-                      {error}
-                    </p>
-                  )}
 
                   {/* Registration Fields */}
                   <div className="space-y-6">

@@ -5,9 +5,6 @@ const tripSlice = createSlice({
   name: "trip",
   initialState: {
     trips: [],
-    success: false,
-    failure: false,
-    message: "",
     tripFeedbacks: {},
   },
   reducers: {
@@ -19,9 +16,6 @@ const tripSlice = createSlice({
           (trip) => !existingTripIds.has(trip.tripId)
         );
         state.trips = [...state.trips, ...newTrips];
-        state.success = true;
-        state.failure = false;
-        state.message = "Trips added successfully.";
       } else if (
         action.payload &&
         typeof action.payload === "object" &&
@@ -29,25 +23,16 @@ const tripSlice = createSlice({
       ) {
         if (!existingTripIds.has(action.payload.tripId)) {
           state.trips.push(action.payload);
-          state.success = true;
-          state.failure = false;
-          state.message = "Single trip added successfully.";
         } else {
           const index = state.trips.findIndex(
             (trip) => trip.tripId === action.payload.tripId
           );
           if (index !== -1) {
             state.trips[index] = action.payload;
-            state.success = true;
-            state.failure = false;
-            state.message = "Trip updated successfully.";
             console.log("Trip updated:", state.trips[index]);
           }
         }
       } else {
-        state.success = false;
-        state.failure = true;
-        state.message = "Invalid payload: trip not added.";
       }
     },
 
@@ -55,9 +40,6 @@ const tripSlice = createSlice({
       const { tripId, feedbacks } = action.payload;
 
       if (!tripId) {
-        state.failure = true;
-        state.success = false;
-        state.message = "Trip ID is missing.";
         return;
       }
 
@@ -93,9 +75,6 @@ const tripSlice = createSlice({
         state.tripFeedbacks[tripId] = normalizedFeedbacks;
       }
 
-      state.success = true;
-      state.failure = false;
-      state.message = "Feedbacks updated successfully.";
     },
     filterTrips:(state,action)=>{
       state.trips = state.trips?.filter(

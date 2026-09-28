@@ -7,66 +7,49 @@ const authSlice = createSlice({
     user: null,
     usersList: [],
     profileStatus: 0,
-    theme: "light",
     loading: false,
-    error: null,
-    success: null,
     nextPageToken: true,
     friendRequests: [],
   },
   reducers: {
     registerSuccess: (state, action) => {
       state.user = action.payload;
-      state.error = null;
     },
     loginSuccess: (state, action) => {
       state.user = action.payload;
-      state.error = null;
       state.usersList = state.usersList?.filter(
-        (user) => user?.userId != action.payload?.userId
+        (user) => user?.userId != action.payload?.userId,
       );
     },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
-    authFailure: (state, action) => {
-      state.error = action.payload;
-    },
-    authSucess: (state, action) => {
-      state.success = action.payload;
-    },
     addUserTrips: (state, action) => {
       // state.user.trips.push(action.payload);
-      
+
       console.log("Payload in addUserTrips:", action.payload);
       const updatedTrip = action.payload;
 
       // Ensure we have a tripId in payload
       if (updatedTrip && updatedTrip.tripId) {
         const index = state.user.trips.findIndex(
-          (trip) => trip.tripId === updatedTrip.tripId
+          (trip) => trip.tripId === updatedTrip.tripId,
         );
         console.log("Index found in addUserTrips:", index);
         if (index !== -1) {
           // Replace existing trip
           state.user.trips[index] = updatedTrip;
-          state.success = true;
-          state.error = false;
         } else {
           // Add as new trip
           state.user.trips.push(updatedTrip);
-          state.success = true;
-          state.error = false;
         }
         console.log("Updated trips in user:", state.user.trips[index]);
       } else {
-        state.success = false;
-        state.error = true;
       }
     },
     removeUserTrips: (state, action) => {
       state.user.trips = state.user.trips?.filter(
-        (trip) => trip?.tripId !== action.payload
+        (trip) => trip?.tripId !== action.payload,
       );
     },
     logout: (state) => {
@@ -74,13 +57,10 @@ const authSlice = createSlice({
       state.usersList = null;
       state.profileStatus = 0;
       state.loading = false;
-      state.error = null;
-      state.success = null;
       state.nextPageToken = true;
     },
     updateUserData: (state, action) => {
       state.user = action.payload;
-      state.error = null;
     },
     profileCompletion: (state, action) => {
       state.profileStatus = action.payload;
@@ -95,8 +75,8 @@ const authSlice = createSlice({
           user?.userId != null &&
           user?.userId !== state?.user?.userId &&
           !state.usersList?.some(
-            (existingUser) => existingUser.userId === user.userId
-          )
+            (existingUser) => existingUser.userId === user.userId,
+          ),
       );
 
       // const newUser = action.payload;
@@ -108,7 +88,7 @@ const authSlice = createSlice({
     updateLike: (state, action) => {
       const { userId, senderId } = action.payload;
       const userIndex = state.usersList.findIndex(
-        (user) => user.userId === userId
+        (user) => user.userId === userId,
       );
       if (userIndex !== -1) {
         const likesArray = state.usersList[userIndex].likes;
@@ -119,7 +99,7 @@ const authSlice = createSlice({
         } else if (likesArray.includes(senderId)) {
           // Remove like
           state.usersList[userIndex].likes = likesArray.filter(
-            (id) => id !== senderId
+            (id) => id !== senderId,
           );
         } else {
           // Add like
@@ -144,14 +124,14 @@ const authSlice = createSlice({
         }
       } else if (type === "remove") {
         state.user.closeFriends = state.user.closeFriends.filter(
-          (id) => id !== friendId
+          (id) => id !== friendId,
         );
       }
     },
     updateTripRequest: (state, action) => {
       const { requestTo, requestFrom, tripId } = action.payload;
       const userIndex = state.usersList?.findIndex(
-        (user) => user.userId === requestTo
+        (user) => user.userId === requestTo,
       );
       if (userIndex != -1) {
         const trips = state.usersList[userIndex]?.trips;
@@ -167,7 +147,7 @@ const authSlice = createSlice({
     removeTripRequest: (state, action) => {
       const { tripId, tripMember } = action.payload;
       const tripIndex = state.user?.trips?.findIndex(
-        (trip) => trip.tripId === tripId
+        (trip) => trip.tripId === tripId,
       );
 
       if (tripIndex !== -1) {
@@ -180,7 +160,7 @@ const authSlice = createSlice({
     removeTripMembers: (state, action) => {
       const { tripId, memberId } = action.payload;
       const tripIndex = state.user?.trips?.findIndex(
-        (trip) => trip.tripId === tripId
+        (trip) => trip.tripId === tripId,
       );
 
       if (tripIndex !== -1) {
@@ -193,7 +173,7 @@ const authSlice = createSlice({
     updateTripMembers: (state, action) => {
       const { tripId, tripMember } = action.payload;
       const tripIndex = state.user.trips?.findIndex(
-        (trip) => trip.tripId == tripId
+        (trip) => trip.tripId == tripId,
       );
       if (tripIndex != -1) {
         state.user.trips[tripIndex].tripMembers.push(tripMember);
@@ -206,12 +186,12 @@ const authSlice = createSlice({
 
       // Build a set of existing connectionIds to avoid duplicates
       const existingConnectionIds = new Set(
-        (state.friendRequests || []).map((req) => req.request?.connectionId)
+        (state.friendRequests || []).map((req) => req.request?.connectionId),
       );
 
       // Filter out duplicates
       const newRequests = incomingRequests.filter(
-        (req) => !existingConnectionIds.has(req.request?.connectionId)
+        (req) => !existingConnectionIds.has(req.request?.connectionId),
       );
 
       // Merge with existing friend requests
@@ -222,7 +202,7 @@ const authSlice = createSlice({
 
       // Filter out the friend request with the matching connectionId
       state.friendRequests = state.friendRequests.filter(
-        (req) => req.request?.connectionId !== connectionIdToRemove
+        (req) => req.request?.connectionId !== connectionIdToRemove,
       );
     },
   },
@@ -230,8 +210,6 @@ const authSlice = createSlice({
 export const {
   registerSuccess,
   loginSuccess,
-  authFailure,
-  authSucess,
   setUsersData,
   setLoading,
   logout,

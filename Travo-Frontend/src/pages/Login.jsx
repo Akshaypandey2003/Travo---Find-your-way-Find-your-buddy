@@ -24,6 +24,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
 
   const auth = useSelector((state) => state.auth);
+  const apiStatus = useSelector((state) => state.apiStatus);
 
   const {
     loginUser,
@@ -169,9 +170,9 @@ const Login = () => {
               Please enter your details to sign in.
             </p>
 
-            {auth.error && (
+            {apiStatus.status === "failed" && apiStatus.message && (
               <span className="mt-4 text-sm text-red-400">
-                {auth?.error}
+                {apiStatus.message}
               </span>
             )}
           </div>

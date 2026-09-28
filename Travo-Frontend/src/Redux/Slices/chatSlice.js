@@ -7,8 +7,6 @@ const chatSlice = createSlice({
     chats: [],
     activeChat: {},
     nextPageTokens: {},
-    success: false,
-    failure: false,
     messages: {},
   },
   reducers: {

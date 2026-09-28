@@ -5,10 +5,7 @@ const blogsSlice = createSlice({
   name: "blog",
   initialState: {
     blogs: [],
-    success: false,
-    failure: false,
     nextPageToken: true,
-    message: "",
   },
   reducers: {
     addBlog: (state, action) => {
@@ -23,21 +20,8 @@ const blogsSlice = createSlice({
       const { blogId } = action.payload;
       state.blogs = state.blogs.filter((blog) => blog?.blogId != blogId);
     },
-    updateSuccess: (state, action) => {
-      const { success, message } = action.payload;
-      state.success = success;
-      state.message = message;
-    },
-    updateFailure: (state, action) => {
-      const { failure, message } = action.payload;
-      state.failure = failure;
-      state.message = message;
-    },
     clearBlogsData: (state, action) => {
       state.blogs = [];
-      state.success = false;
-      state.failure = false;
-      state.message = "";
     },
     updatePostViews: (state,action)=>{
       const {blogId,userId} = action.payload;
@@ -93,8 +77,6 @@ const blogsSlice = createSlice({
 });
 export const {
   addBlog,
-  updateSuccess,
-  updateFailure,
   clearBlogsData,
   filterBlog,
   updatePostLike,

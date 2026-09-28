@@ -24,6 +24,9 @@ const notificationSlice = createSlice({
     },
     clearNotifications: (state) => {
       state.newNotification={};
+      state.success = false;
+      state.error = false;
+      state.message = "";
       state.notificationStatus = false;
     },
     setMessage: (state,action)=>{

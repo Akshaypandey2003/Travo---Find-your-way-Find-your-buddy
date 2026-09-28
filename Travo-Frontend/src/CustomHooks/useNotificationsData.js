@@ -2,6 +2,8 @@ import { useDispatch } from "react-redux";
 import {
     addNotification,
     filterNotifications} from "../Redux/Slices/notificationSlice";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
 const useNotificationsData = () => {
   const dispatch = useDispatch();
@@ -9,7 +11,7 @@ const useNotificationsData = () => {
   const getAllNotifications = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/api/v1/notification?read=false`,
         {
           method: "GET",
@@ -19,15 +21,13 @@ const useNotificationsData = () => {
           },
         }
       );
-      if (!response.ok) throw new Error(`Notification request failed: ${response.status}`);
-      const data = await response.json();
-
       console.log("REceived notifications : ", data);
       dispatch(addNotification(Array.isArray(data) ? data : []));
 
       // Assuming you have a Redux action to set user data
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error fetching notifications:", error);
       return [];
     }
@@ -38,7 +38,7 @@ const useNotificationsData = () => {
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/api/v1/notification/${notificationId}`,
         {
           method: "DELETE",
@@ -48,17 +48,8 @@ const useNotificationsData = () => {
           },
         }
       );
-      // Check response type
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = await response.text(); // fallback to plain text
-      }
-
       dispatch(filterNotifications(notificationId));
+      notifyApiSuccess(dispatch, typeof data === "string" ? data : data?.message);
 
       // Debugging line
       // const payload = {
@@ -70,6 +61,7 @@ const useNotificationsData = () => {
 
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error while deleting notification:", error);
       return null;
     }

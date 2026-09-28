@@ -12,9 +12,10 @@ import {
   updateLike
 } from "../Redux/Slices/authSlice";
 import {
-  filterNotifications,
-  setMessage
+  filterNotifications
 } from "../Redux/Slices/notificationSlice";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
 const useUserData = () => {
   const dispatch = useDispatch();
@@ -31,7 +32,7 @@ const useUserData = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/api/v1/user/all?page=${page}&size=10`,
         {
           method: "GET",
@@ -41,7 +42,6 @@ const useUserData = () => {
           },
         },
       );
-      const data = await response.json();
       console.log("All Users data received:", data); // Debugging line
 
       dispatch(setUsersData(data?.content));
@@ -50,6 +50,7 @@ const useUserData = () => {
       // Assuming you have a Redux action to set user data
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error fetching users:", error);
       return [];
     }
@@ -59,7 +60,7 @@ const useUserData = () => {
   const getUser = useCallback(async (userId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/user/get-user/${userId}`,
         {
           method: "GET",
@@ -69,13 +70,13 @@ const useUserData = () => {
           },
         },
       );
-      const data = await response.json();
       console.log("Feched user:", data); // Debugging line
       dispatch(setUsersData(data));
 
       // Assuming you have a Redux action to set user data
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error fetching users:", error);
       return [];
     }
@@ -88,7 +89,7 @@ const useUserData = () => {
         navigate("/login");
         return;
       }
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/user/updateLike/${userId}/${loggedInUser?.userId}`,
         {
           method: "PUT",
@@ -98,19 +99,12 @@ const useUserData = () => {
           },
         },
       );
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = await response.text(); // fallback to plain text
-      }
       console.log("User liked successfully:", data); // Debugging line
       dispatch(updateLike({ userId: userId, senderId: loggedInUser?.userId }));
 
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error accepting notification:", error);
       return null;
     }
@@ -119,7 +113,7 @@ const useUserData = () => {
   const addCloseFriend = async (userId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/user/close-friend/add/${loggedInUser?.userId}/${userId}`,
         {
           method: "POST",
@@ -129,10 +123,11 @@ const useUserData = () => {
           },
         },
       );
-      const data = await response.json();
       console.log("Close friend addedd successfully", data);
       dispatch(updateCloseFriends({ friendId: userId, type: "add" }));
+      notifyApiSuccess(dispatch, data?.message || "Close friend added successfully.");
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.log("Some error occures while adding close friend");
     }
   };
@@ -140,7 +135,7 @@ const useUserData = () => {
   const removeCloseFriend = async (userId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/user/close-friend/remove/${loggedInUser?.userId}/${userId}`,
         {
           method: "DELETE",
@@ -150,10 +145,11 @@ const useUserData = () => {
           },
         },
       );
-      const data = await response.json();
       console.log("Close friend removed successfully", data);
       dispatch(updateCloseFriends({ friendId: userId, type: "remove" }));
+      notifyApiSuccess(dispatch, data?.message || "Close friend removed successfully.");
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.log("Some error occures while removing close friend");
     }
   };
@@ -162,7 +158,7 @@ const useUserData = () => {
   const acceptFriendRequest = async (notificationId, senderId, receiverId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/connection/accept/${notificationId}/${senderId}/${receiverId}`,
         {
           method: "POST",
@@ -172,20 +168,24 @@ const useUserData = () => {
           },
         },
       );
-      const data = await response.json();
-
       console.log("Notification accepted:", data); // Debugging line
+      const responseMessage = data?.message || data?.messageResponse?.message || data?.messageReponse?.message;
       const payload = {
-        message: data?.messageResponse?.message,
-        success: data?.messageResponse?.status == "success" ? true : false,
-        error: data?.messageResponse?.status == "error" ? true : false,
+        message: responseMessage || "Friend request accepted successfully.",
+        success: true,
+        error: false,
       };
-      dispatch(setMessage(payload));
+      if (payload.success) {
+        notifyApiSuccess(dispatch, payload.message);
+      } else {
+        notifyApiError(dispatch, payload.message);
+      }
       dispatch(filterNotifications(notificationId));
       dispatch(updateFollowings(senderId));
 
       return data;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error accepting notification:", error);
       return null;
     }
@@ -195,7 +195,7 @@ const useUserData = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         `http://localhost:8085/connection/get-all/${loggedInUser?.userId}`,
         {
           method: "GET",
@@ -205,7 +205,6 @@ const useUserData = () => {
           },
         },
       );
-      const data = await response.json();
       console.log("Fetched Friend Requests are:", data); // Debugging line
 
       const detailedRequests = await Promise.all(
@@ -236,6 +235,7 @@ const useUserData = () => {
       // Assuming you have a Redux action to set user data
       return detailedRequests;
     } catch (error) {
+      notifyApiError(dispatch, getApiErrorMessage(error));
       console.error("Error fetching users:", error);
       return [];
     }

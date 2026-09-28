@@ -125,8 +125,6 @@ const App = () => {
                         </Avatar>
 
                         <h1 className="leading-relaxed">
-                          {notifications.newNotification.senderName}
-                          {"\u00A0"}
                           {notifications.newNotification.message}
                         </h1>
                       </>
@@ -149,7 +147,7 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/onboarding" element={<Onboarding />} />
 
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute />}>/
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/explore" element={<Explore />} />

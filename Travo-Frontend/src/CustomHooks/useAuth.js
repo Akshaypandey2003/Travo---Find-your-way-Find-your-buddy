@@ -4,11 +4,9 @@ import { useDispatch } from "react-redux";
 import {
   loginSuccess,
   registerSuccess,
-  authFailure,
   logout,
   updateUserData,
   profileCompletion,
-  authSucess,
   setLoading,
 } from "../Redux/Slices/authSlice";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,6 +14,8 @@ import { clearNotifications } from "../Redux/Slices/notificationSlice";
 import { clearBlogsData } from "../Redux/Slices/blogsSlice";
 import { clearCommentsData } from "../Redux/Slices/commentSlice";
 import { clearChats } from "../Redux/Slices/chatSlice";
+import { apiRequest, getApiErrorMessage } from "../lib/api";
+import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
 const useAuth = () => {
   const dispatch = useDispatch();
@@ -58,7 +58,7 @@ const useAuth = () => {
     console.log("Registering user with data: ", userData);
 
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         "http://localhost:8085/api/v1/auth/register",
         {
           method: "POST",
@@ -69,21 +69,15 @@ const useAuth = () => {
         }
       );
 
-      const data = await response.json();
       console.log("Data received from register API: ", data);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
 
       localStorage.setItem("token", data.accessToken);
 
       dispatch(registerSuccess(data.user));
-
-      dispatch(
-        authSucess(
-          "Registration successful! please complete your profile."
-        )
+      notifyApiSuccess(
+        dispatch,
+        data?.messageReponse?.message || "User registered successfully.",
+        "registerUser",
       );
 
       const completion = getProfileCompletion(data.user);
@@ -92,7 +86,8 @@ const useAuth = () => {
       navigate(`/profile/${data?.user?.userId}`);
     } catch (error) {
       console.error("Registration failed:", error);
-      dispatch(authFailure(error.message));
+      const message = getApiErrorMessage(error);
+      notifyApiError(dispatch, message, "registerUser");
     } finally {
       dispatch(setLoading(false));
     }
@@ -108,7 +103,7 @@ const useAuth = () => {
     dispatch(setLoading(true));
 
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         "http://localhost:8085/api/v1/auth/login",
         {
           method: "POST",
@@ -119,17 +114,12 @@ const useAuth = () => {
         }
       );
 
-      const data = await response.json();
-
       console.log("Data received from login API: ", data);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
 
       localStorage.setItem("token", data.accessToken);
 
       dispatch(loginSuccess(data.user));
+      notifyApiSuccess(dispatch, data?.messageReponse?.message || "User logged in successfully.");
 
       const completion = getProfileCompletion(data.user);
       dispatch(profileCompletion(completion));
@@ -140,7 +130,8 @@ const useAuth = () => {
       navigate(redirectTo);
     } catch (error) {
       console.error("Login failed:", error);
-      dispatch(authFailure(error.message));
+      const message = getApiErrorMessage(error);
+      notifyApiError(dispatch, message);
     } finally {
       dispatch(setLoading(false));
     }
@@ -156,7 +147,7 @@ const useAuth = () => {
     setForgotMessage("");
 
     try {
-      const response = await fetch(
+      const { data } = await apiRequest(
         "http://localhost:8085/api/v1/auth/forget-password",
         {
           method: "POST",
@@ -169,19 +160,12 @@ const useAuth = () => {
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Unable to process request"
-        );
-      }
-
       const message =
         data.message ||
         "Password reset instructions have been sent to your email.";
 
       setForgotMessage(message);
+      notifyApiSuccess(dispatch, message);
 
       // Return success information to Login.jsx
       return {
@@ -192,7 +176,9 @@ const useAuth = () => {
     } catch (error) {
       console.error("Forgot password failed:", error);
 
-      setForgotError(error.message);
+      const message = getApiErrorMessage(error);
+      setForgotError(message);
+      notifyApiError(dispatch, message);
 
       // Important: allow Login.jsx to know that request failed
       return {
@@ -248,7 +234,7 @@ const useAuth = () => {
 
       //----------------- File upload logic (Backend)
 
-      const response = await fetch(
+      const { data, status, raw } = await apiRequest(
         `http://localhost:8085/api/v1/user`,
         {
           method: "PUT",
@@ -260,25 +246,20 @@ const useAuth = () => {
         }
       );
 
-      console.log(
-        "Content-Type:",
-        response.headers.get("content-type")
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Profile update failed"
-        );
-      }
-     
+      console.log("Update API status:", status);
       console.log("Data received from update API: ", data);
       dispatch(updateUserData(data));
+      notifyApiSuccess(
+        dispatch,
+        raw?.message || data?.message || "Profile updated successfully",
+        "updateUser",
+      );
+      
 
       navigate(`/profile/${id}`);
     } catch (error) {
-      dispatch(authFailure(error.message));
+      const message = getApiErrorMessage(error);
+      notifyApiError(dispatch, message);
     } finally {
       dispatch(setLoading(false));
     }
@@ -295,19 +276,13 @@ const useAuth = () => {
     formData.append("upload_preset", "TravoApp");
     formData.append("cloud_name", "dwg7vniow");
 
-    const response = await fetch(
+    const { data } = await apiRequest(
       `https://api.cloudinary.com/v1_1/dwg7vniow/image/upload`,
       {
         method: "POST",
         body: formData,
       }
     );
-
-    if (!response.ok) {
-      throw new Error("Image upload failed");
-    }
-
-    const data = await response.json();
 
     return {
       url: data.secure_url,

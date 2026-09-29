@@ -135,7 +135,8 @@ public class FeedService {
         try {
             feedItemRepository.saveAll(items);
         } catch (Exception ex) {
-            logger.error("Failed to mark feed items inactive for resourceId={}: {}", event.getResourceId(), ex.getMessage());
+            logger.error("Failed to mark feed items inactive for resourceId={}: {}", event.getResourceId(),
+                    ex.getMessage());
         }
 
         for (FeedItem item : items) {
@@ -143,24 +144,50 @@ public class FeedService {
         }
     }
 
-    public List<FeedItemResponse> getFeedForUser(String userId, int limit) {
+    public List<FeedItemResponse> getFeedForUser(String userId, int page, int limit) {
+
         if (userId == null || userId.isBlank()) {
             return Collections.emptyList();
         }
 
+        int safePage = Math.max(page, 0);
         int safeLimit = Math.min(Math.max(limit, 1), 100);
-        List<FeedItemResponse> personalized = getPersonalizedFeed(userId, safeLimit);
-        if (personalized.size() >= safeLimit) {
-            return personalized.subList(0, safeLimit);
+
+        // Number of blogs we need to generate to reach the requested page
+        int requiredBlogs = (safePage + 1) * safeLimit;
+
+        List<FeedItemResponse> personalized = getPersonalizedFeed(userId, requiredBlogs);
+
+        List<FeedItemResponse> discovery = Collections.emptyList();
+
+        if (personalized.size() < requiredBlogs) {
+
+            int remaining = requiredBlogs - personalized.size();
+
+            List<String> publicAuthors = userConnectionService.getPublicUserIds(
+                    Math.min(100, Math.max(remaining * 10, 20)));
+
+            discovery = blogDiscoveryService
+                    .getDiscoveryBlogs(publicAuthors, remaining)
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
         }
 
-        int remaining = safeLimit - personalized.size();
-        List<String> publicAuthors = userConnectionService.getPublicUserIds(Math.min(100, Math.max(remaining * 10, 20)));
-        List<FeedItemResponse> discovery = blogDiscoveryService.getDiscoveryBlogs(publicAuthors, remaining)
-            .stream()
-            .map(this::toResponse)
-            .toList();
-        return mergeAndDeduplicate(personalized, discovery, safeLimit);
+        List<FeedItemResponse> merged = mergeAndDeduplicate(
+                personalized,
+                discovery,
+                requiredBlogs);
+
+        int fromIndex = safePage * safeLimit;
+
+        if (fromIndex >= merged.size()) {
+            return Collections.emptyList();
+        }
+
+        int toIndex = Math.min(fromIndex + safeLimit, merged.size());
+
+        return merged.subList(fromIndex, toIndex);
     }
 
     public void backfillConnection(String viewerId, String authorId) {
@@ -169,7 +196,8 @@ public class FeedService {
         }
         List<DiscoveryBlogResponse> blogs = blogDiscoveryService.getBlogsByAuthor(authorId, 100);
         for (DiscoveryBlogResponse blog : blogs) {
-            if (blog.getResourceId() == null || feedItemRepository.findByResourceIdAndViewerId(blog.getResourceId(), viewerId).isPresent()) {
+            if (blog.getResourceId() == null
+                    || feedItemRepository.findByResourceIdAndViewerId(blog.getResourceId(), viewerId).isPresent()) {
                 continue;
             }
             FeedItem item = FeedItem.builder()
@@ -296,7 +324,8 @@ public class FeedService {
             }
             List<FeedItemResponse> responses = new ArrayList<>();
             for (String payload : cached) {
-                responses.add(objectMapper.readValue(payload, new TypeReference<FeedItemResponse>() {}));
+                responses.add(objectMapper.readValue(payload, new TypeReference<FeedItemResponse>() {
+                }));
             }
             return responses;
         } catch (Exception ex) {

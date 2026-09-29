@@ -58,10 +58,12 @@ const useUserData = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const getUser = useCallback(async (userId) => {
+
+    console.log("Fething users data-", userId);
     const token = localStorage.getItem("token");
     try {
       const { data } = await apiRequest(
-        `http://localhost:8085/user/get-user/${userId}`,
+        `http://localhost:8085/api/v1/user/${userId}`,
         {
           method: "GET",
           headers: {

@@ -43,3 +43,12 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #f0aa49 transparent;
 }
+
+.carousel-scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.carousel-scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}

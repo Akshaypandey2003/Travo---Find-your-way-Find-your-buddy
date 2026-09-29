@@ -9,12 +9,17 @@ const blogsSlice = createSlice({
   },
   reducers: {
     addBlog: (state, action) => {
-
-       const blogs = Array.isArray(action.payload)
+      const blogs = Array.isArray(action.payload)
         ? action.payload
         : [action.payload];
 
-    state.blogs.push(...blogs);
+      const existingIds = new Set(state.blogs.map((blog) => blog.eventId));
+
+      const newBlogs = blogs.filter(
+        (blog) => blog?.eventId && !existingIds.has(blog.eventId),
+      );
+
+      state.blogs.push(...newBlogs);
     },
     filterBlog: (state, action) => {
       const { blogId } = action.payload;
@@ -23,9 +28,9 @@ const blogsSlice = createSlice({
     clearBlogsData: (state, action) => {
       state.blogs = [];
     },
-    updatePostViews: (state,action)=>{
-      const {blogId,userId} = action.payload;
-      
+    updatePostViews: (state, action) => {
+      const { blogId, userId } = action.payload;
+
       const blogIndex = state.blogs.findIndex((blog) => blog?.blogId == blogId);
       if (blogIndex !== -1) {
         const blog = state.blogs[blogIndex];
@@ -40,7 +45,7 @@ const blogsSlice = createSlice({
         console.log("Liked users: ", userViews);
 
         if (!userViews.includes(userId)) {
-           blog.blogViews.push(userId);
+          blog.blogViews.push(userId);
         }
       }
     },
@@ -72,7 +77,7 @@ const blogsSlice = createSlice({
     },
     setBlogsNextPageToken: (state, action) => {
       state.nextPageToken = action.payload;
-    }
+    },
   },
 });
 export const {

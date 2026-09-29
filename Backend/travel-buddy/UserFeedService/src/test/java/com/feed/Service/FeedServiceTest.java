@@ -53,7 +53,7 @@ class FeedServiceTest {
         when(feedItemRepository.findByViewerIdAndActiveTrueOrderByCreatedAtDesc("viewer", org.springframework.data.domain.PageRequest.of(0, 2)))
                 .thenReturn(new PageImpl<>(List.of(item("one"), item("two"))));
 
-        assertThat(feedService.getFeedForUser("viewer", 2))
+        assertThat(feedService.getFeedForUser("viewer",1, 2))
                 .extracting("resourceId")
                 .containsExactly("one", "two");
         verifyNoInteractions(blogDiscoveryService, userConnectionService);
@@ -67,7 +67,7 @@ class FeedServiceTest {
         when(blogDiscoveryService.getDiscoveryBlogs(List.of("author"), 2))
                 .thenReturn(List.of(discovery("two"), discovery("three")));
 
-        assertThat(feedService.getFeedForUser("viewer", 3))
+        assertThat(feedService.getFeedForUser("viewer",1, 3))
                 .extracting("resourceId")
                 .containsExactly("three", "two", "one");
         verify(blogDiscoveryService).getDiscoveryBlogs(List.of("author"), 2);
@@ -81,7 +81,7 @@ class FeedServiceTest {
         when(blogDiscoveryService.getDiscoveryBlogs(List.of("author"), 1))
                 .thenReturn(List.of(discovery("same")));
 
-        assertThat(feedService.getFeedForUser("viewer", 2))
+        assertThat(feedService.getFeedForUser("viewer",1, 2))
                 .extracting("resourceId")
                 .containsExactly("same");
     }

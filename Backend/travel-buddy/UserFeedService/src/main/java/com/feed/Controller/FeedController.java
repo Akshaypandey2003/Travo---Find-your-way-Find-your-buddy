@@ -25,9 +25,10 @@ public class FeedController {
     @GetMapping
     public ResponseEntity<List<FeedItemResponse>> getUserFeed(
             @AuthenticationPrincipal String userId,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int limit) {
 
-        List<FeedItemResponse> feed = feedService.getFeedForUser(userId, limit);
+        List<FeedItemResponse> feed = feedService.getFeedForUser(userId,page, limit);
         return ResponseEntity.ok(feed);
     }
 }

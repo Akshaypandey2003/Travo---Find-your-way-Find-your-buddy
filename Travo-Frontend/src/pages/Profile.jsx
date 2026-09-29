@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import EditProfile from "./EditProfile";
+import { useState,useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   MapPin,
@@ -17,11 +18,37 @@ import {
   Share2,
   Bookmark,
 } from "lucide-react";
+import useUserData from "../CustomHooks/useUserData";
 const Profile = () => {
   const navigate = useNavigate();
 
-  const auth = useSelector((store) => store.auth);
+  const loggedInUser = useSelector((store)=>store.auth?.user);
+  const usersList = useSelector((store)=>store.auth?.usersList);
+  
+  const {getUser} = useUserData();
   const { userId } = useParams();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  let localUser = userId==loggedInUser?.userId ? loggedInUser :usersList?.find((user) => user.userId == userId); // Get the current user's data
+
+
+  console.log("Current user is: ",currentUser);
+
+   useEffect(() => {
+    if (localUser) {
+      setCurrentUser(localUser);
+    }
+  }, [localUser]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!localUser && !currentUser) {
+        const fetchedUser = await getUser(userId);
+        setCurrentUser(fetchedUser);
+      }
+    };
+    fetchUser();
+  }, [localUser, currentUser, userId]);
 
   const stats = [
     { label: "Countries", value: 28 },
@@ -49,7 +76,7 @@ const Profile = () => {
         <div className="flex flex-col lg:flex-row items-end gap-6 pb-6 border-b dark:border-slate-800">
           <div className="relative">
             <img
-              src={auth?.user?.profilePic}
+              src={currentUser?.profilePic}
               className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background-light dark:border-background-dark object-cover shadow-2xl"
               alt="Alex"
             />
@@ -59,7 +86,7 @@ const Profile = () => {
           <div className="flex-1 text-center lg:text-left pt-4 lg:pt-0">
             <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 mb-3">
               <h1 className="text-3xl font-extrabold text-orange-500">
-                {auth?.user?.name}
+                {currentUser?.name}
               </h1>
               <span className="bg-green-500/15 text-green-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 self-center lg:self-auto border border-green-500">
                 Verified
@@ -68,9 +95,9 @@ const Profile = () => {
             <div className="flex flex-wrap justify-center lg:justify-start gap-5 text-slate-500 text-sm mb-4">
               <div className="flex items-center gap-1.5">
                 <MapPin size={16} className="text-primary" />
-                {auth?.user?.city}
+                {currentUser?.city}
                 {", "}
-                {auth?.user?.country}
+                {currentUser?.country}
               </div>
               <div className="flex items-center gap-1.5">
                 <Star size={16} className="text-yellow-500 fill-current" />{" "}
@@ -81,15 +108,15 @@ const Profile = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <PlaneTakeoff size={16} className="text-primary" />{" "}
-                {auth?.user?.tripsCount} Trips
+                {currentUser?.tripsCount} Trips
               </div>
             </div>
             <p className="text-slate-500 max-w-2xl text-sm leading-relaxed mx-auto lg:mx-0">
-              {auth?.user?.bio ||
+              {currentUser?.bio ||
                 "Travel enthusiast exploring the world one adventure at a time. Sharing my experiences and tips for fellow wanderers."}
             </p>
             <p className="text-slate-500 max-w-2xl text-sm leading-relaxed mx-auto lg:mx-0">
-              {/* {auth?.user?.preferences?.map((pref, index) => (
+              {/* {currentUser?.preferences?.map((pref, index) => (
                 // <span key={index} className="mr-2">
                 //   {pref}
                 // </span>
@@ -104,7 +131,7 @@ const Profile = () => {
             </p>
           </div>
 
-          {auth?.user?.userId != userId && (
+          {loggedInUser?.userId != userId && (
             <div className="flex gap-3 w-full lg:w-auto mt-4">
               <button className="flex-1 lg:flex-none bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-xl font-bold shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2">
                 <UserPlus size={20} /> Connect
@@ -118,7 +145,7 @@ const Profile = () => {
               </button>
             </div>
           )}
-          {auth?.user?.userId == userId && <EditProfile />}
+          {loggedInUser?.userId == userId && <EditProfile />}
         </div>
 
         {/* Tabs */}
@@ -315,7 +342,7 @@ const Profile = () => {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {auth.user?.preferences.map((i) => (
+                {currentUser?.preferences.map((i) => (
                   <span
                     key={i}
                     className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold uppercase tracking-widest"

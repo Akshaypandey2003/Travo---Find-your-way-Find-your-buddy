@@ -161,11 +161,11 @@ const getAllBlogs = async(page)=>{
   } 
 }
 
-const getUserFeed = async (limit = 20) => {
+const getUserFeed = async (page = 0, limit = 20) => {
   const token = localStorage.getItem("token");
   try {
     const { data } = await apiRequest(
-      `http://localhost:8085/api/v1/feed?limit=${limit}`,
+      `http://localhost:8085/api/v1/feed?page=${page}&limit=${limit}`,
       {
         method: "GET",
         headers: {
@@ -174,6 +174,8 @@ const getUserFeed = async (limit = 20) => {
         },
       },
     );
+
+    console.log("Blog received in hoook : ", data);
 
     return Array.isArray(data) ? data : data?.content || [];
   } catch (error) {

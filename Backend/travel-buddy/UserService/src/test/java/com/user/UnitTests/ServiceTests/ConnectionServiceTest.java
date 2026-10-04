@@ -21,6 +21,7 @@ import com.user.Exceptions.UserNotFoundException;
 import com.user.Helper.ConnectionMapper;
 import com.user.Repository.*;
 import com.user.ServiceImpl.ConnectionServiceImpl;
+import com.user.ServiceImpl.ConnectionEventProducer;
 import com.user.ServiceImpl.UserNotificationProducer;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +41,9 @@ public class ConnectionServiceTest {
 
     @Mock
     private UserNotificationProducer notificationProducer;
+
+    @Mock
+    private ConnectionEventProducer connectionEventProducer;
 
     @InjectMocks
     private ConnectionServiceImpl connectionService;
@@ -101,7 +105,7 @@ public class ConnectionServiceTest {
         verify(userRepo).incrementFollowersCount("user2");
 
         verify(notificationProducer)
-                .friendRequestSend("user1", "Akshay", "user2");
+                .newFollower("user1", "Akshay", "user2");
     }
 
     @Test
@@ -202,6 +206,9 @@ public class ConnectionServiceTest {
 
         when(connectionRepo.save(any()))
                 .thenReturn(connection);
+
+        when(userRepo.findById("user2"))
+                .thenReturn(Optional.of(privateUser));
 
         when(connectionMapper.toResponse(any()))
                 .thenReturn(ConnectionResponse.builder().build());

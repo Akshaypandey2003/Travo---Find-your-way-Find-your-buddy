@@ -269,7 +269,7 @@ class ConnectionControllerTest {
                 when(connectionService.getFollowing(any(), any()))
                                 .thenReturn(response);
 
-                mockMvc.perform(get("/api/v1/connections/following")
+                mockMvc.perform(get("/api/v1/connections/followings")
                                 .with(authentication(auth())))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content[0].userId").value("following1"));

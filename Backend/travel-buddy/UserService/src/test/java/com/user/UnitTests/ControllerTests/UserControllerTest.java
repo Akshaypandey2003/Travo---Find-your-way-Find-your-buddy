@@ -98,7 +98,7 @@ public class UserControllerTest {
        when(userService.updateUser(any(), any()))
                 .thenReturn(response);
 
-        mockMvc.perform(put("/api/v1/users")
+        mockMvc.perform(put("/api/v1/user")
                        .with(authentication(
             new UsernamePasswordAuthenticationToken(userId, null)))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +125,7 @@ public class UserControllerTest {
        when(userService.updateUser(any(), any()))
                 .thenThrow(new UserNotFoundException("User not found"));
 
-        mockMvc.perform(put("/api/v1/users")
+        mockMvc.perform(put("/api/v1/user")
                         .with(authentication(
             new UsernamePasswordAuthenticationToken(userId, null)))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -158,7 +158,7 @@ public class UserControllerTest {
         when(userService.getAllUsers(any(Pageable.class)))
                 .thenReturn(pageResponse);
 
-        mockMvc.perform(get("/api/v1/users?page=0&size=10"))
+        mockMvc.perform(get("/api/v1/user/all?page=0&size=10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].userId").value("user1"))
                 .andExpect(jsonPath("$.content[0].name").value("Akshay"))
@@ -181,7 +181,7 @@ public class UserControllerTest {
         when(userService.getUserById("user123"))
                 .thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/users/user123"))
+        mockMvc.perform(get("/api/v1/user/user123"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("user123"))
                 .andExpect(jsonPath("$.name").value("Akshay"));
@@ -197,7 +197,7 @@ public class UserControllerTest {
         when(userService.getUserById("invalid"))
                 .thenThrow(new UserNotFoundException("User not found"));
 
-        mockMvc.perform(get("/api/v1/users/invalid"))
+        mockMvc.perform(get("/api/v1/user/invalid"))
                 .andExpect(status().isNotFound());
     }
 
@@ -226,7 +226,7 @@ public class UserControllerTest {
         when(userService.getUserByPreferences(any(Pageable.class), any()))
                 .thenReturn(response);
 
-        mockMvc.perform(post("/api/v1/users/get-user-by-preferences?page=0&size=10")
+        mockMvc.perform(post("/api/v1/user/get-user-by-preferences?page=0&size=10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(List.of("travel"))))
                 .andExpect(status().isOk())
@@ -254,7 +254,7 @@ public class UserControllerTest {
         when(userService.getUserByPreferences(any(Pageable.class), any()))
                 .thenReturn(response);
 
-        mockMvc.perform(post("/api/v1/users/get-user-by-preferences?page=0&size=10")
+        mockMvc.perform(post("/api/v1/user/get-user-by-preferences?page=0&size=10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(List.of("unknown"))))
                 .andExpect(status().isOk())
@@ -270,7 +270,9 @@ public class UserControllerTest {
 
         doNothing().when(userService).deleteUser("user123");
 
-        mockMvc.perform(delete("/api/v1/users/user123"))
+        mockMvc.perform(delete("/api/v1/user")
+                        .with(authentication(
+                                new UsernamePasswordAuthenticationToken("user123", null))))
                 .andExpect(status().isNoContent());
     }
 
@@ -283,9 +285,11 @@ public class UserControllerTest {
 
         doThrow(new UserNotFoundException("User not found"))
                 .when(userService)
-                .deleteUser("invalid");
+                .deleteUser(any());
 
-        mockMvc.perform(delete("/api/v1/users/invalid"))
+        mockMvc.perform(delete("/api/v1/user")
+                        .with(authentication(
+                                new UsernamePasswordAuthenticationToken("invalid", null))))
                 .andExpect(status().isNotFound());
     }
 

@@ -15,6 +15,7 @@ import com.user.Repository.PasswordResetTokenRepo;
 import com.user.Repository.ProcessedFeedbackEventRepo;
 import com.user.Repository.UserRepo;
 import com.user.Service.UserService;
+import com.user.ServiceImpl.RefreshTokenService;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,9 @@ class AuthControllerTest {
 
         @MockBean
         private JwtProvider jwtProvider;
+
+        @MockBean
+        private RefreshTokenService refreshTokenService;
 
         @MockBean
         private UserRepo userRepo;
@@ -228,14 +232,16 @@ class AuthControllerTest {
 
                 request.setEmail("test@email.com");
 
-                doNothing()
-                                .when(userService)
-                                .forgotPassword("test@email.com");
+                when(userService.forgotPassword("test@email.com"))
+                                .thenReturn(new MessageResponse(
+                                                "If the account exists, password reset instructions have been sent",
+                                                "success"));
 
-                mockMvc.perform(post("/api/v1/auth/forgot-password")
+                mockMvc.perform(post("/api/v1/auth/forget-password")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("success"));
         }
 
         // ========================================

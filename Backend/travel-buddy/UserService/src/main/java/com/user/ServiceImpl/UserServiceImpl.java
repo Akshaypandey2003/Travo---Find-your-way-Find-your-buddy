@@ -412,8 +412,8 @@ public class UserServiceImpl implements UserService {
         if (optionalUser.isEmpty()) {
 
             // DO NOT reveal user doesn't exist
-            logger.warn("Password reset requested for non-existing email: {}", email);
-            throw new UserNotFoundException("Account does not exists");
+            logger.warn("Password reset requested for an unknown account");
+            return new MessageResponse("If the account exists, password reset instructions have been sent", "success");
         }
 
         User user = optionalUser.get();
@@ -437,7 +437,7 @@ public class UserServiceImpl implements UserService {
                 user.getName(),
                 resetLink);
         
-        return new MessageResponse("Password reset link sent to email", "success");
+        return new MessageResponse("If the account exists, password reset instructions have been sent", "success");
     }
 
     @Transactional

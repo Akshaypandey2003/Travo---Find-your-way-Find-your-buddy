@@ -42,6 +42,7 @@ import com.user.Repository.PasswordResetTokenRepo;
 import com.user.Repository.UserRepo;
 import com.user.ServiceImpl.UserEventProducer;
 import com.user.ServiceImpl.UserNotificationProducer;
+import com.user.ServiceImpl.RefreshTokenService;
 import com.user.ServiceImpl.UserServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,6 +71,9 @@ public class UserServiceTest {
 
         @Mock
         private UserEventProducer userEventProducer;
+
+        @Mock
+        private RefreshTokenService refreshTokenService;
 
         @Mock
         private UserMapper userMapper;

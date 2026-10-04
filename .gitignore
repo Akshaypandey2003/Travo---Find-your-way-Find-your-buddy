@@ -1,0 +1,12 @@
+# Local environment files and credentials
+**/.env
+**/.env.*
+!**/.env.example
+
+# Generated dependencies and build artifacts
+**/node_modules/
+**/target/
+**/dist/
+
+# Local frontend environment files
+Travo-Frontend/.env.local

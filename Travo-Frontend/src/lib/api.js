@@ -8,6 +8,17 @@ const STATUS_MESSAGES = {
   500: "The server could not complete the request.",
 };
 
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8085"
+).replace(/\/+$/, "");
+
+const resolveApiUrl = (url) => {
+  const localApiOrigin = "http://localhost:8085";
+  return typeof url === "string" && url.startsWith(localApiOrigin)
+    ? `${API_BASE_URL}${url.slice(localApiOrigin.length)}`
+    : url;
+};
+
 const isObject = (value) => value !== null && typeof value === "object";
 
 const extractMessage = (body) => {
@@ -56,7 +67,7 @@ export const apiRequest = async (url, options = {}) => {
   let response;
 
   try {
-    response = await fetch(url, options);
+    response = await fetch(resolveApiUrl(url), options);
   } catch (error) {
     throw new ApiError(
       "Unable to reach the server. Please check your connection and try again.",

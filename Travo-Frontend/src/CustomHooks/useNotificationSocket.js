@@ -5,7 +5,7 @@ import { Client } from '@stomp/stompjs';
 import SockJS from "sockjs-client";
 import { useDispatch, useSelector } from "react-redux";
 import { addNewNotification } from "../Redux/Slices/notificationSlice";
-import { apiRequest } from "../lib/api";
+import { API_BASE_URL, apiRequest } from "../lib/api";
 
 const useNotificationSocket = () => {
   const loggedInUser = useSelector((state) => state.auth.user);
@@ -40,7 +40,7 @@ const useNotificationSocket = () => {
     );
 
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8085/ws"),
+      webSocketFactory: () => new SockJS(`${API_BASE_URL}/ws`),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },

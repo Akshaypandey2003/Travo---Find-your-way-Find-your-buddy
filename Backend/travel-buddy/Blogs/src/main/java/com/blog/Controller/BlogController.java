@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
 
 import com.blog.DTO.ApiResponse;
+import com.blog.DTO.BlogEngagementBatchRequest;
+import com.blog.DTO.BlogEngagementResponse;
 import com.blog.DTO.CreateBlogRequest;
 import com.blog.DTO.DiscoveryBlogResponse;
 import com.blog.DTO.UpdateBlogRequest;
@@ -81,13 +83,23 @@ public class BlogController {
 
     // ✅ Like Blog
     @PostMapping("/{blogId}/like")
-    public ResponseEntity<ApiResponse<Blog>> likeBlog(
+    public ResponseEntity<ApiResponse<BlogEngagementResponse>> likeBlog(
             @PathVariable String blogId,
             @AuthenticationPrincipal String userId) {
         if (userId == null || userId.isBlank()) {
             throw new InvalidRequestException("Authenticated user is required");
         }
         return ResponseEntity.ok(blogService.likeBlog(blogId, userId));
+    }
+
+    @PostMapping("/engagement/batch")
+    public ResponseEntity<List<BlogEngagementResponse>> getEngagement(
+            @Valid @RequestBody BlogEngagementBatchRequest request,
+            @AuthenticationPrincipal String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new InvalidRequestException("Authenticated user is required");
+        }
+        return ResponseEntity.ok(blogService.getEngagement(request.getBlogIds(), userId));
     }
 
     // ✅ Delete Blog
@@ -163,10 +175,12 @@ public class BlogController {
     }
 
     @PostMapping("/{blogId}/view")
-    public ResponseEntity<?> updateBlogViews(@PathVariable String blogId,
+    public ResponseEntity<ApiResponse<BlogEngagementResponse>> updateBlogViews(@PathVariable String blogId,
             @AuthenticationPrincipal String userId) {
-        ApiResponse<Blog> updatedBlog = blogService.updateBlogViews(blogId);
-        return ResponseEntity.status(200).body(updatedBlog);
+        if (userId == null || userId.isBlank()) {
+            throw new InvalidRequestException("Authenticated user is required");
+        }
+        return ResponseEntity.ok(blogService.updateBlogViews(blogId, userId));
     }
 
 }

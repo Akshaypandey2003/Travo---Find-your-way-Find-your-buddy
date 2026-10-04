@@ -112,9 +112,14 @@ const Dashboard = () => {
       ? new Date(item.createdAt).toLocaleString()
       : "Recently",
     content: item.caption || "Shared a travel update.",
+    resourceId: item.resourceId || null,
     images: item.images || item.thumbnailUrl,
-    likes: 0,
-    comments: 0,
+    likesCount: item.likesCount || 0,
+    commentsCount: item.commentsCount || 0,
+    viewsCount: item.viewsCount || 0,
+    likedByMe: item.likedByMe || false,
+    blogId: item.resourceId,
+    blogAuthor: item.authorId,
   }));
 
   return (

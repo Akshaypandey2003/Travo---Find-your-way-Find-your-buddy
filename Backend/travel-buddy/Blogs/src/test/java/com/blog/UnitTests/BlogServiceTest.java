@@ -22,6 +22,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import com.blog.Client.UserServiceClient;
 import com.blog.DTO.ApiResponse;
@@ -57,6 +60,8 @@ class BlogServiceTest {
     private CommentRepository commentRepo;
     @Mock
     private EventPublisher eventPublisher;
+        @Mock
+        private MongoTemplate mongoTemplate;
 
     private BlogServiceImpl blogService;
 
@@ -70,6 +75,7 @@ class BlogServiceTest {
                 likeRepo,
                 commentRepo,
                 eventPublisher,
+                mongoTemplate,
                 50);
     }
 
@@ -148,15 +154,50 @@ class BlogServiceTest {
         when(likeRepo.countByResourceIdAndResourceType("b1", ResourceType.BLOG))
                 .thenReturn(0)
                 .thenReturn(1);
-        when(blogRepo.save(any(Blog.class))).thenAnswer(i -> i.getArgument(0));
+        ApiResponse<com.blog.DTO.BlogEngagementResponse> first = blogService.likeBlog("b1", "u1");
+        assertThat(first.getData().getLikesCount()).isZero();
 
-        ApiResponse<Blog> first = blogService.likeBlog("b1", "u1");
-        assertThat(first.getData().getLikeCount()).isZero();
-
-        ApiResponse<Blog> second = blogService.likeBlog("b1", "u1");
-        assertThat(second.getData().getLikeCount()).isEqualTo(1);
+        ApiResponse<com.blog.DTO.BlogEngagementResponse> second = blogService.likeBlog("b1", "u1");
+        assertThat(second.getData().getLikesCount()).isEqualTo(1);
         verify(likeRepo).delete(existingLike);
         verify(likeRepo).save(any(Like.class));
+        verify(mongoTemplate, times(2)).updateFirst(any(Query.class), any(Update.class), eq(Blog.class));
+    }
+
+    @Test
+    void getEngagement_returnsCountsAndWhetherViewerLikedEachBlog() {
+        Blog blog = Blog.builder()
+                .id("b1")
+                .likeCount(4)
+                .commentCount(2)
+                .viewCount(9)
+                .build();
+        when(blogRepo.findAllById(List.of("b1"))).thenReturn(List.of(blog));
+        when(likeRepo.findByResourceTypeAndResourceIdInAndUserId(ResourceType.BLOG, List.of("b1"), "u1"))
+                .thenReturn(List.of(Like.builder().resourceId("b1").build()));
+
+        List<com.blog.DTO.BlogEngagementResponse> result = blogService.getEngagement(List.of("b1"), "u1");
+
+        assertThat(result).singleElement().satisfies(engagement -> {
+            assertThat(engagement.getLikesCount()).isEqualTo(4);
+            assertThat(engagement.getCommentsCount()).isEqualTo(2);
+            assertThat(engagement.getViewsCount()).isEqualTo(9);
+            assertThat(engagement.isLikedByMe()).isTrue();
+        });
+    }
+
+    @Test
+    void updateBlogViews_usesAtomicIncrementAndReturnsCurrentEngagement() {
+        Blog updated = Blog.builder().id("b1").viewCount(5).build();
+        when(blogRepo.findById("b1")).thenReturn(Optional.of(updated));
+        when(likeRepo.findByResourceIdAndResourceTypeAndUserId("b1", ResourceType.BLOG, "u1"))
+                .thenReturn(Optional.empty());
+
+        var response = blogService.updateBlogViews("b1", "u1");
+
+        assertThat(response.getData().getViewsCount()).isEqualTo(5);
+        assertThat(response.getData().isLikedByMe()).isFalse();
+        verify(mongoTemplate).updateFirst(any(Query.class), any(Update.class), eq(Blog.class));
     }
 
     @Test

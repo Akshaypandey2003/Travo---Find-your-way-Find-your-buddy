@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +17,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.blog.Client.UserServiceClient;
 import com.blog.DTO.ApiResponse;
+import com.blog.DTO.BlogEngagementResponse;
 import com.blog.DTO.CreateBlogRequest;
 import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
@@ -46,6 +53,7 @@ public class BlogServiceImpl implements BlogService {
     private final LikeRepository likeRepo;
     private final CommentRepository commentRepo;
     private final EventPublisher eventPublisher;
+    private final MongoTemplate mongoTemplate;
     private final int maxPageSize;
 
     @Override
@@ -65,6 +73,7 @@ public class BlogServiceImpl implements BlogService {
             LikeRepository likeRepo,
             CommentRepository commentRepo,
             EventPublisher eventPublisher,
+            MongoTemplate mongoTemplate,
             @Value("${blog.pagination.max-page-size:100}") int maxPageSize) {
         this.blogRepo = blogRepo;
         this.cloudinaryService = cloudinaryService;
@@ -73,6 +82,7 @@ public class BlogServiceImpl implements BlogService {
         this.likeRepo = likeRepo;
         this.commentRepo = commentRepo;
         this.eventPublisher = eventPublisher;
+        this.mongoTemplate = mongoTemplate;
         this.maxPageSize = maxPageSize;
     }
 
@@ -103,7 +113,6 @@ public class BlogServiceImpl implements BlogService {
             logger.info(
                     "No friends found for authorId: {}",
                     authorId);
-
         } else {
             Set<String> friendSet = new HashSet<>(friends);
 
@@ -279,7 +288,7 @@ public class BlogServiceImpl implements BlogService {
 
     @Transactional
     @Override
-    public ApiResponse<Blog> likeBlog(String blogId, String userId) {
+    public ApiResponse<BlogEngagementResponse> likeBlog(String blogId, String userId) {
         Blog blog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
 
@@ -298,19 +307,69 @@ public class BlogServiceImpl implements BlogService {
 
         int likeCount = likeRepo.countByResourceIdAndResourceType(blogId, ResourceType.BLOG);
         blog.setLikeCount(likeCount);
-        Blog updatedBlog = blogRepo.save(blog);
+        mongoTemplate.updateFirst(
+            Query.query(Criteria.where("_id").is(blogId)),
+            new Update().set("likeCount", likeCount),
+            Blog.class);
 
-        return new ApiResponse<>(true, updatedBlog, "Blog Liked Successfully.");
+        return new ApiResponse<>(true, toEngagement(blog, !like.isPresent()), "Blog like status updated.");
     }
 
     @Override
-    public ApiResponse<Blog> updateBlogViews(String blogId) {
-        Blog blog = blogRepo.findById(blogId)
+    public ApiResponse<BlogEngagementResponse> updateBlogViews(String blogId, String userId) {
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(blogId)),
+                new Update().inc("viewCount", 1),
+                Blog.class);
+        Blog updatedBlog = blogRepo.findById(blogId)
                 .orElseThrow(() -> new BlogNotFoundException("Blog not found with id: " + blogId));
-        blog.setViewCount(blog.getViewCount() + 1);
-        Blog updatedBlog = blogRepo.save(blog);
+        boolean likedByMe = likeRepo.findByResourceIdAndResourceTypeAndUserId(
+                blogId, ResourceType.BLOG, userId).isPresent();
+        return new ApiResponse<>(true, toEngagement(updatedBlog, likedByMe), "Blog views updated successfully.");
+    }
 
-        return new ApiResponse<>(true, updatedBlog, "Blog views updated Successfully.");
+    @Override
+    public List<BlogEngagementResponse> getEngagement(List<String> blogIds, String userId) {
+        if (blogIds == null || blogIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("Authenticated user is required");
+        }
+
+        List<Blog> blogs = blogRepo.findAllById(blogIds);
+        Set<String> likedBlogIds = likeRepo.findByResourceTypeAndResourceIdInAndUserId(
+                ResourceType.BLOG, blogIds, userId)
+            .stream()
+            .map(Like::getResourceId)
+            .collect(Collectors.toSet());
+        Map<String, Blog> blogsById = blogs.stream()
+                .collect(Collectors.toMap(Blog::getId, blog -> blog));
+
+        return blogIds.stream()
+                .distinct()
+                .map(blogsById::get)
+                .filter(java.util.Objects::nonNull)
+                .map(blog -> toEngagement(blog, likedBlogIds.contains(blog.getId())))
+                .toList();
+    }
+
+    @Override
+    public void incrementCommentCount(String blogId) {
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(blogId)),
+                new Update().inc("commentCount", 1),
+                Blog.class);
+    }
+
+    private BlogEngagementResponse toEngagement(Blog blog, boolean likedByMe) {
+        return BlogEngagementResponse.builder()
+                .blogId(blog.getId())
+                .likesCount(blog.getLikeCount())
+                .commentsCount(blog.getCommentCount())
+                .viewsCount(blog.getViewCount())
+                .likedByMe(likedByMe)
+                .build();
     }
 
     private int normalizePageSize(int size) {

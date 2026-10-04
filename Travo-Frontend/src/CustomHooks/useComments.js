@@ -4,6 +4,7 @@ import {
   setCommentNextPageToken,
   updateCommentLike,
 } from "../Redux/Slices/commentSlice";
+import { incrementPostCommentCount } from "../Redux/Slices/blogsSlice";
 import { apiRequest, getApiErrorMessage } from "../lib/api";
 import { notifyApiError, notifyApiSuccess } from "../lib/apiNotifications";
 
@@ -11,12 +12,12 @@ const useComments = () => {
 
   const dispatch = useDispatch();
 
-  const postComment = async (commentData,blogAuthorId) => {
+  const postComment = async (commentData) => {
     const token = localStorage.getItem("token");
     console.log("Received comment data is: ", commentData);
     try {
       const { data, message } = await apiRequest(
-        `http://localhost:8085/comment/post/${blogAuthorId}`,
+        "http://localhost:8085/api/v1/comments",
         {
           method: "POST",
           headers: {
@@ -28,6 +29,7 @@ const useComments = () => {
       );
       console.log("Comment posted successfully: ", data);
       dispatch(addComment(data));
+      dispatch(incrementPostCommentCount({ blogId: data?.blogId || commentData.blogId }));
       notifyApiSuccess(dispatch, message || "Comment posted successfully.");
     } catch (error) {
       notifyApiError(dispatch, getApiErrorMessage(error));
@@ -41,7 +43,7 @@ const useComments = () => {
     const token = localStorage.getItem("token");
     try {
       const { data, raw } = await apiRequest(
-        `http://localhost:8085/comment/get-comments/${blogId}?page=${page}&size=5`,
+        `http://localhost:8085/api/v1/comments/blog/${blogId}?page=${page}&size=5`,
         {
           method: "GET",
           headers: {
@@ -52,9 +54,9 @@ const useComments = () => {
       );
       if (raw?.data) {
         console.log("All Comments fetched successfully: ", raw);
-        dispatch(addComment(data?.comments || data?.content || data));
+        dispatch(addComment(data?.comments || data?.content || []));
         // Check for last page
-        if (data?.lastPage) {
+        if (data?.lastPage || data?.isLastPage) {
           console.log("This is last page");
           dispatch(setCommentNextPageToken({ blogId, nextPageToken: false }));
         }
@@ -70,7 +72,7 @@ const useComments = () => {
     const token = localStorage.getItem("token");
     try {
       const { data, message } = await apiRequest(
-        `http://localhost:8085/comment/like-comment/${commentId}/${userId}`,
+        `http://localhost:8085/api/v1/comments/${commentId}/like`,
         {
           method: "PUT",
           headers: {

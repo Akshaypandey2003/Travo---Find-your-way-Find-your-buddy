@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
@@ -55,6 +56,8 @@ class BlogIntegrationTest {
     private CommentRepository commentRepo;
     @Autowired
     private LikeRepository likeRepo;
+        @Autowired
+        private MongoTemplate mongoTemplate;
 
     private BlogServiceImpl blogService;
     private CommentServiceImpl commentService;
@@ -86,6 +89,7 @@ class BlogIntegrationTest {
                 likeRepo,
                 commentRepo,
                 eventPublisher,
+                mongoTemplate,
                 100);
 
         commentService = new CommentServiceImpl(
@@ -126,11 +130,11 @@ class BlogIntegrationTest {
                 .category("Tech")
                 .build(), "owner").getData();
 
-        Blog first = blogService.likeBlog(blog.getId(), "u1").getData();
-        assertThat(first.getLikeCount()).isEqualTo(1);
+        com.blog.DTO.BlogEngagementResponse first = blogService.likeBlog(blog.getId(), "u1").getData();
+        assertThat(first.getLikesCount()).isEqualTo(1);
 
-        Blog second = blogService.likeBlog(blog.getId(), "u1").getData();
-        assertThat(second.getLikeCount()).isZero();
+        com.blog.DTO.BlogEngagementResponse second = blogService.likeBlog(blog.getId(), "u1").getData();
+        assertThat(second.getLikesCount()).isZero();
     }
 
     @Test
@@ -151,6 +155,7 @@ class BlogIntegrationTest {
 
         assertThat(page.getTotalElements()).isEqualTo(1);
         assertThat(page.getContent().get(0).getContent()).isEqualTo("first");
+        assertThat(blogService.getBlogById(blog.getId()).getData().getCommentCount()).isEqualTo(1);
     }
 
     @Test

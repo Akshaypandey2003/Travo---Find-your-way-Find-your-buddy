@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 import com.blog.DTO.ApiResponse;
+import com.blog.DTO.BlogEngagementResponse;
 import com.blog.DTO.CreateBlogRequest;
 import com.blog.DTO.UpdateBlogRequest;
 import com.blog.Entity.Blog;
@@ -24,6 +25,8 @@ public interface BlogService {
     public ApiResponse<List<Blog>> getBlogsByDateRange(Instant startDate, Instant endDate);
     public ApiResponse<Page<Blog>> getBlogsByKeyword(String keyword,int page, int size);
     public ApiResponse<Page<Blog>> getBlogsByTitle(String title, int page, int size);
-    public ApiResponse<Blog> likeBlog(String blogId, String userId);
-    public ApiResponse<Blog> updateBlogViews(String blogId);
+    public List<BlogEngagementResponse> getEngagement(List<String> blogIds, String userId);
+    public void incrementCommentCount(String blogId);
+    public ApiResponse<BlogEngagementResponse> likeBlog(String blogId, String userId);
+    public ApiResponse<BlogEngagementResponse> updateBlogViews(String blogId, String userId);
 }

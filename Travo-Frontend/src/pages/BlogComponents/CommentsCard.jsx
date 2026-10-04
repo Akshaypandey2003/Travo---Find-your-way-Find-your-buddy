@@ -45,7 +45,7 @@ export const CommentsCard = ({ comment,blog}) => {
   const handleSubmit = () => {
     const reply = replyRef.current.value;
     const finalData = { ...commentData, content: reply };
-    postComment(finalData,blog?.blogAuthor);
+    postComment(finalData);
     setActiveReply(!activeReply);
   };
   console.log("Current comment: ", comment);

@@ -14,6 +14,7 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Camera,
+  Eye,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -30,10 +31,11 @@ import BlogComments from "./BlogComments";
 import useFriendRequest from "../../CustomHooks/useFriendRequest";
 
 export const BlogCard = ({ post }) => {
-  const { deleteBlog, updateBlogLike, updateBlogView } = useBlog();
+  const { deleteBlog, updateBlogLike, updateBlogViews } = useBlog();
   const { formatTimeAgo } = useHelperMethods();
   const navigate = useNavigate();
   const cardRef = useRef(null);
+  const viewedBlogIds = useRef(new Set());
   const {sendFriendRequest} = useFriendRequest();
 
   const loggedInUser = useSelector((store) => store.auth.user);
@@ -41,20 +43,26 @@ export const BlogCard = ({ post }) => {
 
   // ✅ View count when card visible
   useEffect(() => {
+    const card = cardRef.current;
+    if (!card || !post?.resourceId || !loggedInUser?.userId) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          updateBlogView(blog.blogId, loggedInUser.userId);
+          if (!viewedBlogIds.current.has(post.resourceId)) {
+            viewedBlogIds.current.add(post.resourceId);
+            updateBlogViews(post.resourceId);
+          }
           observer.disconnect();
         }
       },
       { threshold: 0.6 },
     );
 
-    if (cardRef.current) observer.observe(cardRef.current);
+    observer.observe(card);
 
     return () => observer.disconnect();
-  }, []);
+  }, [post?.resourceId, loggedInUser?.userId, updateBlogViews]);
 
   return (
     // <Card
@@ -182,6 +190,7 @@ export const BlogCard = ({ post }) => {
     // </Card>
     <>
       <div
+        ref={cardRef}
         key={post.id}
         className="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-gray-900 overflow-hidden"
       >
@@ -293,18 +302,21 @@ export const BlogCard = ({ post }) => {
               className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors group"
               onClick={(e) => {
                 e.stopPropagation();
-                updateBlogLike(blog.blogId, loggedInUser.userId);
+                updateBlogLike(post?.resourceId);
               }}
             >
-              <Heart size={20} className="group-hover:fill-current" />
-              <span className="text-xs font-bold">{post.likes}</span>
+              <Heart
+                size={20}
+                className={post.likedByMe ? "fill-red-500 text-red-500" : "group-hover:fill-current"}
+              />
+              <span className="text-xs font-bold">{post.likesCount ?? post.likes ?? 0}</span>
             </button>
-            {/* <button className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
-              <MessageCircle size={20} />
-              <span className="text-xs font-bold">{post.comments}</span>
-            </button> */}
             <div onClick={(e) => e.stopPropagation()}>
               <BlogComments blog={post} />
+            </div>
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400" aria-label={`${post.viewsCount ?? 0} views`}>
+              <Eye size={18} />
+              <span className="text-xs font-bold">{post.viewsCount ?? 0}</span>
             </div>
             <button className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
               <Share2 size={20} />

@@ -128,6 +128,8 @@ public class NotificationProducerImpl implements NotificationProducer {
         );
         saveFailedEvent(TOPIC, blogId, event, ex);
     }
+
+    
     public void blogCommentFallback(String senderId, String receiverId, String blogId, String blogTitle,Exception ex)
     {
         NotificationEvent event = new NotificationEvent(

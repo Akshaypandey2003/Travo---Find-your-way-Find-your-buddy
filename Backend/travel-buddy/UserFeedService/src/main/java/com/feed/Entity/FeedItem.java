@@ -56,6 +56,10 @@ public class FeedItem {
 
     private String thumbnailUrl;
 
+    private long likesCount;
+    private long commentsCount;
+    private long viewsCount;
+
     @Builder.Default
     private boolean active = true;
 }

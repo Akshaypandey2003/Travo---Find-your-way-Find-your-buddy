@@ -58,6 +58,30 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
         publish(blog.getId(), event);
         publishPostCreatedEvent(blog);
     }
+     private void publishPostCreatedEvent(Blog blog) {
+        try {
+            PostCreatedEvent postEvent = PostCreatedEvent.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .resourceType("BLOG")
+                    .authorId(blog.getAuthorId())
+                    .authorName(blog.getAuthorName())
+                    .authorProfilePic(blog.getAuthorProfilePic())
+                    .resourceId(blog.getId())
+                    .caption(blog.getCaption())
+                    .likesCount(blog.getLikeCount())
+                    .commentsCount(blog.getCommentCount())
+                    .viewCount(blog.getViewCount())
+                    .images(blog.getImageUrls())
+                    .cloudinaryPublicIds(blog.getCloudinaryPublicIds())
+                    .visibility("PUBLIC")
+                    .createdAt(blog.getCreatedAt())
+                    .build();
+            publish(POST_TOPIC, blog.getId(), postEvent);
+        } catch (Exception ex) {
+            logger.error("Failed to publish PostCreatedEvent for blogId {}: {}", blog.getId(), ex.getMessage());
+            saveFailedPostCreatedEvent(blog, ex);
+        }
+    }
     
     @Override
     @CircuitBreaker(name = "blogDomainEventCircuitBreaker", fallbackMethod = "blogDeletedFallback")
@@ -85,26 +109,7 @@ public class BlogDomainEventPublisherImpl implements EventPublisher {
         }
     }
 
-    private void publishPostCreatedEvent(Blog blog) {
-        try {
-            PostCreatedEvent postEvent = PostCreatedEvent.builder()
-                    .eventId(java.util.UUID.randomUUID().toString())
-                    .resourceType("BLOG")
-                    .authorId(blog.getAuthorId())
-                    .authorName(blog.getAuthorName())
-                    .authorProfilePic(blog.getAuthorProfilePic())
-                    .resourceId(blog.getId())
-                    .caption(blog.getCaption())
-                    .images(blog.getImageUrls())
-                    .visibility("PUBLIC")
-                    .createdAt(blog.getCreatedAt())
-                    .build();
-            publish(POST_TOPIC, blog.getId(), postEvent);
-        } catch (Exception ex) {
-            logger.error("Failed to publish PostCreatedEvent for blogId {}: {}", blog.getId(), ex.getMessage());
-            saveFailedPostCreatedEvent(blog, ex);
-        }
-    }
+   
 
     private void publishPostDeletedEvent(String blogId, String authorId) {
         try {

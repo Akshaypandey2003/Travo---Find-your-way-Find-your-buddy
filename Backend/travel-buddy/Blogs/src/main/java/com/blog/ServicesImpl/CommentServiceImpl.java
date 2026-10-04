@@ -60,6 +60,7 @@ public class CommentServiceImpl implements CommentService {
                 throw new IllegalArgumentException("Maximum reply depth exceeded");
             }
         }
+        Blog blog = fetchBlog(request.getBlogId());
         Comment comment = Comment.builder()
             .blogId(request.getBlogId())
             .authorId(authorId)
@@ -70,8 +71,7 @@ public class CommentServiceImpl implements CommentService {
             .build();
             
         Comment savedComment = commentRepo.save(comment);
-
-        Blog blog = fetchBlog(savedComment.getBlogId());
+        blogService.incrementCommentCount(savedComment.getBlogId());
 
         notificationProducer.sendCommentNotification(
                 authorId,

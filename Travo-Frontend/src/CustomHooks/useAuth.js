@@ -119,7 +119,7 @@ const useAuth = () => {
       localStorage.setItem("token", data.accessToken);
 
       dispatch(loginSuccess(data.user));
-      notifyApiSuccess(dispatch, data?.messageReponse?.message || "User logged in successfully.");
+      notifyApiSuccess(dispatch, data?.messageReponse?.message || "Something went wrong, Please try again !!");
 
       const completion = getProfileCompletion(data.user);
       dispatch(profileCompletion(completion));

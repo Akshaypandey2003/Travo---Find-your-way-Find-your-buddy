@@ -18,6 +18,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feed.DTO.DiscoveryBlogResponse;
+import com.feed.DTO.BlogEngagementResponse;
 import com.feed.Entity.FeedItem;
 import com.feed.Repository.FeedItemRepository;
 
@@ -53,7 +54,7 @@ class FeedServiceTest {
         when(feedItemRepository.findByViewerIdAndActiveTrueOrderByCreatedAtDesc("viewer", org.springframework.data.domain.PageRequest.of(0, 2)))
                 .thenReturn(new PageImpl<>(List.of(item("one"), item("two"))));
 
-        assertThat(feedService.getFeedForUser("viewer",1, 2))
+        assertThat(feedService.getFeedForUser("viewer", 0, 2))
                 .extracting("resourceId")
                 .containsExactly("one", "two");
         verifyNoInteractions(blogDiscoveryService, userConnectionService);
@@ -67,7 +68,7 @@ class FeedServiceTest {
         when(blogDiscoveryService.getDiscoveryBlogs(List.of("author"), 2))
                 .thenReturn(List.of(discovery("two"), discovery("three")));
 
-        assertThat(feedService.getFeedForUser("viewer",1, 3))
+        assertThat(feedService.getFeedForUser("viewer", 0, 3))
                 .extracting("resourceId")
                 .containsExactly("three", "two", "one");
         verify(blogDiscoveryService).getDiscoveryBlogs(List.of("author"), 2);
@@ -81,16 +82,41 @@ class FeedServiceTest {
         when(blogDiscoveryService.getDiscoveryBlogs(List.of("author"), 1))
                 .thenReturn(List.of(discovery("same")));
 
-        assertThat(feedService.getFeedForUser("viewer",1, 2))
+                assertThat(feedService.getFeedForUser("viewer", 0, 2))
                 .extracting("resourceId")
                 .containsExactly("same");
     }
+
+        @Test
+        void hydratesReturnedBlogsWithViewerEngagementInOneBatch() {
+                when(feedItemRepository.findByViewerIdAndActiveTrueOrderByCreatedAtDesc("viewer", org.springframework.data.domain.PageRequest.of(0, 1)))
+                                .thenReturn(new PageImpl<>(List.of(item("blog-1"))));
+                BlogEngagementResponse engagement = new BlogEngagementResponse();
+                engagement.setBlogId("blog-1");
+                engagement.setLikesCount(8);
+                engagement.setCommentsCount(3);
+                engagement.setViewsCount(42);
+                engagement.setLikedByMe(true);
+                when(blogDiscoveryService.getEngagement(List.of("blog-1"), "Bearer token"))
+                                .thenReturn(List.of(engagement));
+
+                var result = feedService.getFeedForUser("viewer", 0, 1, "Bearer token");
+
+                assertThat(result).singleElement().satisfies(post -> {
+                        assertThat(post.getLikesCount()).isEqualTo(8);
+                        assertThat(post.getCommentsCount()).isEqualTo(3);
+                        assertThat(post.getViewsCount()).isEqualTo(42);
+                        assertThat(post.isLikedByMe()).isTrue();
+                });
+                verify(blogDiscoveryService).getEngagement(List.of("blog-1"), "Bearer token");
+        }
 
     private FeedItem item(String resourceId) {
         return FeedItem.builder()
                 .viewerId("viewer")
                 .resourceId(resourceId)
                 .eventId("event-" + resourceId)
+                .resourceType("BLOG")
                 .authorId("author")
                 .createdAt(Instant.parse("2026-01-01T00:00:00Z"))
                 .build();

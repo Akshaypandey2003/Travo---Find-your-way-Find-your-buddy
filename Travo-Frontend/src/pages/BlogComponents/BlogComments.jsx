@@ -22,6 +22,7 @@ import CommentsCardSkeleton from "./CommentsCardSkeleton";
 import { MessageCircle } from "lucide-react";
 
 export const BlogComments = ({ blog }) => {
+  const blogId = blog?.blogId || blog?.resourceId;
 
   const comments = useSelector((store) => store.comment);
   const scrollRef = useRef(null);
@@ -42,11 +43,11 @@ export const BlogComments = ({ blog }) => {
  
   
   const postComments = allComments?.filter(
-    (item) => item?.parentCommentId === null && item?.blogId === blog?.blogId
+    (item) => item?.parentCommentId === null && item?.blogId === blogId
   );
 
   const commentData = {
-    blogId: blog?.blogId,
+    blogId,
     authorId: loggedInUser?.userId,
     authorName: loggedInUser?.name,
     authorProfilePic: loggedInUser?.profilePic,
@@ -55,29 +56,32 @@ export const BlogComments = ({ blog }) => {
 
   const handleSubmit = () => {
     const comment = commentRef.current?.value;
+    if (!comment?.trim()) return;
     const finalData = { ...commentData, content: comment };
-    postComment(finalData,blog?.blogAuthor);
+    postComment(finalData);
     commentRef.current.value = "";
   };
-  const nextPageToken = useSelector((store) => store.comment.nextPageTokens[blog?.blogId]);
+  const nextPageToken = useSelector((store) => store.comment.nextPageTokens[blogId]);
+
+  console.log("Post comments are: ",postComments);
   
   const loadMoreComments = useCallback(async () => {
     if (isFetchingMore || nextPageToken) return;
     setIsFetchingMore(true);
-    await getComments(blog?.blogId, page + 1);
+    await getComments(blogId, page + 1);
 
     // Assuming your `getComments` supports pagination
     setPage((prev) => prev + 1);
     setIsFetchingMore(false);
-  }, [page, blog?.blogId, isFetchingMore]);
+  }, [page, blogId, isFetchingMore]);
 
   useEffect(() => {
     if (fetchComments) {
       setPage(0);
-      getComments(blog?.blogId, 0); // Initial load
+      getComments(blogId, 0);
       setFetchComments(false);
     }
-  }, [fetchComments, blog?.blogId, getComments]);
+  }, [fetchComments, blogId, getComments]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -109,11 +113,7 @@ export const BlogComments = ({ blog }) => {
         >
           <div className="flex items-center gap-1">
             <MessageCircle  className="hover:cursor-pointer" size={20} onClick={() => setFetchComments(true)}/>
-            {postComments?.length > 0 && (
-              <div>
-                <h1 className="font-normal">{postComments?.length}</h1>
-              </div>
-            )}
+            <span className="font-normal">{blog?.commentsCount ?? postComments?.length ?? 0}</span>
           </div>
         </DialogTrigger>
 

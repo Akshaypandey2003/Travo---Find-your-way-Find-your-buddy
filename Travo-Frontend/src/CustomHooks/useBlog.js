@@ -185,14 +185,11 @@ const getUserFeed = async (page = 0, limit = 20) => {
   }
 };
 
-const updateBlogLike = async(blogId, userId)=>{
-  console.log("User with id : ",userId," is liking blog with id: ",blogId);
-
+const updateBlogLike = async(blogId)=>{
   const token = localStorage.getItem("token");
   try {
-    
-      const { raw: data } = await apiRequest(
-        `http://localhost:8085/blog/like-blog/${blogId}/${userId}`,
+      const { data } = await apiRequest(
+        `http://localhost:8085/api/v1/blogs/${blogId}/like`,
         {
           method: "POST",
           headers: {
@@ -201,27 +198,20 @@ const updateBlogLike = async(blogId, userId)=>{
           },
         }
       );
-        console.log("Blog liked successfully: ", data);
-        dispatch(updatePostLike({blogId,userId}));
-        notifyApiSuccess(dispatch, data?.message);
+          dispatch(updatePostLike({ blogId, ...data }));
+          notifyApiSuccess(dispatch, "Like status updated.");
   } catch (error) {
         notifyApiError(dispatch, getApiErrorMessage(error));
         console.log("Some error occured while liking blogs",error);
   } 
 }
 
-const updateBlogViews = async(blogId, userId)=>{
-
+const updateBlogViews = async(blogId)=>{
   const token = localStorage.getItem("token");
-  if(!userId)
-  {
-    console.log("User id is not present");
-    return;
-  }
+  if (!token || !blogId) return;
     try {
-    
-      const { raw: data } = await apiRequest(
-        `http://localhost:8085/blog/update-blog-views/${blogId}/${userId}`,
+      const { data } = await apiRequest(
+        `http://localhost:8085/api/v1/blogs/${blogId}/view`,
         {
           method: "POST",
           headers: {
@@ -230,9 +220,7 @@ const updateBlogViews = async(blogId, userId)=>{
           },
         }
       );
-        console.log("Blog view updated successfully: ", data);
-        dispatch(updatePostViews({blogId,userId}));
-        notifyApiSuccess(dispatch, data?.message);
+          dispatch(updatePostViews({ blogId, viewsCount: data?.viewsCount }));
   } catch (error) {
         notifyApiError(dispatch, getApiErrorMessage(error));
         console.log("Some error occured while updating blog views",error);

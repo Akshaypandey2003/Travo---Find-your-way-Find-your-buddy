@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import com.events.Feed.PostDeletedEvent;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feed.DTO.FeedItemResponse;
+import com.feed.DTO.BlogEngagementResponse;
 import com.feed.DTO.DiscoveryBlogResponse;
 import com.feed.Entity.FeedItem;
 import com.feed.Repository.FeedItemRepository;
@@ -73,6 +75,7 @@ public class FeedService {
         }
 
         List<FeedItem> itemsToInsert = new ArrayList<>();
+        
         for (String viewerId : viewers) {
             if (viewerId == null || viewerId.isBlank()) {
                 continue;
@@ -86,6 +89,9 @@ public class FeedService {
                     .viewerId(viewerId)
                     .eventId(event.getEventId())
                     .resourceType(event.getResourceType())
+                    .likesCount(event.getLikesCount())
+                    .commentsCount(event.getCommentsCount())
+                    .viewsCount(event.getViewCount())
                     .authorId(event.getAuthorId())
                     .authorName(event.getAuthorName())
                     .authorProfilePic(event.getAuthorProfilePic())
@@ -145,6 +151,10 @@ public class FeedService {
     }
 
     public List<FeedItemResponse> getFeedForUser(String userId, int page, int limit) {
+        return getFeedForUser(userId, page, limit, null);
+    }
+
+    public List<FeedItemResponse> getFeedForUser(String userId, int page, int limit, String authorization) {
 
         if (userId == null || userId.isBlank()) {
             return Collections.emptyList();
@@ -187,7 +197,9 @@ public class FeedService {
 
         int toIndex = Math.min(fromIndex + safeLimit, merged.size());
 
-        return merged.subList(fromIndex, toIndex);
+        List<FeedItemResponse> pageItems = new ArrayList<>(merged.subList(fromIndex, toIndex));
+        hydrateEngagement(pageItems, authorization);
+        return pageItems;
     }
 
     public void backfillConnection(String viewerId, String authorId) {
@@ -368,6 +380,9 @@ public class FeedService {
                 .images(item.getImages() == null ? List.of() : item.getImages())
                 .visibility(item.getVisibility())
                 .createdAt(item.getCreatedAt())
+                .likesCount(item.getLikesCount())
+                .commentsCount(item.getCommentsCount())
+                .viewsCount(item.getViewsCount())
                 .thumbnailUrl(item.getThumbnailUrl())
                 .build();
     }
@@ -386,5 +401,34 @@ public class FeedService {
                 .createdAt(blog.getCreatedAt())
                 .thumbnailUrl(firstImage(blog.getImages()))
                 .build();
+    }
+
+    private void hydrateEngagement(List<FeedItemResponse> items, String authorization) {
+        List<String> blogIds = items.stream()
+                .filter(item -> "BLOG".equalsIgnoreCase(item.getResourceType()))
+                .map(FeedItemResponse::getResourceId)
+                .filter(resourceId -> resourceId != null && !resourceId.isBlank())
+                .distinct()
+                .toList();
+        if (blogIds.isEmpty() || authorization == null || authorization.isBlank()) {
+            return;
+        }
+
+        Map<String, BlogEngagementResponse> engagementByBlogId = blogDiscoveryService
+                .getEngagement(blogIds, authorization)
+                .stream()
+                .collect(Collectors.toMap(BlogEngagementResponse::getBlogId, engagement -> engagement));
+
+        items.stream()
+                .filter(item -> item.getResourceId() != null)
+                .forEach(item -> {
+                    BlogEngagementResponse engagement = engagementByBlogId.get(item.getResourceId());
+                    if (engagement != null) {
+                        item.setLikesCount(engagement.getLikesCount());
+                        item.setCommentsCount(engagement.getCommentsCount());
+                        item.setViewsCount(engagement.getViewsCount());
+                        item.setLikedByMe(engagement.isLikedByMe());
+                    }
+                });
     }
 }

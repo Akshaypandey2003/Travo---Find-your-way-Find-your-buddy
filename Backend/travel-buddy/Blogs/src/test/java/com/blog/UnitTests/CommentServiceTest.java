@@ -77,6 +77,7 @@ class CommentServiceTest {
         CommentResponseDTO response = commentService.addComment(request, "u1");
 
         assertThat(response.getCommentId()).isEqualTo("c1");
+        verify(blogService).incrementCommentCount("b1");
         verify(notificationProducer).sendCommentNotification("u1", "owner", "b1", "Blog");
     }
 

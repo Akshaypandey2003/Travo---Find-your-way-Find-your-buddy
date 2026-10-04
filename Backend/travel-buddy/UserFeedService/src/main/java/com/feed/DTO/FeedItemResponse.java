@@ -32,5 +32,10 @@ public class FeedItemResponse {
 
     private Instant createdAt;
 
+    private long viewsCount;
+    private long likesCount;
+    private long commentsCount;
+    private boolean likedByMe;
+
     private String thumbnailUrl;
 }
